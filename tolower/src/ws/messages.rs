@@ -21,6 +21,8 @@ pub enum WebSocketMessage {
     Init(InitData),
     Join(String),
     TempDraw(TempDrawData),
+    Snapshot(SnapshotData),
+    ToggleHistoryElement(ToggleHistoryElementData),
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -56,6 +58,18 @@ pub struct TempDrawData {
     start: drawing::Point,
     end: drawing::Point,
     layer: String,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct SnapshotData {
+    pub layer: String,
+    pub data: Vec<u8>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct ToggleHistoryElementData {
+    pub layer: String,
+    pub index: usize,
 }
 
 impl CursorDataOut {

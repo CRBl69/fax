@@ -131,7 +131,29 @@ impl WebSocketHandler {
                             .then(|_, _, _| fut::ready(()))
                             .wait(ctx);
                 }
-                // Onlt sent by the server thus they should be ignored
+                WebSocketMessage::Snapshot(data) => {
+                    let mut drawing = self.drawing.lock().unwrap();
+                    let layer = drawing.get_layer_mut(&data.layer);
+                    if let Some(layer) = layer {
+                        layer.snapshot(data.data);
+                    }
+                    self.server.send(m)
+                            .into_actor(self)
+                            .then(|_, _, _| fut::ready(()))
+                            .wait(ctx);
+                }
+                WebSocketMessage::ToggleHistoryElement(data) => {
+                    let mut drawing = self.drawing.lock().unwrap();
+                    let layer = drawing.get_layer_mut(&data.layer);
+                    if let Some(layer) = layer {
+                        layer.toggle_history(data.index);
+                    }
+                    self.server.send(m)
+                            .into_actor(self)
+                            .then(|_, _, _| fut::ready(()))
+                            .wait(ctx);
+                }
+                // Only sent by the server thus they should be ignored
                 WebSocketMessage::CursorOut(_) => {}
                 WebSocketMessage::Init(_) => {}
                 WebSocketMessage::Join(_) => {}
