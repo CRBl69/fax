@@ -16,5 +16,6 @@ pub enum Instruction {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct InstructionBox {
     pub instruction: Instruction,
+    pub applied: bool,
     pub uuid: String,
 }
