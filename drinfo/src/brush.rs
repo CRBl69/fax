@@ -13,6 +13,8 @@ pub struct Brush {
     pub width: f32,
     /// The diffusion of the brush.
     pub diffusion: u64,
+    /// The opacity of the brush.
+    pub opacity: u64,
     /// Wether to erase or not.
     pub erase: bool,
 }
@@ -24,6 +26,7 @@ impl Default for Brush {
             color: Color::default(),
             width: 1.0,
             diffusion: 0,
+            opacity: u64::MAX,
             erase: false,
         }
     }
@@ -31,12 +34,13 @@ impl Default for Brush {
 
 impl Brush {
     /// Creates a new brush initiated with the properties passed to the function.
-    pub fn new(brush_shape: BrushShape, color: Color, width: f32, diffusion: u64, erase: bool) -> Self {
+    pub fn new(brush_shape: BrushShape, color: Color, width: f32, diffusion: u64, opacity: u64, erase: bool) -> Self {
         Brush {
             brush_shape,
             color,
             width,
             diffusion,
+            opacity,
             erase,
         }
     }
@@ -49,6 +53,21 @@ impl Brush {
     /// Updates the width of the brush.
     pub fn set_width(&mut self, width: f32) {
         self.width = width;
+    }
+
+    /// Updates the opacity of the brush.
+    pub fn set_diffusion(&mut self, diffusion: u64) {
+        self.diffusion = diffusion;
+    }
+
+    /// Updates the opacity of the brush.
+    pub fn set_opacity(&mut self, opacity: u64) {
+        self.opacity = opacity;
+    }
+
+    /// Updates the opacity of the brush.
+    pub fn set_erase(&mut self, erase: bool) {
+        self.erase = erase;
     }
 
     /// Updates the shape of the brush.
