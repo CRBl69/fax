@@ -7,7 +7,7 @@ export const LAYER_UNDO_ERROR = "Layer cannot be undone anymore.";
 export const LAYER_REDO_ERROR = "Layer cannot be redone anymore.";
 export const LAYER_DOWN_ERROR = "Layer cannot be moved down anymore.";
 export const LAYER_UP_ERROR = "Layer cannot be moved up anymore.";
-export const LAYER_HISTORY_ERROR = "Layer history element cannot be toggled.";
+export const LAYER_HISTORY_ERROR = "Layer history element visibility cannot be set.";
 
 export interface DrawingData {
   layers: SvelteMap<string, Layer>;
@@ -66,31 +66,28 @@ export class Drawing {
     ];
   }
 
-  toggleLayerVisibility(name: string) {
+  setLayerVisibility(name: string, visible: boolean) {
     const layer = this.layers.get(name);
     if (!layer) {
       throw LAYER_NOT_FOUND_ERROR;
     }
-    layer.visible = !layer.visible;
-    this.layers.delete(name);
-    this.layers.set(name, layer);
+    layer.visible = visible;
   }
 
-  toggleHistoryElement(name: string, index: number) {
+  setHistoryElementVisibility(name: string, index: number, visible: boolean) {
     const layer = this.layers.get(name);
     if (!layer) {
       throw LAYER_NOT_FOUND_ERROR;
     }
-    if (layer.historyIndex < index || index < 0) {
+    if (!layer.history.has(index)) {
       throw LAYER_HISTORY_ERROR;
     }
-    layer.history.get(index)!.applied = !layer.history.get(index)!.applied;
+    layer.history.get(index)!.applied = visible;
     for (const snapshotIndex of layer.snapshots.keys()) {
       if (snapshotIndex >= index) {
         layer.snapshots.delete(snapshotIndex);
       }
     }
-    this.layers.set(name, layer);
   }
 
   instruct(name: string, instructionBox: InstructionBox) {
@@ -107,12 +104,12 @@ export class Drawing {
     layer.history.set(layer.historyIndex, instructionBox);
   }
 
-  snapshot(name: string, data: string) {
+  snapshot(name: string, data: string, index: number) {
     const layer = this.layers.get(name);
     if (!layer) {
       throw LAYER_NOT_FOUND_ERROR;
     }
-    layer.snapshots.set(layer.historyIndex, data);
+    layer.snapshots.set(index, data);
     this.layers.set(name, layer);
   }
 
@@ -132,10 +129,10 @@ export class Drawing {
     let greatestSnapshotIndex: number | null = null;
     let greatestSnapshot: string | null = null;
     for (const [snapshotIndex, snapshot] of layer.snapshots.entries()) {
-      if (greatestSnapshotIndex == null) {
+      if (greatestSnapshotIndex == null && snapshotIndex <= index) {
         greatestSnapshotIndex = snapshotIndex;
         greatestSnapshot = snapshot;
-      } else if (snapshotIndex < index && snapshotIndex > greatestSnapshotIndex) {
+      } else if (snapshotIndex <= index && snapshotIndex > (greatestSnapshotIndex ?? 0)) {
         greatestSnapshotIndex = snapshotIndex;
         greatestSnapshot = snapshot;
       }
@@ -148,12 +145,10 @@ export class Drawing {
     if (!layer) {
       throw LAYER_NOT_FOUND_ERROR;
     }
-    if (layer.historyIndex == 0) {
+    if (!layer.history.has(layer.historyIndex - 1) && layer.historyIndex != 1) {
       throw LAYER_UNDO_ERROR;
     }
     layer.historyIndex -= 1;
-    this.layers.delete(layerName);
-    this.layers.set(layerName, layer);
   }
 
   redo(layerName: string) {
@@ -161,11 +156,9 @@ export class Drawing {
     if (!layer) {
       throw LAYER_NOT_FOUND_ERROR;
     }
-    if (layer.historyIndex == layer.history.size) {
+    if (!layer.history.has(layer.historyIndex + 1)) {
       throw LAYER_REDO_ERROR;
     }
     layer.historyIndex += 1;
-    this.layers.delete(layerName);
-    this.layers.set(layerName, layer);
   }
 }

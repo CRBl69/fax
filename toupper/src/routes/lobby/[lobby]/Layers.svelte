@@ -1,5 +1,4 @@
 <script lang="ts">
-  import type { Layer } from "$lib/drinfo";
   import { drawSquares, getRatio, type Cursor } from "$lib/toupper";
   import CursorLayer from "./CursorLayer.svelte";
   import LayerComponent from "./Layer.svelte";

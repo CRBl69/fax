@@ -11,8 +11,8 @@ import type {
   RedoMessage,
   SnapshotMessage,
   TempDrawMessage,
-  ToggleHistoryElementMessage,
-  ToggleLayerVisibilityMessage,
+  SetHistoryElementVisibilityMessage,
+  SetLayerVisibilityMessage,
   UndoMessage,
   WebSocketMessage,
 } from "./server-types";
@@ -21,8 +21,10 @@ import * as TypeConverter from "./type-converter";
 interface EventMap {
   cursorout: CustomEvent<CursorOutMessage["CursorOut"]>;
   instruction: CustomEvent<InstructionMessage["Instruction"]>;
-  togglelayervisibility: CustomEvent<ToggleLayerVisibilityMessage["ToggleLayerVisibility"]>;
-  togglehistoryelement: CustomEvent<ToggleHistoryElementMessage["ToggleHistoryElement"]>;
+  setlayervisibility: CustomEvent<SetLayerVisibilityMessage["SetLayerVisibility"]>;
+  sethistoryelementvisibility: CustomEvent<
+    SetHistoryElementVisibilityMessage["SetHistoryElementVisibility"]
+  >;
   snapshot: CustomEvent<SnapshotMessage["Snapshot"]>;
   addlayer: CustomEvent<AddLayerMessage["AddLayer"]>;
   layerup: CustomEvent<LayerUpMessage["LayerUp"]>;
@@ -147,28 +149,33 @@ export class Server extends typedEventTarget {
     this.send(message);
   }
 
-  toggleLayerVisibility(layer: string) {
-    const message: ToggleLayerVisibilityMessage = {
-      ToggleLayerVisibility: layer,
-    };
-    this.send(message);
-  }
-
-  toggleHistoryElement(layer: string, index: number) {
-    const message: ToggleHistoryElementMessage = {
-      ToggleHistoryElement: {
+  setLayerVisibility(layer: string, visible: boolean) {
+    const message: SetLayerVisibilityMessage = {
+      SetLayerVisibility: {
         layer,
-        index,
+        visible,
       },
     };
     this.send(message);
   }
 
-  snapshot(layer: string, data: string) {
+  setHistoryElementVisibility(layer: string, index: number, visible: boolean) {
+    const message: SetHistoryElementVisibilityMessage = {
+      SetHistoryElementVisibility: {
+        layer,
+        index,
+        visible,
+      },
+    };
+    this.send(message);
+  }
+
+  snapshot(layer: string, data: string, index: number) {
     const message: SnapshotMessage = {
       Snapshot: {
         layer,
         data,
+        index,
       },
     };
     this.send(message);

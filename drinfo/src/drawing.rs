@@ -1,8 +1,9 @@
 use std::collections::hash_map::HashMap;
 
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
-use crate::{Error, InstructionBox, Layer};
+use crate::{layer::LayerError, InstructionBox, Layer};
 
 /// A drawing representation as a list of instructions executed on different layers.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -11,6 +12,20 @@ pub struct Drawing {
     layer_order: Vec<String>,
     width: u32,
     height: u32,
+}
+
+#[derive(Error, Debug)]
+pub enum DrawingError {
+    #[error("could not find layer {0}")]
+    LayerNotFound(String),
+    #[error("layer {0} already exists")]
+    LayerAlreadyExists(String),
+    #[error("layer {0} cannot be moved up because it is already at the top")]
+    LayerTop(String),
+    #[error("layer {0} cannot be moved down because it is already at the bottom")]
+    LayerBottom(String),
+    #[error("layer error: {0}")]
+    LayerError(#[from] LayerError),
 }
 
 impl Default for Drawing {
@@ -36,36 +51,32 @@ impl Drawing {
     /// Since names are used as identifiers, they must be
     /// uniqe and this function will fail if another layer
     /// with a similar name already exists.
-    pub fn add_layer(&mut self, name: &str) -> Result<(), Error> {
-        if !self.layers.contains_key(name) {
-            self.layers.insert(name.to_string(), Layer::new());
-            self.layer_order.push(name.to_string());
+    pub fn add_layer(&mut self, name: String) -> Result<(), DrawingError> {
+        if !self.layers.contains_key(&name) {
+            self.layers.insert(name.clone(), Layer::new());
+            self.layer_order.push(name);
             Ok(())
         } else {
-            Err(Error("Layer already exists".to_string()))
+            Err(DrawingError::LayerAlreadyExists(name))
         }
     }
 
     /// Moves the given layer one time upwards in the layer order.
-    pub fn layer_up(&mut self, name: &str) -> Result<(), Error> {
+    pub fn layer_up(&mut self, name: &str) -> Result<(), DrawingError> {
         if let Some(index) = self.layer_order.iter().position(|e| e == name) {
             if index < self.layer_order.len() && index > 0 {
-                let n2 = self.layer_order[index - 1].to_string();
-                self.layer_order[index - 1] = name.to_string();
-                self.layer_order[index] = n2;
+                self.layer_order.swap(index - 1, index);
                 Ok(())
             } else {
-                Err(Error(
-                    "Layer cannot be moved up, already at the top.".to_string(),
-                ))
+                Err(DrawingError::LayerTop(name.to_string()))
             }
         } else {
-            Err(Error("Layer not found.".to_string()))
+            Err(DrawingError::LayerNotFound(name.to_string()))
         }
     }
 
     /// Moves the given layer one time downwards in the layer order.
-    pub fn layer_down(&mut self, name: &str) -> Result<(), Error> {
+    pub fn layer_down(&mut self, name: &str) -> Result<(), DrawingError> {
         if let Some(index) = self.layer_order.iter().position(|e| e == name) {
             if index < self.layer_order.len() - 1 {
                 let n2 = self.layer_order[index + 1].to_string();
@@ -73,52 +84,10 @@ impl Drawing {
                 self.layer_order[index] = n2;
                 Ok(())
             } else {
-                Err(Error(
-                    "Layer cannot be moved down, already at the bottom.".to_string(),
-                ))
+                Err(DrawingError::LayerBottom(name.to_string()))
             }
         } else {
-            Err(Error("Layer not found.".to_string()))
-        }
-    }
-
-    /// Moves the given layer multiple times upwards in the layer order.
-    pub fn layer_up_by(&mut self, name: &str, by: usize) -> Result<(), Error> {
-        if let Some(index) = self.layer_order.iter().position(|e| e == name) {
-            if index + by < self.layer_order.len() {
-                let layer = self.layer_order.remove(index);
-                self.layer_order.insert(index + by, layer);
-                Ok(())
-            } else {
-                Err(Error("Layer cannot be moved up this much.".to_string()))
-            }
-        } else {
-            Err(Error("Layer not found.".to_string()))
-        }
-    }
-
-    /// Moves the given layer multiple times downwards in the layer order.
-    pub fn layer_down_by(&mut self, name: &str, by: usize) -> Result<(), Error> {
-        if let Some(index) = self.layer_order.iter().position(|e| e == name) {
-            if index >= by {
-                let layer = self.layer_order.remove(index);
-                self.layer_order.insert(index - by, layer);
-                Ok(())
-            } else {
-                Err(Error("Layer cannot be moved down this much.".to_string()))
-            }
-        } else {
-            Err(Error("Layer not found.".to_string()))
-        }
-    }
-
-    /// Applies the given instruction to the given layer
-    pub fn instruct(&mut self, instruction: InstructionBox, layer_name: &str) -> Result<(), Error> {
-        let layer = self.layers.get_mut(layer_name);
-        if let Some(l) = layer {
-            l.instruct(instruction)
-        } else {
-            Err(Error("Layer not found.".to_string()))
+            Err(DrawingError::LayerNotFound(name.to_string()))
         }
     }
 
@@ -132,8 +101,107 @@ impl Drawing {
         self.height
     }
 
-    /// Returns a mutable reference to the given layer.
-    pub fn get_layer_mut(&mut self, layer_name: &str) -> Option<&mut Layer> {
-        self.layers.get_mut(layer_name)
+    /// Applies the given instruction to the given layer..
+    pub fn instruct(
+        &mut self,
+        layer_name: &str,
+        instruction: InstructionBox,
+    ) -> Result<(), DrawingError> {
+        let layer = self.layers.get_mut(layer_name);
+        if let Some(l) = layer {
+            l.instruct(instruction)?;
+            Ok(())
+        } else {
+            Err(DrawingError::LayerNotFound(layer_name.to_string()))
+        }
+    }
+
+    /// Clears the given layer.
+    ///
+    /// The layer is cleared by removing the history. You cannot undo this.
+    pub fn clear(&mut self, layer_name: &str) -> Result<(), DrawingError> {
+        let layer = self.layers.get_mut(layer_name);
+        if let Some(l) = layer {
+            l.clear();
+            Ok(())
+        } else {
+            Err(DrawingError::LayerNotFound(layer_name.to_string()))
+        }
+    }
+
+    /// Set the visibility of the given layer.
+    pub fn set_visibility(&mut self, layer_name: &str, visible: bool) -> Result<(), DrawingError> {
+        let layer = self.layers.get_mut(layer_name);
+        if let Some(l) = layer {
+            l.set_visibility(visible);
+            Ok(())
+        } else {
+            Err(DrawingError::LayerNotFound(layer_name.to_string()))
+        }
+    }
+
+    /// Set the visibility of an instruction in the history of the given layer.
+    pub fn set_history_element_visibility(
+        &mut self,
+        layer_name: &str,
+        index: usize,
+        visible: bool,
+    ) -> Result<(), DrawingError> {
+        let layer = self.layers.get_mut(layer_name);
+        if let Some(l) = layer {
+            l.set_history_element_visibility(index, visible)?;
+            Ok(())
+        } else {
+            Err(DrawingError::LayerNotFound(layer_name.to_string()))
+        }
+    }
+
+    /// Saves the given image as a snapshot of the given history index for the given layer.
+    pub fn snapshot(
+        &mut self,
+        layer_name: &str,
+        index: usize,
+        data: String,
+    ) -> Result<(), DrawingError> {
+        let layer = self.layers.get_mut(layer_name);
+        if let Some(l) = layer {
+            l.snapshot(index, data);
+            Ok(())
+        } else {
+            Err(DrawingError::LayerNotFound(layer_name.to_string()))
+        }
+    }
+
+    /// Truncates the history of the given layer before this index.
+    pub fn truncate(&mut self, layer_name: &str, index: usize) -> Result<(), DrawingError> {
+        let layer = self.layers.get_mut(layer_name);
+        if let Some(l) = layer {
+            l.truncate(index)?;
+            Ok(())
+        } else {
+            Err(DrawingError::LayerNotFound(layer_name.to_string()))
+        }
+    }
+
+    /// Undo an action in the given layer.
+    pub fn undo(&mut self, layer_name: &str) -> Result<(), DrawingError> {
+        let layer = self.layers.get_mut(layer_name);
+        if let Some(l) = layer {
+            l.undo()?;
+            Ok(())
+        } else {
+            Err(DrawingError::LayerNotFound(layer_name.to_string()))
+        }
+    }
+
+    /// Redo an action in the given layer.
+    pub fn redo(&mut self, layer_name: &str) -> Result<(), DrawingError> {
+        let layer = self.layers.get_mut(layer_name);
+        if let Some(l) = layer {
+            l.redo()?;
+            Ok(())
+        } else {
+            Err(DrawingError::LayerNotFound(layer_name.to_string()))
+        }
     }
 }

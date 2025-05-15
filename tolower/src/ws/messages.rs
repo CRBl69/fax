@@ -11,7 +11,7 @@ pub enum WebSocketMessage {
     CursorIn(CursorDataIn),
     CursorOut(CursorDataOut),
     Instruction(InstructionData),
-    ToggleLayerVisibility(String),
+    SetLayerVisibility(SetLayerVisibilityData),
     AddLayer(String),
     LayerUp(String),
     LayerDown(String),
@@ -22,13 +22,19 @@ pub enum WebSocketMessage {
     Join(String),
     TempDraw(TempDrawData),
     Snapshot(SnapshotData),
-    ToggleHistoryElement(ToggleHistoryElementData),
+    SetHistoryElementVisibility(SetHistoryElementData),
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct InstructionData {
     pub layer: String,
     pub instruction: InstructionBox,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct SetLayerVisibilityData {
+    pub layer: String,
+    pub visible: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -64,12 +70,14 @@ pub struct TempDrawData {
 pub struct SnapshotData {
     pub layer: String,
     pub data: String,
+    pub index: usize,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct ToggleHistoryElementData {
+pub struct SetHistoryElementData {
     pub layer: String,
     pub index: usize,
+    pub visible: bool,
 }
 
 impl CursorDataOut {

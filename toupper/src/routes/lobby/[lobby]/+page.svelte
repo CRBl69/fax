@@ -62,8 +62,8 @@
       gs.drawing.layerDown(data);
     });
 
-    gs.server.registerEventHandler("togglelayervisibility", (data) => {
-      gs.drawing.toggleLayerVisibility(data);
+    gs.server.registerEventHandler("setlayervisibility", (data) => {
+      gs.drawing.setLayerVisibility(data.layer, data.visible);
     });
 
     gs.server.registerEventHandler("join", (data) => {
@@ -78,12 +78,12 @@
       gs.drawing.redo(data);
     });
 
-    gs.server.registerEventHandler("snapshot", ({ layer, data }) => {
-      gs.drawing.snapshot(layer, data);
+    gs.server.registerEventHandler("snapshot", ({ layer, data, index }) => {
+      gs.drawing.snapshot(layer, data, index);
     });
 
-    gs.server.registerEventHandler("togglehistoryelement", ({ layer, index }) => {
-      gs.drawing.toggleHistoryElement(layer, index);
+    gs.server.registerEventHandler("sethistoryelementvisibility", ({ layer, index, visible }) => {
+      gs.drawing.setHistoryElementVisibility(layer, index, visible);
     });
 
     gs.server.registerEventHandler("instruction", ({ layer, instruction }) => {

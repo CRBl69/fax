@@ -1,4 +1,4 @@
-import { Drawing, type Brush, type InstructionBox, type Point } from "$lib/drinfo";
+import { Drawing, type Brush, type Point } from "$lib/drinfo";
 import type { Server } from "$lib/tolower";
 import { getDefaultBrush } from "$lib/toupper";
 import { SvelteMap } from "svelte/reactivity";

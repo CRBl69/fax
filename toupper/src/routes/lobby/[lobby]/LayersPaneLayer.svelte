@@ -46,7 +46,7 @@
   <div class="buttons">
     <button class="up" onclick={() => gs.server?.layerUp(name)}>UP</button>
     <button class="down" onclick={() => gs.server?.layerDown(name)}>DOWN</button>
-    <button class="toggle" onclick={() => gs.server?.toggleLayerVisibility(name)}
+    <button class="toggle" onclick={() => gs.server?.setLayerVisibility(name, !visible)}
       >{visible ? "HIDE" : "SHOW"}</button
     >
   </div>

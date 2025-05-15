@@ -112,14 +112,18 @@ export type TempDrawMessage = {
   };
 };
 
-export type ToggleLayerVisibilityMessage = {
-  ToggleLayerVisibility: string;
+export type SetLayerVisibilityMessage = {
+  SetLayerVisibility: {
+    layer: string;
+    visible: boolean;
+  };
 };
 
-export type ToggleHistoryElementMessage = {
-  ToggleHistoryElement: {
+export type SetHistoryElementVisibilityMessage = {
+  SetHistoryElementVisibility: {
     layer: string;
     index: number;
+    visible: boolean;
   };
 };
 
@@ -127,6 +131,7 @@ export type SnapshotMessage = {
   Snapshot: {
     layer: string;
     data: string;
+    index: number;
   };
 };
 
@@ -158,8 +163,8 @@ export type WebSocketMessage =
   | CursorInMessage
   | CursorOutMessage
   | InstructionMessage
-  | ToggleLayerVisibilityMessage
-  | ToggleHistoryElementMessage
+  | SetLayerVisibilityMessage
+  | SetHistoryElementVisibilityMessage
   | SnapshotMessage
   | AddLayerMessage
   | LayerUpMessage

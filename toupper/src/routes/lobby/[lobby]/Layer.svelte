@@ -6,11 +6,8 @@
   import {
     FromServer,
     type InstructionMessage,
-    type RedoMessage,
+    type SetHistoryElementVisibilityMessage,
     type TempDrawMessage,
-    type ToggleHistoryElementMessage,
-    type ToggleLayerVisibilityMessage,
-    type UndoMessage,
   } from "$lib/tolower";
   import { SvelteMap } from "svelte/reactivity";
 
@@ -68,30 +65,46 @@
   };
 
   const renderAt = (index: number) => {
-    const snapshotData = gs.drawing.getSnapshotBefore(name, index)!;
-    console.log({ snapshotData });
-    if (snapshotData != null) {
-      let startIndex = snapshotData[0];
-      currentIndex = startIndex;
-      console.log({ startIndex });
-      let image = new Image();
-      image.onload = () => {
-        context.clearRect(0, 0, gs.drawing.width, gs.drawing.height);
-        context.drawImage(image, 0, 0);
-        const newContext = copyContext(context);
-        layerData.historyContexts.set(currentIndex, newContext);
-        for (let i = startIndex + 1; i <= layer.historyIndex; i++) {
-          const instructionBox = layer.history.get(i)!;
-          pushToHistory(instructionBox);
-        }
-      };
-      image.src = snapshotData[1];
-    } else {
-      currentIndex = 0;
-      for (let i = 1; i <= layer.historyIndex; i++) {
+    const renderFromCurrentIndex = () => {
+      for (let i = currentIndex + 1; i <= layer.historyIndex; i++) {
         const instructionBox = layer.history.get(i)!;
         pushToHistory(instructionBox);
+        if (currentIndex % 5 == 0) {
+          const historyContext = layerData.historyContexts.get(currentIndex)!;
+          const data = historyContext.canvas.toDataURL("image/png");
+          gs.server?.snapshot(name, data, currentIndex);
+        }
       }
+      const historyContext = layerData.historyContexts.get(layer.historyIndex)!;
+      context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+      context.drawImage(historyContext.canvas, 0, 0);
+    };
+
+    let closestContextIndex = 0;
+
+    for (const [contextIndex, _] of layerData.historyContexts) {
+      if (contextIndex > closestContextIndex && contextIndex < index) {
+        closestContextIndex = contextIndex;
+      }
+    }
+
+    const snapshotData = gs.drawing.getSnapshotBefore(name, index);
+
+    if (snapshotData && snapshotData![0] > closestContextIndex && snapshotData![0] <= index) {
+      let startIndex = snapshotData![0];
+      let image = new Image();
+      image.onload = () => {
+        const newContext = copyContext(context);
+        newContext.clearRect(0, 0, gs.drawing.width, gs.drawing.height);
+        newContext.drawImage(image, 0, 0);
+        layerData.historyContexts.set(startIndex, newContext);
+        currentIndex = startIndex;
+        renderFromCurrentIndex();
+      };
+      image.src = snapshotData![1];
+    } else {
+      currentIndex = closestContextIndex;
+      renderFromCurrentIndex();
     }
   };
 
@@ -236,15 +249,7 @@
   // Server event handlers.
   const oninstruction = (data: CustomEvent<InstructionMessage["Instruction"]>) => {
     if (data.detail.layer === name) {
-      const instructionBox = FromServer.instructionBox(data.detail.instruction);
-      pushToHistory(instructionBox);
       layerData.tmps.delete(data.detail.instruction.uuid);
-      if (layer.historyIndex % 5 == 0) {
-        setTimeout(() => {
-          const data = context.canvas.toDataURL("image/png");
-          gs.server?.snapshot(name, data);
-        }, 100);
-      }
     }
   };
 
@@ -258,8 +263,8 @@
     }
   };
 
-  const ontogglehistoryelement = (
-    data: CustomEvent<ToggleHistoryElementMessage["ToggleHistoryElement"]>,
+  const onsethistoryelementvisibility = (
+    data: CustomEvent<SetHistoryElementVisibilityMessage["SetHistoryElementVisibility"]>,
   ) => {
     if (data.detail.layer === name) {
       renderAt(data.detail.index);
@@ -269,26 +274,28 @@
   $effect(() => {
     gs.server?.addEventListener("instruction", oninstruction);
     gs.server?.addEventListener("tempdraw", ontempdraw);
-    gs.server?.addEventListener("togglehistoryelement", ontogglehistoryelement);
+    gs.server?.addEventListener("sethistoryelementvisibility", onsethistoryelementvisibility);
 
     return () => {
       gs.server?.removeEventListener("instruction", oninstruction);
       gs.server?.removeEventListener("tempdraw", ontempdraw);
-      gs.server?.removeEventListener("togglehistoryelement", ontogglehistoryelement);
+      gs.server?.removeEventListener("sethistoryelementvisibility", onsethistoryelementvisibility);
     };
+  });
+
+  $effect(() => {
+    if (!layerData.historyContexts.has(0)) {
+      let clearContext = copyContext(context);
+      clearContext.clearRect(0, 0, clearContext.canvas.width, clearContext.canvas.height);
+      layerData.historyContexts.set(0, clearContext);
+    }
   });
 
   // Whenever the history changes, draw the appropriate history context.
   // If historyContexts is not initialized yet, it must be done with a clear context.
   $effect(() => {
-    if (layerData.historyContexts.size === 0) {
-      layerData.historyContexts.set(0, copyContext(context));
-    }
-    const historyContext = layerData.historyContexts.get(layer.historyIndex);
-    if (historyContext) {
-      context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-      context.drawImage(historyContext.canvas, 0, 0);
-    }
+    if (layer.historyIndex != untrack(() => currentIndex))
+      untrack(() => renderAt(layer.historyIndex));
   });
 
   // Draw things in buffer map.
@@ -309,8 +316,7 @@
   });
 
   onMount(() => {
-    console.log({ layer });
-    renderAt(layer.historyIndex);
+    // renderAt(layer.historyIndex);
     window.addEventListener("keydown", onkeydown);
 
     return () => window.removeEventListener("keydown", onkeydown);

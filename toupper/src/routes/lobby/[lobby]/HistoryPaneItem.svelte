@@ -32,7 +32,7 @@
     type="checkbox"
     checked={instruction.applied}
     onclick={(v) => {
-      gs.server?.toggleHistoryElement(layerName, index);
+      gs.server?.setHistoryElementVisibility(layerName, index, !instruction.applied);
     }}
   />
 </div>

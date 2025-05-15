@@ -1,5 +1,4 @@
 <script lang="ts">
-  import type { Layer } from "$lib/drinfo";
   import { drawSquares } from "$lib/toupper";
   import { onMount } from "svelte";
   import { gs } from "./state.svelte";
@@ -36,7 +35,8 @@
         const layerData = gs.layerData.get(name);
         const layer = gs.drawing.layers.get(name);
         if (layerData) {
-          const layerContext = layerData.historyContexts.get(layer!.historyIndex)!;
+          const layerContext = layerData.historyContexts.get(layer!.historyIndex);
+          if (!layerContext) return;
           context.drawImage(
             layerContext.canvas,
             cursorPosition.x - 100 / gs.zoomRatio,

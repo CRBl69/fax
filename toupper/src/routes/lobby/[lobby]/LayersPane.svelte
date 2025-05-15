@@ -1,5 +1,4 @@
 <script lang="ts">
-  import type { Layer } from "$lib/drinfo";
   import LayersPaneLayer from "./LayersPaneLayer.svelte";
   import { gs } from "./state.svelte";
 

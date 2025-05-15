@@ -12,7 +12,7 @@
 </script>
 
 <div class="history">
-  {#each layer.history as [index, instruction], _ (instruction.uuid)}
+  {#each layer.history as [index, instruction] (instruction.uuid)}
     <HistoryPaneItem {instruction} {index} layerName={name} historyIndex={layer.historyIndex} />
   {/each}
 </div>

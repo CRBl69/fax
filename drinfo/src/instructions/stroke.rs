@@ -17,6 +17,10 @@ impl Stroke {
         self.points.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.points.len() == 0
+    }
+
     /// Changes the stroke's brush.
     pub fn set_brush(&mut self, brush: Brush) {
         self.brush = brush;
@@ -24,7 +28,7 @@ impl Stroke {
 
     /// Gets the stroke's brush.
     pub fn brush(&self) -> Brush {
-        return self.brush.clone();
+        self.brush.clone()
     }
 
     /// Adds a new point to the stroke.
