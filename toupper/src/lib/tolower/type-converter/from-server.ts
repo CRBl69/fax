@@ -1,7 +1,19 @@
 import * as DrInFo from "$lib/drinfo";
 import * as ToUpper from "$lib/toupper";
 import { SvelteMap } from "svelte/reactivity";
-import type { Brush, BrushShape, Color, Cursor, Drawing, ImageInsertion, Instruction, InstructionBox, Layer, Motion, Stroke } from "../server-types";
+import type {
+  Brush,
+  BrushShape,
+  Color,
+  Cursor,
+  Drawing,
+  ImageInsertion,
+  Instruction,
+  InstructionBox,
+  Layer,
+  Motion,
+  Stroke,
+} from "../server-types";
 
 export class FromServer {
   static color(color: Color): DrInFo.Color {
@@ -31,15 +43,16 @@ export class FromServer {
       color: FromServer.color(brush.color),
       width: brush.width,
       diffusion: brush.diffusion,
+      opacity: brush.opacity,
       erase: brush.erase,
-    }
+    };
   }
 
   static stroke({ Stroke: stroke }: Stroke): DrInFo.Stroke {
     return {
       brush: FromServer.brush(stroke.brush),
       points: stroke.points,
-    }
+    };
   }
 
   static motion({ Motion: motion }: Motion): DrInFo.Motion {
@@ -51,10 +64,10 @@ export class FromServer {
   }
 
   static instruction(instruction: Instruction): DrInFo.Instruction {
-    if ('Stroke' in instruction) {
+    if ("Stroke" in instruction) {
       return FromServer.stroke(instruction);
     }
-    if ('Motion' in instruction) {
+    if ("Motion" in instruction) {
       return FromServer.motion(instruction);
     }
     return FromServer.imageInsertion(instruction);
@@ -64,19 +77,28 @@ export class FromServer {
     return {
       instruction: FromServer.instruction(instructionBox.instruction),
       uuid: instructionBox.uuid,
+      applied: instructionBox.applied,
     };
   }
 
   static layer(layer: Layer): DrInFo.Layer {
-    return {
-      history: layer.history.map(FromServer.instructionBox),
-      visible: layer.visible,
-      historyIndex: layer.history_index,
+    const drinfoLayer = new DrInFo.Layer();
+    drinfoLayer.historyIndex = layer.history_index;
+    drinfoLayer.visible = layer.visible;
+    for (const [index, instructionBox] of Object.entries(layer.history)) {
+      drinfoLayer.history.set(parseInt(index), FromServer.instructionBox(instructionBox));
     }
+    for (const [index, snapshot] of Object.entries(layer.snapshots)) {
+      drinfoLayer.snapshots.set(parseInt(index), snapshot);
+    }
+    return drinfoLayer;
   }
 
   static drawing(drawing: Drawing): DrInFo.Drawing {
-    const layers: [string,DrInFo.Layer][] = Object.entries(drawing.layers).map(([k, v], _) => [k, FromServer.layer(v)]);
+    const layers: [string, DrInFo.Layer][] = Object.entries(drawing.layers).map(([k, v], _) => [
+      k,
+      FromServer.layer(v),
+    ]);
     return new DrInFo.Drawing({
       height: drawing.height,
       width: drawing.width,

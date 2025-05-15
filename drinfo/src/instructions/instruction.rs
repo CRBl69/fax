@@ -1,6 +1,6 @@
 use core::fmt::Debug;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::{ImageInsertion, Motion, Stroke};
 
@@ -9,7 +9,7 @@ use crate::{ImageInsertion, Motion, Stroke};
 pub enum Instruction {
     Stroke(Stroke),
     Motion(Motion),
-    ImageInsertion(ImageInsertion)
+    ImageInsertion(ImageInsertion),
 }
 
 /// An instruction box.

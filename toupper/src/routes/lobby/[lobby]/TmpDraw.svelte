@@ -17,10 +17,10 @@
   let tempDrawCanvas: HTMLCanvasElement;
 
   $effect(() => {
-    if(tempDrawCanvas) {
+    if (tempDrawCanvas) {
       context = tempDrawCanvas.getContext("2d")!;
     }
-  })
+  });
 
   const tempDraw = (brush: Brush, start: Point, end: Point) => {
     draw(start, end, brush, context!);
@@ -29,7 +29,7 @@
   $effect(() => {
     const ontempdraw = (data: CustomEvent<TempDrawMessage["TempDraw"]>) => {
       if (data.detail.layer === name && data.detail.uuid === uuid) {
-        tempDraw(FromServer.brush(data.detail.brush), data.detail.start, data.detail.end)
+        tempDraw(FromServer.brush(data.detail.brush), data.detail.start, data.detail.end);
       }
     };
 
@@ -38,14 +38,13 @@
     return () => {
       gs.server?.removeEventListener("tempdraw", ontempdraw);
     };
-  })
-
+  });
 </script>
 
 <canvas bind:this={tempDrawCanvas} {height} {width}></canvas>
 
 <style>
-canvas {
-  position: absolute;
-}
+  canvas {
+    position: absolute;
+  }
 </style>

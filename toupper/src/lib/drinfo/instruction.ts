@@ -21,4 +21,5 @@ export type Instruction = Stroke | Motion | ImageInsertion;
 export type InstructionBox = {
   instruction: Instruction;
   uuid: string;
+  applied: boolean;
 };

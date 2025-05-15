@@ -1,11 +1,29 @@
 import * as DrInFo from "../drinfo";
-import type { AddLayerMessage, CursorInMessage, CursorOutMessage, InitMessage, InstructionMessage, JoinMessage, LayerDownMessage, LayerUpMessage, RedoMessage, TempDrawMessage, ToggleLayerVisibilityMessage, UndoMessage, WebSocketMessage } from "./server-types";
+import type {
+  AddLayerMessage,
+  CursorInMessage,
+  CursorOutMessage,
+  InitMessage,
+  InstructionMessage,
+  JoinMessage,
+  LayerDownMessage,
+  LayerUpMessage,
+  RedoMessage,
+  SnapshotMessage,
+  TempDrawMessage,
+  ToggleHistoryElementMessage,
+  ToggleLayerVisibilityMessage,
+  UndoMessage,
+  WebSocketMessage,
+} from "./server-types";
 import * as TypeConverter from "./type-converter";
 
 interface EventMap {
   cursorout: CustomEvent<CursorOutMessage["CursorOut"]>;
   instruction: CustomEvent<InstructionMessage["Instruction"]>;
   togglelayervisibility: CustomEvent<ToggleLayerVisibilityMessage["ToggleLayerVisibility"]>;
+  togglehistoryelement: CustomEvent<ToggleHistoryElementMessage["ToggleHistoryElement"]>;
+  snapshot: CustomEvent<SnapshotMessage["Snapshot"]>;
   addlayer: CustomEvent<AddLayerMessage["AddLayer"]>;
   layerup: CustomEvent<LayerUpMessage["LayerUp"]>;
   layerdown: CustomEvent<LayerDownMessage["LayerDown"]>;
@@ -39,7 +57,7 @@ interface ServerEventTarget extends EventTarget {
   ): void;
 }
 
-const typedEventTarget = EventTarget as { new(): ServerEventTarget; prototype: ServerEventTarget };
+const typedEventTarget = EventTarget as { new (): ServerEventTarget; prototype: ServerEventTarget };
 
 export class Server extends typedEventTarget {
   private _websocket;
@@ -77,7 +95,7 @@ export class Server extends typedEventTarget {
     try {
       this._websocket.send(JSON.stringify(obj));
     } catch (e) {
-      console.warn("Could not send.", e)
+      console.warn("Could not send.", e);
     }
   }
 
@@ -113,7 +131,7 @@ export class Server extends typedEventTarget {
         CursorIn: {
           brush: TypeConverter.ToServer.brush(brush),
           point,
-        }
+        },
       };
       this.send(message);
     }
@@ -124,33 +142,59 @@ export class Server extends typedEventTarget {
       Instruction: {
         instruction: TypeConverter.ToServer.instructionBox(instructionBox),
         layer,
-      }
-    }
+      },
+    };
     this.send(message);
   }
 
   toggleLayerVisibility(layer: string) {
     const message: ToggleLayerVisibilityMessage = {
       ToggleLayerVisibility: layer,
-    }
+    };
+    this.send(message);
+  }
+
+  toggleHistoryElement(layer: string, index: number) {
+    const message: ToggleHistoryElementMessage = {
+      ToggleHistoryElement: {
+        layer,
+        index,
+      },
+    };
+    this.send(message);
+  }
+
+  snapshot(layer: string, data: string) {
+    const message: SnapshotMessage = {
+      Snapshot: {
+        layer,
+        data,
+      },
+    };
     this.send(message);
   }
 
   layerDown(layer: string): void {
     const message: LayerDownMessage = {
       LayerDown: layer,
-    }
+    };
     this.send(message);
   }
 
   layerUp(layer: string): void {
     const message: LayerUpMessage = {
       LayerUp: layer,
-    }
+    };
     this.send(message);
   }
 
-  drawTemp(brush: DrInFo.Brush, uuid: string, start: DrInFo.Point, end: DrInFo.Point, layer: string) {
+  drawTemp(
+    brush: DrInFo.Brush,
+    uuid: string,
+    start: DrInFo.Point,
+    end: DrInFo.Point,
+    layer: string,
+  ) {
     const message: TempDrawMessage = {
       TempDraw: {
         brush: TypeConverter.ToServer.brush(brush),
@@ -158,12 +202,15 @@ export class Server extends typedEventTarget {
         start,
         end,
         layer,
-      }
-    }
+      },
+    };
     this.send(message);
   }
 
-  registerEventHandler<K extends keyof EventMap>(eventName: K, fn: (data: EventMap[K]["detail"]) => void) {
+  registerEventHandler<K extends keyof EventMap>(
+    eventName: K,
+    fn: (data: EventMap[K]["detail"]) => void,
+  ) {
     this.addEventListener(eventName, (event: EventMap[K]) => fn(event.detail));
   }
 

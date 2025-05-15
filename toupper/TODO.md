@@ -3,8 +3,8 @@
 # Mid term
 
 - rework messaging system
-    - use nonced data
-    - use confirmation validation
+  - use nonced data
+  - use confirmation validation
 
 # Long term
 

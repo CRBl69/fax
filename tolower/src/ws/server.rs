@@ -71,11 +71,11 @@ impl Handler<CursorMessage> for WebSocketServer {
         self.users.iter().for_each(|user| {
             if *user.0 != msg.username {
                 info!("Sending cursor from {} to {}.", msg.username, user.0);
-                user.1.send(message.clone())
+                user.1
+                    .send(message.clone())
                     .into_actor(self)
                     .then(|_, _, _| fut::ready(()))
                     .wait(ctx);
-
             }
         })
     }
@@ -114,17 +114,24 @@ impl Handler<RequestInitMessage> for WebSocketServer {
     type Result = ();
 
     fn handle(&mut self, msg: RequestInitMessage, ctx: &mut Self::Context) -> Self::Result {
-        let message =
-            super::messages::WebSocketMessage::Init(super::messages::InitData {
-                drawing: msg.drawing,
-                users: self.users.clone().keys().into_iter().map(|a| a.to_owned()).collect()
-            });
+        let message = super::messages::WebSocketMessage::Init(super::messages::InitData {
+            drawing: msg.drawing,
+            users: self
+                .users
+                .clone()
+                .keys()
+                .into_iter()
+                .map(|a| a.to_owned())
+                .collect(),
+        });
         let json = serde_json::to_string(&message).unwrap();
-        self.users.get(&msg.name).unwrap()
+        self.users
+            .get(&msg.name)
+            .unwrap()
             .send(message)
             .into_actor(self)
             .then(|_, _, _| fut::ready(()))
-            .wait(ctx);;
+            .wait(ctx);
     }
 }
 
@@ -135,11 +142,11 @@ impl Handler<TempDrawMessage> for WebSocketServer {
         let message = WebSocketMessage::TempDraw(msg.data);
         self.users.iter().for_each(|user| {
             if *user.0 != msg.username {
-                user.1.send(message.clone())
+                user.1
+                    .send(message.clone())
                     .into_actor(self)
                     .then(|_, _, _| fut::ready(()))
                     .wait(ctx);
-
             }
         })
     }

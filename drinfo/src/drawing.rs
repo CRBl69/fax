@@ -2,7 +2,7 @@ use std::collections::hash_map::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{Layer, InstructionBox, Error};
+use crate::{Error, InstructionBox, Layer};
 
 /// A drawing representation as a list of instructions executed on different layers.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -38,8 +38,7 @@ impl Drawing {
     /// with a similar name already exists.
     pub fn add_layer(&mut self, name: &str) -> Result<(), Error> {
         if !self.layers.contains_key(name) {
-            self.layers
-                .insert(name.to_string(), Layer::new());
+            self.layers.insert(name.to_string(), Layer::new());
             self.layer_order.push(name.to_string());
             Ok(())
         } else {
@@ -51,12 +50,14 @@ impl Drawing {
     pub fn layer_up(&mut self, name: &str) -> Result<(), Error> {
         if let Some(index) = self.layer_order.iter().position(|e| e == name) {
             if index < self.layer_order.len() && index > 0 {
-                let n2 = self.layer_order[index-1].to_string();
-                self.layer_order[index-1] = name.to_string();
+                let n2 = self.layer_order[index - 1].to_string();
+                self.layer_order[index - 1] = name.to_string();
                 self.layer_order[index] = n2;
                 Ok(())
             } else {
-                Err(Error("Layer cannot be moved up, already at the top.".to_string()))
+                Err(Error(
+                    "Layer cannot be moved up, already at the top.".to_string(),
+                ))
             }
         } else {
             Err(Error("Layer not found.".to_string()))
@@ -67,12 +68,14 @@ impl Drawing {
     pub fn layer_down(&mut self, name: &str) -> Result<(), Error> {
         if let Some(index) = self.layer_order.iter().position(|e| e == name) {
             if index < self.layer_order.len() - 1 {
-                let n2 = self.layer_order[index+1].to_string();
-                self.layer_order[index+1] = name.to_string();
+                let n2 = self.layer_order[index + 1].to_string();
+                self.layer_order[index + 1] = name.to_string();
                 self.layer_order[index] = n2;
                 Ok(())
             } else {
-                Err(Error("Layer cannot be moved down, already at the bottom.".to_string()))
+                Err(Error(
+                    "Layer cannot be moved down, already at the bottom.".to_string(),
+                ))
             }
         } else {
             Err(Error("Layer not found.".to_string()))

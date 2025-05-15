@@ -7,5 +7,6 @@ export const getDefaultBrush = (): Brush => ({
   brushShape: {
     shape: "circle",
   },
-  erase: false
+  opacity: 100000,
+  erase: false,
 });

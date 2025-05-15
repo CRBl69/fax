@@ -10,7 +10,6 @@
   import type { Cursor } from "$lib/toupper";
   import { page } from "$app/stores";
   import { gs, type LayerData } from "./state.svelte";
-  import { Drawing } from "$lib/drinfo";
   import Zoom from "./Zoom.svelte";
 
   export const ssr = false;
@@ -18,15 +17,16 @@
 
   let username = $page.params.lobby;
 
-  let drawing: Drawing = $state(new Drawing());
   let users: SvelteMap<string, Cursor | null> = $state(new SvelteMap());
 
   onMount(() => {
-    gs.server = new Server(`${location.protocol.replace(/http/, "ws")}//${env.PUBLIC_HOST ?? "localhost:8079"}`, username);
+    gs.server = new Server(
+      `${location.protocol.replace(/http/, "ws")}//${env.PUBLIC_HOST ?? "localhost:8079"}`,
+      username,
+    );
 
     gs.server.registerEventHandler("init", (data) => {
-      console.log(data.drawing.layer_order);
-      for(const layerName of data.drawing.layer_order) {
+      for (const layerName of data.drawing.layer_order) {
         const x: LayerData = $state({
           historyIndex: 0,
           historyContexts: new SvelteMap(),
@@ -35,8 +35,8 @@
         });
         gs.layerData.set(layerName, x);
       }
-      drawing = FromServer.drawing(data.drawing);
-      data.users.forEach(u => {
+      gs.drawing = FromServer.drawing(data.drawing);
+      data.users.forEach((u) => {
         if (u !== username) users.set(u, null);
       });
     });
@@ -47,49 +47,64 @@
 
     gs.server.registerEventHandler("addlayer", (data) => {
       gs.layerData.set(data, {
-        historyIndex: 0,
         historyContexts: new SvelteMap(),
-        history: [],
         tmps: new SvelteMap(),
       });
-      drawing.addLayer(data);
+      gs.drawing.addLayer(data);
     });
 
     gs.server.registerEventHandler("layerup", (data) => {
-      drawing.layerUp(data);
-      console.log("layer up")
+      gs.drawing.layerUp(data);
+      console.log("layer up");
     });
 
     gs.server.registerEventHandler("layerdown", (data) => {
-      drawing.layerDown(data);
+      gs.drawing.layerDown(data);
     });
 
     gs.server.registerEventHandler("togglelayervisibility", (data) => {
-      drawing.toggleLayerVisibility(data);
+      gs.drawing.toggleLayerVisibility(data);
     });
 
     gs.server.registerEventHandler("join", (data) => {
       users.set(data, null);
     });
+
+    gs.server.registerEventHandler("undo", (data) => {
+      gs.drawing.undo(data);
+    });
+
+    gs.server.registerEventHandler("redo", (data) => {
+      gs.drawing.redo(data);
+    });
+
+    gs.server.registerEventHandler("snapshot", ({ layer, data }) => {
+      gs.drawing.snapshot(layer, data);
+    });
+
+    gs.server.registerEventHandler("togglehistoryelement", ({ layer, index }) => {
+      gs.drawing.toggleHistoryElement(layer, index);
+    });
+
+    gs.server.registerEventHandler("instruction", ({ layer, instruction }) => {
+      gs.drawing.instruct(layer, FromServer.instructionBox(instruction));
+    });
   });
 
   onDestroy(() => {
-    if(gs.server) {
+    if (gs.server) {
       gs.server.close();
       gs.server = null;
     }
-  })
+  });
 </script>
 
 <div class="container">
   <div class="buttons">
-    <Buttons/>
+    <Buttons />
   </div>
   <div class="layers-pane">
-    <LayersPane
-      layers={drawing.layers}
-      layerOrder={drawing.layerOrder}
-    />
+    <LayersPane />
   </div>
   <div class="history-pane">
     {#if gs.selectedLayer}
@@ -99,7 +114,7 @@
     {/if}
   </div>
   <div class="layers">
-    <Layers layers={drawing.layers} layerOrder={drawing.layerOrder} users={users} height={drawing.height} width={drawing.width} />
+    <Layers {users} />
   </div>
   <div class="info">
     <div>
@@ -114,7 +129,7 @@
     </div>
   </div>
   {#if gs.zoom}
-    <Zoom layerOrder={drawing.layerOrder} layers={drawing.layers} />
+    <Zoom />
   {/if}
 </div>
 
@@ -124,7 +139,7 @@
     width: 100vw;
     display: grid;
     grid-template-rows: auto repeat(2, minmax(0, 1fr)) auto;
-    grid-template-columns: minmax(0,1fr) 5fr;
+    grid-template-columns: minmax(0, 1fr) 5fr;
     overflow: hidden;
   }
   .layers-pane {

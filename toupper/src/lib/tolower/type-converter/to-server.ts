@@ -1,11 +1,23 @@
 import * as DrInFo from "$lib/drinfo";
-import type { Brush, BrushShape, Color, ImageInsertion, Instruction, InstructionBox, Motion, Stroke } from "../server-types";
+import type {
+  Brush,
+  BrushShape,
+  Color,
+  ImageInsertion,
+  Instruction,
+  InstructionBox,
+  Motion,
+  Stroke,
+} from "../server-types";
 
 export class ToServer {
   static color(color: DrInFo.Color): Color {
     let data: string = color.substring(1);
     if (data.length === 3 || data.length === 4) {
-      data = data.split("").map(e => `${e}${e}`).join("");
+      data = data
+        .split("")
+        .map((e) => `${e}${e}`)
+        .join("");
     }
     const red = data.substring(0, 2);
     const green = data.substring(2, 4);
@@ -16,7 +28,7 @@ export class ToServer {
       g: parseInt(green, 16),
       b: parseInt(blue, 16),
       a: parseInt(alpha === "" ? "ff" : alpha, 16),
-    }
+    };
   }
 
   static brushShape(brushShape: DrInFo.BrushShape): BrushShape {
@@ -28,8 +40,8 @@ export class ToServer {
     }
     return {
       Custom: {
-        points: brushShape.customShape!
-      }
+        points: brushShape.customShape!,
+      },
     };
   }
 
@@ -39,8 +51,9 @@ export class ToServer {
       color: ToServer.color(brush.color),
       width: brush.width,
       diffusion: brush.diffusion,
+      opacity: brush.opacity,
       erase: brush.erase,
-    }
+    };
   }
 
   static stroke(stroke: DrInFo.Stroke): Stroke {
@@ -49,26 +62,26 @@ export class ToServer {
         brush: ToServer.brush(stroke.brush),
         points: stroke.points,
       },
-    }
+    };
   }
 
   static motion(motion: DrInFo.Motion): Motion {
     return {
       Motion: motion,
-    }
+    };
   }
 
   static imageInsertion(imageInsertion: DrInFo.ImageInsertion): ImageInsertion {
     return {
       ImageInsertion: imageInsertion,
-    }
+    };
   }
 
   static instruction(instruction: DrInFo.Instruction): Instruction {
-    if ('points' in instruction) {
+    if ("points" in instruction) {
       return ToServer.stroke(instruction);
     }
-    if ('selection' in instruction) {
+    if ("selection" in instruction) {
       return ToServer.motion(instruction);
     }
     return ToServer.imageInsertion(instruction);
@@ -78,6 +91,7 @@ export class ToServer {
     return {
       instruction: ToServer.instruction(instructionBox.instruction),
       uuid: instructionBox.uuid,
+      applied: instructionBox.applied,
     };
   }
 }

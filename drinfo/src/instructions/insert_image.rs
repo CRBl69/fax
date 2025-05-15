@@ -15,7 +15,7 @@ impl ImageInsertion {
     pub fn new(base64: &str, point: Point) -> Self {
         ImageInsertion {
             base64: String::from(base64),
-            position: point
+            position: point,
         }
     }
 }

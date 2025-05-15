@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{Point, Color};
+use crate::{Color, Point};
 
 /// The data structure that holds information about how to draw a stroke.
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -26,7 +26,7 @@ impl Default for Brush {
             color: Color::default(),
             width: 1.0,
             diffusion: 0,
-            opacity: u64::MAX,
+            opacity: 100_000,
             erase: false,
         }
     }
@@ -34,7 +34,14 @@ impl Default for Brush {
 
 impl Brush {
     /// Creates a new brush initiated with the properties passed to the function.
-    pub fn new(brush_shape: BrushShape, color: Color, width: f32, diffusion: u64, opacity: u64, erase: bool) -> Self {
+    pub fn new(
+        brush_shape: BrushShape,
+        color: Color,
+        width: f32,
+        diffusion: u64,
+        opacity: u64,
+        erase: bool,
+    ) -> Self {
         Brush {
             brush_shape,
             color,
@@ -83,7 +90,7 @@ pub enum BrushShape {
     /// A square.
     Square,
     /// A custom shape.
-    Custom(CustomBrush)
+    Custom(CustomBrush),
 }
 
 /// A custom brush shape.

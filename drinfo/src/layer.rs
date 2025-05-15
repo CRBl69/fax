@@ -2,12 +2,12 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{Instruction, InstructionBox, Error};
+use crate::{Error, Instruction, InstructionBox};
 
 /// A layer.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Layer {
-    snapshots: BTreeMap<usize, Vec<u8>>,
+    snapshots: BTreeMap<usize, String>,
     history: BTreeMap<usize, InstructionBox>,
     history_index: usize,
     visible: bool,
@@ -31,7 +31,7 @@ impl Layer {
 
     /// Goes one step back in the history.
     pub fn undo(&mut self) -> Result<(), Error> {
-        if self.history_index > 0 {
+        if self.history.contains_key(&(self.history_index - 1)) {
             self.history_index -= 1;
             Ok(())
         } else {
@@ -41,7 +41,7 @@ impl Layer {
 
     /// Goes one step forward in the history.
     pub fn redo(&mut self) -> Result<(), Error> {
-        if self.history_index < self.history.len() {
+        if self.history.contains_key(&(self.history_index + 1)) {
             self.history_index += 1;
             Ok(())
         } else {
@@ -49,30 +49,11 @@ impl Layer {
         }
     }
 
-    /// Goes multiple steps back in the history.
-    pub fn undo_by(&mut self, by: usize) -> Result<(), Error> {
-        if self.history_index >= by {
-            self.history_index -= by;
-            Ok(())
-        } else {
-            Err(Error("Cannot undo by this much".to_string()))
-        }
-    }
-
-    /// Goes multiple steps forward in the history.
-    pub fn redo_by(&mut self, by: usize) -> Result<(), Error> {
-        if self.history_index + by < self.history.len() {
-            self.history_index += by;
-            Ok(())
-        } else {
-            Err(Error("Cannot redo by this much".to_string()))
-        }
-    }
-
     /// Toggle an instruction in the history.
-    pub fn toggle_history(&mut self, index: usize) -> Result<(), Error> {
-        if index < self.history.len() {
-            self.history.get_mut(&index).unwrap().applied = !self.history.get(&index).unwrap().applied;
+    pub fn toggle_history_element(&mut self, index: usize) -> Result<(), Error> {
+        if let Some(history_element) = self.history.get_mut(&index) {
+            history_element.applied = !history_element.applied;
+            self.snapshots.split_off(&index);
             Ok(())
         } else {
             Err(Error("Invalid history index".to_string()))
@@ -92,7 +73,9 @@ impl Layer {
     pub fn instruct(&mut self, instruction: InstructionBox) -> Result<(), crate::Error> {
         if let Instruction::Stroke(s) = &instruction.instruction {
             if s.len() == 0 {
-                return Err(crate::Error("Stroke must have at least 1 point.".to_string()));
+                return Err(crate::Error(
+                    "Stroke must have at least 1 point.".to_string(),
+                ));
             }
         }
         self.history_index += 1;
@@ -108,7 +91,7 @@ impl Layer {
     }
 
     /// Saves the given image as a snapshot of the current history index.
-    pub fn snapshot(&mut self, data: Vec<u8>) {
+    pub fn snapshot(&mut self, data: String) {
         self.snapshots.insert(self.history_index, data);
     }
 
@@ -116,7 +99,9 @@ impl Layer {
     pub fn truncate(&mut self, index: usize) -> Result<(), Error> {
         if index < self.history.len() {
             if !self.snapshots.contains_key(&index) {
-                return Err(Error("Layer does not contain a snapshot at the given index".to_string()))
+                return Err(Error(
+                    "Layer does not contain a snapshot at the given index".to_string(),
+                ));
             }
             self.history = self.history.split_off(&(index + 1));
             Ok(())

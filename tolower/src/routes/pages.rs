@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use actix_files::NamedFile;
-use actix_web::{get, Result, web::Data};
+use actix_web::{get, web::Data, Result};
 
 use crate::AppData;
 
@@ -12,9 +12,7 @@ pub async fn index() -> Result<NamedFile> {
 }
 
 #[get("/save")]
-pub async fn save(
-    data: Data<AppData>,
-) -> Result<NamedFile> {
+pub async fn save(data: Data<AppData>) -> Result<NamedFile> {
     let drawig = data.drawing.lock().unwrap();
     Ok(NamedFile::open(save_drawing(&drawig).as_path())?)
 }

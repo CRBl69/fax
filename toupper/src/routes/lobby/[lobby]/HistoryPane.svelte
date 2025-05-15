@@ -8,20 +8,20 @@
 
   let { name }: Props = $props();
 
-  let layerData = $derived.by(() => gs.layerData.get(name)!);
+  let layer = $derived.by(() => gs.drawing.layers.get(name)!);
 </script>
 
 <div class="history">
-  {#each layerData.history as instruction, index (instruction.uuid)}
-    <HistoryPaneItem {instruction} {index} historyIndex={layerData.historyIndex} />
+  {#each layer.history as [index, instruction], _ (instruction.uuid)}
+    <HistoryPaneItem {instruction} {index} layerName={name} historyIndex={layer.historyIndex} />
   {/each}
 </div>
 
 <style>
-.history {
-  display: flex;
-  flex-direction: column;
-  overflow: scroll;
-  height: 100%;
-}
+  .history {
+    display: flex;
+    flex-direction: column;
+    overflow: scroll;
+    height: 100%;
+  }
 </style>

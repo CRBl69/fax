@@ -63,7 +63,7 @@ pub struct TempDrawData {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct SnapshotData {
     pub layer: String,
-    pub data: Vec<u8>,
+    pub data: String,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -74,9 +74,6 @@ pub struct ToggleHistoryElementData {
 
 impl CursorDataOut {
     pub fn from_recieved(cursor: CursorDataIn, username: String) -> Self {
-        CursorDataOut {
-            cursor,
-            username,
-        }
+        CursorDataOut { cursor, username }
     }
 }

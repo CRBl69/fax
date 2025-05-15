@@ -1,13 +1,11 @@
-import type { Brush, InstructionBox, Point } from "$lib/drinfo";
+import { Drawing, type Brush, type InstructionBox, type Point } from "$lib/drinfo";
 import type { Server } from "$lib/tolower";
 import { getDefaultBrush } from "$lib/toupper";
 import { SvelteMap } from "svelte/reactivity";
 
 export type LayerData = {
-  historyIndex: number,
-  historyContexts: SvelteMap<number, CanvasRenderingContext2D>,
-  history: InstructionBox[],
-  tmps: SvelteMap<string, {canvas: HTMLCanvasElement | undefined, brush: Brush}>,
+  historyContexts: SvelteMap<number, CanvasRenderingContext2D>;
+  tmps: SvelteMap<string, { canvas: HTMLCanvasElement | undefined; brush: Brush }>;
 };
 
 interface GlobalState {
@@ -19,6 +17,7 @@ interface GlobalState {
   server: Server | null;
   selectedLayer: string | null;
   layerData: SvelteMap<string, LayerData>;
+  drawing: Drawing;
   bg: boolean;
 }
 
@@ -31,5 +30,6 @@ export const gs: GlobalState = $state({
   server: null,
   selectedLayer: null,
   layerData: new SvelteMap(),
+  drawing: new Drawing(),
   bg: true,
 });
