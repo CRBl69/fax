@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { env } from "$env/dynamic/public";
-  import { getContext, onMount } from "svelte";
+  import { onMount } from "svelte";
   import { gs } from "./state.svelte";
   import { stroke } from "$lib/toupper";
+  import { SERVER_URL } from "$lib/env";
 
   let saveUrl = $state("");
 
   onMount(() => {
-    saveUrl = `${location.protocol}//${env.PUBLIC_HOST}/save`;
+    saveUrl = `${location.protocol}//${SERVER_URL}/save`;
   });
 </script>
 

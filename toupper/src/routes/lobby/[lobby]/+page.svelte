@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import { SvelteMap } from "svelte/reactivity";
-  import { env } from "$env/dynamic/public";
+  import { SERVER_URL } from "$lib/env";
   import { FromServer, Server } from "$lib/tolower";
   import Layers from "./Layers.svelte";
   import Buttons from "./Buttons.svelte";
@@ -21,7 +21,7 @@
 
   onMount(() => {
     gs.server = new Server(
-      `${location.protocol.replace(/http/, "ws")}//${env.PUBLIC_HOST ?? "localhost:8079"}`,
+      `${location.protocol.replace(/http/, "ws")}//${SERVER_URL}`,
       username,
     );
 
