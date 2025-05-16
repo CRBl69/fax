@@ -28,7 +28,7 @@ async fn main() -> std::io::Result<()> {
         let f = std::fs::File::open(file).expect("File not found.");
         ciborium::de::from_reader(f).unwrap()
     } else {
-        Drawing::new(1080, 1920)
+        Drawing::new(args.height, args.width)
     };
     let drawing = Mutex::new(drawing);
     let websocket_server = ws::server::WebSocketServer {
