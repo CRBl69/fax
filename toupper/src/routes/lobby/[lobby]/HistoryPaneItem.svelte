@@ -17,30 +17,30 @@
   const getCoordinates = (stroke: Stroke) => {
     let minX, maxX, minY, maxY;
     for (const point of stroke.points) {
-      if(maxX) {
-        if(point.x > maxX) {
-          maxX = point.x
+      if (maxX) {
+        if (point.x > maxX) {
+          maxX = point.x;
         }
       } else {
         maxX = point.x;
       }
-      if(minX) {
-        if(point.x < minX) {
-          minX = point.x
+      if (minX) {
+        if (point.x < minX) {
+          minX = point.x;
         }
       } else {
         minX = point.x;
       }
-      if(maxY) {
-        if(point.y > maxY) {
-          maxY = point.y
+      if (maxY) {
+        if (point.y > maxY) {
+          maxY = point.y;
         }
       } else {
         maxY = point.y;
       }
-      if(minY) {
-        if(point.y < minY) {
-          minY = point.y
+      if (minY) {
+        if (point.y < minY) {
+          minY = point.y;
         }
       } else {
         minY = point.y;
@@ -54,12 +54,14 @@
   };
 
   const centerize = (stroke: Stroke, canvasHeight: number, canvasWidth: number) => {
-    const {height, width, deltaX, deltaY} = getCoordinates(stroke);
+    const { height, width, deltaX, deltaY } = getCoordinates(stroke);
     const canvasAspectRatio = canvasWidth / canvasHeight;
-    const magnifier = !(height * canvasAspectRatio > width) ? canvasWidth / width : canvasHeight / height;
+    const magnifier = !(height * canvasAspectRatio > width)
+      ? canvasWidth / width
+      : canvasHeight / height;
 
     let newStroke: Stroke = {
-      points: stroke.points.map(p => ({
+      points: stroke.points.map((p) => ({
         x: (p.x - deltaX - stroke.brush.width / 2) * magnifier,
         y: (p.y - deltaY - stroke.brush.width / 2) * magnifier,
       })),
@@ -67,21 +69,22 @@
     };
     newStroke.brush.width *= magnifier;
 
-    let minEmptyX = canvasWidth, minEmptyY = canvasHeight;
+    let minEmptyX = canvasWidth,
+      minEmptyY = canvasHeight;
     for (const point of newStroke.points) {
       const emptyX = canvasWidth - point.x;
-      if(emptyX < minEmptyX) {
+      if (emptyX < minEmptyX) {
         minEmptyX = emptyX;
       }
       const emptyY = canvasHeight - point.y;
-      if(emptyY < minEmptyY) {
+      if (emptyY < minEmptyY) {
         minEmptyY = emptyY;
       }
     }
 
-    newStroke.points = newStroke.points.map(point => ({
+    newStroke.points = newStroke.points.map((point) => ({
       x: point.x + minEmptyX / 2,
-      y: point.y + minEmptyY / 2
+      y: point.y + minEmptyY / 2,
     }));
 
     return newStroke;
@@ -92,7 +95,10 @@
       const context = canvas.getContext("2d")!;
       drawSquares(context);
       if ("points" in instruction.instruction) {
-        stroke(centerize(instruction.instruction, context.canvas.height, context.canvas.width), context);
+        stroke(
+          centerize(instruction.instruction, context.canvas.height, context.canvas.width),
+          context,
+        );
       }
     }
   });

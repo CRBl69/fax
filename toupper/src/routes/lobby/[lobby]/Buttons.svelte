@@ -2,7 +2,7 @@
   import { env } from "$env/dynamic/public";
   import { getContext, onMount } from "svelte";
   import { gs } from "./state.svelte";
-    import { stroke } from "$lib/toupper";
+  import { stroke } from "$lib/toupper";
 
   let saveUrl = $state("");
 
@@ -75,23 +75,26 @@
   </div>
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div class="inner-container button" onclick={() => {
-    const canvas = new OffscreenCanvas(gs.drawing.width, gs.drawing.height);
-    const context = canvas.getContext("2d")!;
-    for (const layerName of gs.drawing.layerOrder) {
-      const layer = gs.drawing.layers.get(layerName)!;
-      for (const key of layer.history.keys().toArray().toSorted()) {
-        const instruction = layer.history.get(key)!;
-        if ("points" in instruction.instruction) {
-          stroke(instruction.instruction, context);
+  <div
+    class="inner-container button"
+    onclick={() => {
+      const canvas = new OffscreenCanvas(gs.drawing.width, gs.drawing.height);
+      const context = canvas.getContext("2d")!;
+      for (const layerName of gs.drawing.layerOrder) {
+        const layer = gs.drawing.layers.get(layerName)!;
+        for (const key of layer.history.keys().toArray().toSorted()) {
+          const instruction = layer.history.get(key)!;
+          if ("points" in instruction.instruction) {
+            stroke(instruction.instruction, context);
+          }
         }
       }
-    }
-    context.canvas.convertToBlob().then(r => {
-      const w = window.open('about:blank')!;
-      w.location = URL.createObjectURL(r);
-    })
-  }}>
+      context.canvas.convertToBlob().then((r) => {
+        const w = window.open("about:blank")!;
+        w.location = URL.createObjectURL(r);
+      });
+    }}
+  >
     Save PNG
   </div>
 </div>
