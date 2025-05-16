@@ -100,21 +100,23 @@ impl WebSocketHandler {
                 }
                 WebSocketMessage::LayerUp(layer_name) => {
                     let mut drawing = self.drawing.lock().unwrap();
-                    drawing.layer_up(&layer_name);
-                    self.server
-                        .send(m)
-                        .into_actor(self)
-                        .then(|_, _, _| fut::ready(()))
-                        .wait(ctx);
+                    if drawing.layer_up(&layer_name).is_ok() {
+                        self.server
+                            .send(m)
+                            .into_actor(self)
+                            .then(|_, _, _| fut::ready(()))
+                            .wait(ctx);
+                    }
                 }
                 WebSocketMessage::LayerDown(layer_name) => {
                     let mut drawing = self.drawing.lock().unwrap();
-                    drawing.layer_down(&layer_name);
-                    self.server
-                        .send(m)
-                        .into_actor(self)
-                        .then(|_, _, _| fut::ready(()))
-                        .wait(ctx);
+                    if drawing.layer_down(&layer_name).is_ok() {
+                        self.server
+                            .send(m)
+                            .into_actor(self)
+                            .then(|_, _, _| fut::ready(()))
+                            .wait(ctx);
+                    }
                 }
                 WebSocketMessage::SetLayerVisibility(data) => {
                     let mut drawing = self.drawing.lock().unwrap();

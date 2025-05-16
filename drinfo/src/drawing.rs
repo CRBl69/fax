@@ -64,8 +64,8 @@ impl Drawing {
     /// Moves the given layer one time upwards in the layer order.
     pub fn layer_up(&mut self, name: &str) -> Result<(), DrawingError> {
         if let Some(index) = self.layer_order.iter().position(|e| e == name) {
-            if index < self.layer_order.len() && index > 0 {
-                self.layer_order.swap(index - 1, index);
+            if index < self.layer_order.len() - 1 {
+                self.layer_order.swap(index, index + 1);
                 Ok(())
             } else {
                 Err(DrawingError::LayerTop(name.to_string()))
@@ -78,10 +78,8 @@ impl Drawing {
     /// Moves the given layer one time downwards in the layer order.
     pub fn layer_down(&mut self, name: &str) -> Result<(), DrawingError> {
         if let Some(index) = self.layer_order.iter().position(|e| e == name) {
-            if index < self.layer_order.len() - 1 {
-                let n2 = self.layer_order[index + 1].to_string();
-                self.layer_order[index + 1] = name.to_string();
-                self.layer_order[index] = n2;
+            if index < self.layer_order.len() && index > 0 {
+                self.layer_order.swap(index - 1, index);
                 Ok(())
             } else {
                 Err(DrawingError::LayerBottom(name.to_string()))
