@@ -1,7 +1,7 @@
 import type { Stroke } from "$lib/drinfo";
 import { draw } from "./util";
 
-export const stroke = (stroke: Stroke, context: CanvasRenderingContext2D) => {
+export const stroke = (stroke: Stroke, context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D) => {
   if (stroke.points.length === 1) {
     draw(stroke.points[0], stroke.points[0], stroke.brush, context);
   }

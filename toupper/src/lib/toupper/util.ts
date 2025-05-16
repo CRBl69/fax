@@ -9,7 +9,7 @@ export const getRatio = (canvas: Dimensions, drawing: Dimensions) => {
   return ratio;
 };
 
-export const draw = (start: Point, end: Point, brush: Brush, context: CanvasRenderingContext2D) => {
+export const draw = (start: Point, end: Point, brush: Brush, context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D) => {
   if (!context) {
     console.warn("No context for draw.");
     return;

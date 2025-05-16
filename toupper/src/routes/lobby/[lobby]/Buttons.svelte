@@ -1,7 +1,8 @@
 <script lang="ts">
   import { env } from "$env/dynamic/public";
-  import { onMount } from "svelte";
+  import { getContext, onMount } from "svelte";
   import { gs } from "./state.svelte";
+    import { stroke } from "$lib/toupper";
 
   let saveUrl = $state("");
 
@@ -70,7 +71,28 @@
     <input type="checkbox" bind:checked={gs.bg} />
   </div>
   <div class="inner-container">
-    <a href={saveUrl}>Save</a>
+    <a class="button" href={saveUrl}>Save DrInFo</a>
+  </div>
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div class="inner-container button" onclick={() => {
+    const canvas = new OffscreenCanvas(gs.drawing.width, gs.drawing.height);
+    const context = canvas.getContext("2d")!;
+    for (const layerName of gs.drawing.layerOrder) {
+      const layer = gs.drawing.layers.get(layerName)!;
+      for (const key of layer.history.keys().toArray().toSorted()) {
+        const instruction = layer.history.get(key)!;
+        if ("points" in instruction.instruction) {
+          stroke(instruction.instruction, context);
+        }
+      }
+    }
+    context.canvas.convertToBlob().then(r => {
+      const w = window.open('about:blank')!;
+      w.location = URL.createObjectURL(r);
+    })
+  }}>
+    Save PNG
   </div>
 </div>
 
@@ -104,11 +126,12 @@
     font-size: 16px;
     cursor: pointer;
   }
-  a {
+  .button {
     color: var(--white);
     text-decoration: none;
     border: 1px solid var(--lightGrey);
     padding: 0.4em;
     border-radius: 0.2em;
+    cursor: pointer;
   }
 </style>
