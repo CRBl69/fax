@@ -12,9 +12,6 @@
   import { gs, type LayerData } from "./state.svelte";
   import Zoom from "./Zoom.svelte";
 
-  export const ssr = false;
-  export const csr = true;
-
   let username = $page.params.lobby;
 
   let users: SvelteMap<string, Cursor | null> = $state(new SvelteMap());
@@ -55,7 +52,6 @@
 
     gs.server.registerEventHandler("layerup", (data) => {
       gs.drawing.layerUp(data);
-      console.log("layer up");
     });
 
     gs.server.registerEventHandler("layerdown", (data) => {

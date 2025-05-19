@@ -113,8 +113,8 @@
   }}
 >
   <canvas
-    height={gs.drawing.height}
-    width={gs.drawing.width}
+    height={150}
+    width={250}
     bind:this={canvas}
     class="instruction-preview"
   >
@@ -144,13 +144,15 @@
     border-top: none;
     display: flex;
     justify-content: space-between;
+    align-items: center;
+    height: 3rem;
   }
   .future {
     color: var(--lightGrey);
   }
   .instruction-preview {
-    max-height: 2rem;
-    max-width: 4rem;
+    height: 3rem;
+    width: 5rem;
     border: 1px solid var(--darkGrey);
   }
 </style>

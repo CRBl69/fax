@@ -25,7 +25,8 @@
   let listener: HTMLDivElement | undefined = $state();
   let bgCanvas: HTMLCanvasElement | undefined = $state();
 
-  onMount(() => {
+  $effect(() => {
+    gs.ratio;
     let context = bgCanvas!.getContext("2d")!;
     drawSquares(context);
   });

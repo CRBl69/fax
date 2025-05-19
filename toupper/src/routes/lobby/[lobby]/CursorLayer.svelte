@@ -2,6 +2,7 @@
   import { type Cursor, getX, getY } from "$lib/toupper";
   import type { SvelteMap } from "svelte/reactivity";
   import { gs } from "./state.svelte";
+    import { onMount, untrack } from "svelte";
 
   interface Props {
     users: SvelteMap<string, Cursor | null>;
@@ -44,7 +45,9 @@
       context.stroke();
     };
 
-    users.forEach(drawCursor);
+    users.entries().forEach((v) => {
+      drawCursor(v[1], v[0])
+    });
 
     if (gs.brush && gs.cursorPosition) {
       drawCursor(
@@ -68,13 +71,20 @@
 
   const onmousemove = (element: HTMLDivElement, e: MouseEvent) => {
     updateCursorPosition(element, e);
+    gs.server?.cursor(gs.brush, gs.cursorPosition);
     drawCursor();
   };
 
   const onmouseout = () => {
     gs.cursorPosition = null;
+    gs.server?.cursor(gs.brush, gs.cursorPosition);
     drawCursor();
   };
+
+  $effect(() => {
+    users.entries();
+    untrack(() => drawCursor());
+  })
 
   $effect(() => {
     if (listener) {
@@ -91,9 +101,17 @@
     }
   });
 
+  const onfriendcursor = () => {
+    drawCursor();
+  };
+
   $effect(() => {
-    gs.server?.cursor(gs.brush, gs.cursorPosition);
-  });
+    cursorCanvas;
+    gs.server?.addEventListener("cursorout", onfriendcursor);
+    return () => {
+      gs.server?.removeEventListener("cursorout", onfriendcursor);
+    };
+  })
 </script>
 
 <canvas bind:this={cursorCanvas} height={gs.drawing.height} width={gs.drawing.width}></canvas>

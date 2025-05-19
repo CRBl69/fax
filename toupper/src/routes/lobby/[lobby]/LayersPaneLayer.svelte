@@ -27,6 +27,8 @@
   });
 </script>
 
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<!-- svelte-ignore a11y_click_events_have_key_events -->
 <div
   class="layer {gs.selectedLayer === name ? 'selected' : ''}"
   onclick={() => {
@@ -40,7 +42,7 @@
     class="layer-preview"
   >
   </canvas>
-  <span class="name">
+  <span class="name" title={name}>
     {name}
   </span>
   <div class="buttons">
@@ -55,7 +57,6 @@
 <style>
   .layer {
     border: 1px solid var(--darkGrey);
-    padding: 0.2em;
     outline: none;
     display: flex;
     flex-direction: row;
@@ -64,9 +65,6 @@
   .layer:first-child {
     border-top: none;
   }
-  .layer:last-child {
-    border-bottom: none;
-  }
   .selected {
     background: var(--blue);
   }
@@ -74,8 +72,8 @@
     color: var(--black);
   }
   .layer-preview {
-    border: 1px solid var(--darkGrey);
-    max-width: 4em;
+    border-right: 1px solid var(--darkGrey);
+    max-height: 3em;
   }
   .buttons {
     display: grid;
@@ -84,10 +82,12 @@
   }
   .up,
   .down {
-    border: 1px solid var(--darkGrey);
+    border-left: 1px solid var(--darkGrey);
+    border-right: 1px solid var(--darkGrey);
   }
   .up {
     grid-row: 1;
+    border-bottom: 1px solid var(--darkGrey);
   }
   .down {
     grid-row: 2;
@@ -100,5 +100,9 @@
   }
   .name {
     place-content: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+    text-wrap-mode: nowrap;
   }
 </style>

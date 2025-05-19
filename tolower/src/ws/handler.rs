@@ -49,9 +49,7 @@ impl WebSocketHandler {
         if let Ok(m) = serde_json::from_str::<WebSocketMessage>(text) {
             match m.clone() {
                 WebSocketMessage::Instruction(instruction) => {
-                    let mut drawing = self.drawing.lock().unwrap();
-                    let res = drawing.instruct(&instruction.layer, instruction.instruction);
-                    if res.is_ok() {
+                    if self.drawing.lock().unwrap().instruct(&instruction.layer, instruction.instruction).is_ok() {
                         self.server
                             .send(m)
                             .into_actor(self)
@@ -70,8 +68,7 @@ impl WebSocketHandler {
                         .wait(ctx);
                 }
                 WebSocketMessage::Undo(layer_name) => {
-                    let mut drawing = self.drawing.lock().unwrap();
-                    if drawing.undo(&layer_name).is_ok() {
+                    if self.drawing.lock().unwrap().undo(&layer_name).is_ok() {
                         self.server
                             .send(m)
                             .into_actor(self)
@@ -80,8 +77,7 @@ impl WebSocketHandler {
                     }
                 }
                 WebSocketMessage::Redo(layer_name) => {
-                    let mut drawing = self.drawing.lock().unwrap();
-                    if drawing.redo(&layer_name).is_ok() {
+                    if self.drawing.lock().unwrap().redo(&layer_name).is_ok() {
                         self.server
                             .send(m)
                             .into_actor(self)
@@ -90,17 +86,16 @@ impl WebSocketHandler {
                     }
                 }
                 WebSocketMessage::AddLayer(layer_name) => {
-                    let mut drawing = self.drawing.lock().unwrap();
-                    drawing.add_layer(layer_name);
-                    self.server
-                        .send(m)
-                        .into_actor(self)
-                        .then(|_, _, _| fut::ready(()))
-                        .wait(ctx);
+                    if self.drawing.lock().unwrap().add_layer(layer_name).is_ok() {
+                        self.server
+                            .send(m)
+                            .into_actor(self)
+                            .then(|_, _, _| fut::ready(()))
+                            .wait(ctx);
+                    }
                 }
                 WebSocketMessage::LayerUp(layer_name) => {
-                    let mut drawing = self.drawing.lock().unwrap();
-                    if drawing.layer_up(&layer_name).is_ok() {
+                    if self.drawing.lock().unwrap().layer_up(&layer_name).is_ok() {
                         self.server
                             .send(m)
                             .into_actor(self)
@@ -109,8 +104,7 @@ impl WebSocketHandler {
                     }
                 }
                 WebSocketMessage::LayerDown(layer_name) => {
-                    let mut drawing = self.drawing.lock().unwrap();
-                    if drawing.layer_down(&layer_name).is_ok() {
+                    if self.drawing.lock().unwrap().layer_down(&layer_name).is_ok() {
                         self.server
                             .send(m)
                             .into_actor(self)
@@ -119,8 +113,7 @@ impl WebSocketHandler {
                     }
                 }
                 WebSocketMessage::SetLayerVisibility(data) => {
-                    let mut drawing = self.drawing.lock().unwrap();
-                    if drawing.set_visibility(&data.layer, data.visible).is_ok() {
+                    if self.drawing.lock().unwrap().set_visibility(&data.layer, data.visible).is_ok() {
                         self.server
                             .send(m)
                             .into_actor(self)
@@ -149,8 +142,7 @@ impl WebSocketHandler {
                         .wait(ctx);
                 }
                 WebSocketMessage::Snapshot(data) => {
-                    let mut drawing = self.drawing.lock().unwrap();
-                    if drawing.snapshot(&data.layer, data.index, data.data).is_ok() {
+                    if self.drawing.lock().unwrap().snapshot(&data.layer, data.index, data.data).is_ok() {
                         self.server
                             .send(m)
                             .into_actor(self)
@@ -159,8 +151,7 @@ impl WebSocketHandler {
                     }
                 }
                 WebSocketMessage::SetHistoryElementVisibility(data) => {
-                    let mut drawing = self.drawing.lock().unwrap();
-                    if drawing
+                    if self.drawing.lock().unwrap()
                         .set_history_element_visibility(&data.layer, data.index, data.visible)
                         .is_ok()
                     {

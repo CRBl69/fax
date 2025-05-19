@@ -50,14 +50,16 @@ export const drawSquares = (context: CanvasRenderingContext2D) => {
   let x = 0;
   let y = 0;
   let white = true;
+  let firstWhite = white;
   while (x < context.canvas.height) {
+    firstWhite = white;
     while (y < context.canvas.width) {
       context.fillStyle = white ? "#ffffff" : "#aaaaaa";
       white = !white;
       context.fillRect(y, x, 20, 20);
       y += 20;
     }
-    white = !white;
+    white = !firstWhite;
     y = 0;
     x += 20;
   }
