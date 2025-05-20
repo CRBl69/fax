@@ -14,6 +14,9 @@ export type Motion = {
 
 export type ImageInsertion = {
   base64: string;
+  point: Point;
+  scale: Point;
+  rotate: number;
 };
 
 export type Instruction = Stroke | Motion | ImageInsertion;

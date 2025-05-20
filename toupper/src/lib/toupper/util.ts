@@ -1,4 +1,4 @@
-import type { Brush, Point } from "$lib/drinfo";
+import type { Brush, ImageInsertion, Point } from "$lib/drinfo";
 import type { Dimensions } from "./types";
 
 export const getRatio = (canvas: Dimensions, drawing: Dimensions) => {
@@ -64,3 +64,22 @@ export const drawSquares = (context: CanvasRenderingContext2D) => {
     x += 20;
   }
 };
+
+export const drawImage = (image: HTMLImageElement, imageInsertion: ImageInsertion, context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D) => {
+  const centerX = Math.round((imageInsertion.point.x * 2 + image.width * imageInsertion.scale.x) / 2);
+  const centerY = Math.round((imageInsertion.point.y * 2 + image.height * imageInsertion.scale.y) / 2);
+  context.translate(centerX, centerY);
+  context.rotate(imageInsertion.rotate * Math.PI / 180);
+  context.drawImage(
+    image,
+    0,
+    0,
+    image.width,
+    image.height,
+    - image.width * imageInsertion.scale.x / 2,
+    - image.height * imageInsertion.scale.y / 2,
+    image.width * imageInsertion.scale.x,
+    image.height * imageInsertion.scale.y
+  );
+  context.resetTransform();
+}

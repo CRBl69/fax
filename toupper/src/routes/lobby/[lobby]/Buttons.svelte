@@ -6,9 +6,47 @@
 
   let saveUrl = $state("");
 
+  let files: FileList | undefined = $state(undefined);
+
   onMount(() => {
     saveUrl = `${location.protocol}//${SERVER_URL}/save`;
   });
+
+  $effect(() => {
+    if (gs.selectedLayer && files && files[0]) {
+      const fileReader = new FileReader();
+      fileReader.addEventListener("load", (e) => {
+        if (!e.target) {
+          return;
+        }
+        const base64img = e.target.result as string;
+        let image = new Image();
+        image.onload = () => {
+          gs.instructionBox = {
+            applied: true,
+            instruction: {
+              base64: base64img,
+              point: {
+                x: 0,
+                y: 0,
+              },
+              scale: {
+                x: 1,
+                y: 1,
+              },
+              rotate: 0,
+            },
+            uuid: crypto.randomUUID(),
+          };
+        };
+        image.src = base64img;
+        files = undefined
+      });
+      fileReader.readAsDataURL(files[0]);
+    } else {
+      files = undefined;
+    }
+  })
 </script>
 
 <div class="container">
@@ -87,6 +125,32 @@
       <label for="background">Background:</label>
       <input type="checkbox" bind:checked={gs.bg} />
     </div>
+  </div>
+  <div
+    class="inner-container">
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <label for="insertion">Insert picture:</label>
+    {#if !(gs.instructionBox && "point" in gs.instructionBox.instruction)}
+      <input
+        class="button"
+        type="file"
+        accept="image/png, image/jpeg"
+        id="insertion"
+        name="insertion"
+        oninput={(f) => {
+          if (f.currentTarget.files) {
+            files = f.currentTarget.files;
+          }
+        }}
+      />
+    {:else}
+      <button class="button" onclick={() => {
+        gs.server?.instructionBox(gs.instructionBox!, gs.selectedLayer!);
+        gs.instructionBox = null;
+      }}>Confirm</button>
+      <button class="button" onclick={() => {gs.instructionBox = null; files = undefined}}>Abort</button>
+    {/if}
   </div>
   <div class="inner-container">
     <a class="button" href={saveUrl}>Save DrInFo</a>

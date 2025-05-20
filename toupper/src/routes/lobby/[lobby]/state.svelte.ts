@@ -1,4 +1,4 @@
-import { Drawing, type Brush, type Point } from "$lib/drinfo";
+import { Drawing, type Brush, type InstructionBox, type Point } from "$lib/drinfo";
 import type { Server } from "$lib/tolower";
 import { getDefaultBrush } from "$lib/toupper";
 import { SvelteMap } from "svelte/reactivity";
@@ -19,6 +19,9 @@ interface GlobalState {
   layerData: SvelteMap<string, LayerData>;
   drawing: Drawing;
   bg: boolean;
+  instructionBox: InstructionBox | null;
+  hoveredInstruction: InstructionBox | null,
+  images: Map<string, HTMLImageElement>,
 }
 
 export const gs: GlobalState = $state({
@@ -32,4 +35,7 @@ export const gs: GlobalState = $state({
   layerData: new SvelteMap(),
   drawing: new Drawing(),
   bg: true,
+  instructionBox: null,
+  hoveredInstruction: null,
+  images: new Map(),
 });

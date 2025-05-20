@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { InstructionBox, Stroke } from "$lib/drinfo";
-  import { drawSquares, stroke } from "$lib/toupper";
+  import type { ImageInsertion, InstructionBox, Stroke } from "$lib/drinfo";
+  import { drawImage, drawSquares, stroke } from "$lib/toupper";
   import { gs } from "./state.svelte";
 
   interface Props {
@@ -99,6 +99,35 @@
           centerize(instruction.instruction, context.canvas.height, context.canvas.width),
           context,
         );
+      } else if ("point" in instruction.instruction) {
+        (async () => {
+          const imageInsertion = instruction.instruction as ImageInsertion;
+          let image = gs.images.get(imageInsertion.base64);
+          if (!image) {
+            image = new Image();
+            await new Promise((resolve, reject) => {
+              image.onload = resolve;
+              image.onerror = reject;
+              image.src = imageInsertion.base64;
+            });
+            gs.images.set(imageInsertion.base64, image);
+          }
+          let ratio;
+          if (image.height * imageInsertion.scale.y > image.width * imageInsertion.scale.x) {
+            ratio = 250 / (image.width * imageInsertion.scale.x);
+          } else {
+            ratio = 150 / (image.height * imageInsertion.scale.y);
+          }
+          const imageInsertionShifted = structuredClone(imageInsertion);
+          imageInsertionShifted.scale.x *= ratio;
+          imageInsertionShifted.scale.y *= ratio;
+          imageInsertionShifted.point = {
+            x: (250 / 2) - (image.width * imageInsertionShifted.scale.x / 2),
+            y: (150 / 2) - (image.height * imageInsertionShifted.scale.y / 2),
+          };
+          // imageInsertionShifted.;
+          drawImage(image, imageInsertionShifted, context);
+        })();
       }
     }
   });
@@ -117,6 +146,8 @@
     width={250}
     bind:this={canvas}
     class="instruction-preview"
+    onmouseenter={() => gs.hoveredInstruction = instruction ?? null}
+    onmouseout={() => gs.hoveredInstruction = null}
   >
   </canvas>
   <div>

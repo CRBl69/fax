@@ -5,6 +5,7 @@
   import type { SvelteMap } from "svelte/reactivity";
   import { gs } from "./state.svelte";
   import { onMount } from "svelte";
+    import PreviewLayer from "./PreviewLayer.svelte";
 
   interface Props {
     users: SvelteMap<string, Cursor | null>;
@@ -48,6 +49,7 @@
     {#each gs.drawing.layerOrder as layer (layer)}
       <LayerComponent {listener} name={layer} />
     {/each}
+    <PreviewLayer />
     <CursorLayer {users} {listener} />
   </div>
 </div>

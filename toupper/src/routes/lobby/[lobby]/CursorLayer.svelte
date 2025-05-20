@@ -3,6 +3,7 @@
   import type { SvelteMap } from "svelte/reactivity";
   import { gs } from "./state.svelte";
     import { onMount, untrack } from "svelte";
+    import { preventDefault } from "svelte/legacy";
 
   interface Props {
     users: SvelteMap<string, Cursor | null>;
@@ -114,7 +115,9 @@
   })
 </script>
 
-<canvas bind:this={cursorCanvas} height={gs.drawing.height} width={gs.drawing.width}></canvas>
+<canvas bind:this={cursorCanvas} height={gs.drawing.height} width={gs.drawing.width}
+  oncontextmenu={(e) => {e.preventDefault();return false}}
+></canvas>
 
 <style>
   canvas {

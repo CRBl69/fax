@@ -21,7 +21,7 @@ pub async fn accept_ws(
 ) -> Result<HttpResponse, Error> {
     let username = username.into_inner().0;
     let codec = Codec::new();
-    let codec = codec.max_size(1048576);
+    let codec = codec.max_size(usize::MAX);
     let resp = ws::WsResponseBuilder::new(
         WebSocketHandler {
             drawing: Arc::clone(&data.drawing),

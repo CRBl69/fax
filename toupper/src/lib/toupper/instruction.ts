@@ -1,5 +1,5 @@
-import type { Stroke } from "$lib/drinfo";
-import { draw } from "./util";
+import type { ImageInsertion, Instruction, InstructionBox, Stroke } from "$lib/drinfo";
+import { draw, drawImage } from "./util";
 
 export const stroke = (
   stroke: Stroke,
@@ -15,4 +15,32 @@ export const stroke = (
 
 export const motion = () => {};
 
-export const insertImage = () => {};
+export const insertImage = async (
+  imageInsertion: ImageInsertion,
+  context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+  imageCache: Map<string, HTMLImageElement>,
+) => {
+  let image = imageCache.get(imageInsertion.base64)
+  if (!image) {
+    image = new Image();
+    await new Promise((resolve, reject) => {
+      image!.onload = resolve;
+      image!.onerror = reject;
+      image!.src = imageInsertion.base64;
+    });
+    imageCache.set(imageInsertion.base64, image);
+  }
+  drawImage(image, imageInsertion, context);
+};
+
+export const applyInstruction = async (
+  instruction: Instruction,
+  context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+  imageCache: Map<string, HTMLImageElement>,
+) => {
+  if ("point" in instruction) {
+    await insertImage(instruction, context, imageCache);
+  } else if ("points" in instruction) {
+    stroke(instruction, context);
+  }
+}
