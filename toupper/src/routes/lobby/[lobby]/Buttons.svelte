@@ -47,6 +47,14 @@
       files = undefined;
     }
   });
+
+  let displayOpacity = $state(gs.brush.opacity / 1000);
+  $effect(() => {
+    displayOpacity = gs.brush.opacity / 1000;
+  });
+  $effect(() => {
+    gs.brush.opacity = displayOpacity * 1000;
+  });
 </script>
 
 <div class="container">
@@ -62,9 +70,20 @@
       </div>
       <input id="brush-color" type="color" bind:value={gs.brush.color} />
     </div>
-    <div class="inner-container">
-      <label for="brush-type">Erase:</label>
-      <input type="checkbox" bind:checked={gs.brush.erase} />
+    <div class="inner-container brush-container">
+      <label for="brush-width">Opacity:</label>
+      <div class="input-group">
+        <input id="brush-width" type="range" min="1" max="100" bind:value={displayOpacity} />
+        <input
+          type="number"
+          oninput={(e) => {
+            if (e.currentTarget.value && !isNaN(Number(e.currentTarget.value))) {
+              gs.brush.opacity = Number(e.currentTarget.value);
+            }
+          }}
+          value={displayOpacity}
+        />
+      </div>
     </div>
   </div>
   <div class="inner-group">
@@ -100,17 +119,23 @@
               gs.brush.diffusion = Number(e.currentTarget.value);
             }
           }}
-          value={gs.brush.width}
+          value={gs.brush.diffusion}
         />
       </div>
     </div>
   </div>
-  <div class="inner-container">
-    <label for="brush-shape">Shape:</label>
-    <select bind:value={gs.brush.brushShape.shape}>
-      <option value={"circle"} selected>Circle</option>
-      <option value={"square"}>Square</option>
-    </select>
+  <div class="inner-group">
+    <div class="inner-container">
+      <label for="brush-shape">Shape:</label>
+      <select bind:value={gs.brush.brushShape.shape}>
+        <option value={"circle"} selected>Circle</option>
+        <option value={"square"}>Square</option>
+      </select>
+    </div>
+    <div class="inner-container">
+      <label for="brush-type">Erase:</label>
+      <input type="checkbox" bind:checked={gs.brush.erase} />
+    </div>
   </div>
   <div class="inner-group">
     <div class="inner-container">
@@ -135,36 +160,37 @@
   <div class="inner-container">
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <label for="insertion">Insert picture:</label>
-    {#if !(gs.instructionBox && "point" in gs.instructionBox.instruction)}
-      <input
-        class="button"
-        type="file"
-        accept="image/png, image/jpeg"
-        id="insertion"
-        name="insertion"
-        oninput={(f) => {
-          if (f.currentTarget.files) {
-            files = f.currentTarget.files;
-          }
-        }}
-      />
-    {:else}
-      <button
-        class="button"
-        onclick={() => {
-          gs.server?.instructionBox(gs.instructionBox!, gs.selectedLayer!);
-          gs.instructionBox = null;
-        }}>Confirm</button
-      >
-      <button
-        class="button"
-        onclick={() => {
-          gs.instructionBox = null;
-          files = undefined;
-        }}>Abort</button
-      >
-    {/if}
+    <div class="inner-group">
+      {#if !(gs.instructionBox && "point" in gs.instructionBox.instruction)}
+        <label for="insertion" class="button">Insert picture</label>
+        <input
+          type="file"
+          accept="image/png, image/jpeg"
+          id="insertion"
+          name="insertion"
+          oninput={(f) => {
+            if (f.currentTarget.files) {
+              files = f.currentTarget.files;
+            }
+          }}
+        />
+      {:else}
+        <button
+          class="button"
+          onclick={() => {
+            gs.server?.instructionBox(gs.instructionBox!, gs.selectedLayer!);
+            gs.instructionBox = null;
+          }}>Confirm</button
+        >
+        <button
+          class="button"
+          onclick={() => {
+            gs.instructionBox = null;
+            files = undefined;
+          }}>Abort</button
+        >
+      {/if}
+    </div>
   </div>
   <div class="inner-container">
     <a class="button" href={saveUrl}>Save DrInFo</a>
@@ -249,5 +275,8 @@
     margin: 0.1em;
     border-radius: 0.2em;
     cursor: pointer;
+  }
+  input[type="file"] {
+    display: none;
   }
 </style>

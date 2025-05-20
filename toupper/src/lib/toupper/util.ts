@@ -1,4 +1,5 @@
 import type { Brush, ImageInsertion, Point } from "$lib/drinfo";
+import { ToServer } from "$lib/tolower";
 import type { Dimensions } from "./types";
 
 export const getRatio = (canvas: Dimensions, drawing: Dimensions) => {
@@ -22,7 +23,8 @@ export const draw = (
   context.lineCap = "round";
   context.lineJoin = "round";
   context.lineWidth = brush.width;
-  context.strokeStyle = brush.color;
+  const color = ToServer.color(brush.color);
+  context.strokeStyle = `rgba(${color.r} ${color.g} ${color.b} / ${brush.opacity / 1000}%)`;
   if (brush.erase) {
     context.globalCompositeOperation = "destination-out";
   } else {

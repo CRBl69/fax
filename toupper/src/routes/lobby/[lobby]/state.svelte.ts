@@ -1,6 +1,6 @@
 import { Drawing, type Brush, type InstructionBox, type Point } from "$lib/drinfo";
 import type { Server } from "$lib/tolower";
-import { getDefaultBrush } from "$lib/toupper";
+import { getDefaultBrush, getSecondaryDefaultBrush } from "$lib/toupper";
 import { SvelteMap } from "svelte/reactivity";
 
 export type LayerData = {
@@ -11,6 +11,7 @@ export type LayerData = {
 interface GlobalState {
   cursorPosition: Point | null;
   brush: Brush;
+  secondaryBrush: Brush;
   ratio: number;
   zoom: boolean;
   zoomRatio: number;
@@ -27,6 +28,7 @@ interface GlobalState {
 export const gs: GlobalState = $state({
   cursorPosition: null,
   brush: getDefaultBrush(),
+  secondaryBrush: getSecondaryDefaultBrush(),
   ratio: 0,
   zoom: true,
   zoomRatio: 1,

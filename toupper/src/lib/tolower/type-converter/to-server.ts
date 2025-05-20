@@ -22,12 +22,10 @@ export class ToServer {
     const red = data.substring(0, 2);
     const green = data.substring(2, 4);
     const blue = data.substring(4, 6);
-    const alpha = data.substring(6, 8);
     return {
       r: parseInt(red, 16),
       g: parseInt(green, 16),
       b: parseInt(blue, 16),
-      a: parseInt(alpha === "" ? "ff" : alpha, 16),
     };
   }
 

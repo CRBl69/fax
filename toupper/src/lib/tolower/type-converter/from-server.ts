@@ -17,7 +17,7 @@ import type {
 
 export class FromServer {
   static color(color: Color): DrInFo.Color {
-    return `#${color.r.toString(16).padStart(2, "0")}${color.g.toString(16).padStart(2, "0")}${color.b.toString(16).padStart(2, "0")}${color.a.toString(16).padStart(2, "0")}`;
+    return `#${color.r.toString(16).padStart(2, "0")}${color.g.toString(16).padStart(2, "0")}${color.b.toString(16).padStart(2, "0")}`;
   }
 
   static brushShape(brushShape: BrushShape): DrInFo.BrushShape {

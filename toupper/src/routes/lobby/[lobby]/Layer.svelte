@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { Brush, ImageInsertion, InstructionBox, Point, Stroke } from "$lib/drinfo";
-  import { draw, drawImage, getX, getY, applyInstruction } from "$lib/toupper";
+  import type { ImageInsertion, InstructionBox, Point, Stroke } from "$lib/drinfo";
+  import { drawImage, getX, getY, applyInstruction, stroke } from "$lib/toupper";
   import { onMount, untrack } from "svelte";
   import { gs } from "./state.svelte";
   import {
@@ -37,13 +37,12 @@
 
   let image: HTMLImageElement | undefined = $state();
 
-  // Map that stores point buffers while the canvas is created.
-  let bufferMap = $state(new SvelteMap<string, Point[]>());
-
   // Used for shift click straight line drawing.
   let lastPoint: Point | undefined = $state(undefined);
 
   let lastUuid: string | undefined = $state();
+
+  let friendStrokes: Map<string, InstructionBox> = $state(new Map());
 
   const onkeydown = (e: KeyboardEvent) => {
     if (gs.selectedLayer === name) {
@@ -142,23 +141,14 @@
     cursorPosition = { x, y };
   };
 
-  const tempDraw = (uuid: string, brush: Brush, start: Point, end: Point) => {
-    const canvas = layerData.tmps.get(uuid)!.canvas;
+  const tempDraw = (instructionBox: InstructionBox) => {
+    const canvas = layerData.tmps.get(instructionBox.uuid)!.canvas;
     if (!canvas) {
-      if (bufferMap.has(uuid)) {
-        bufferMap.get(uuid)!.push(start);
-      } else {
-        bufferMap.set(uuid, [start]);
-      }
       return;
     }
     const tempContext = canvas!.getContext("2d")!;
-    draw(
-      start,
-      end,
-      { ...brush, color: brush.erase ? "#000000" : brush.color, erase: false },
-      tempContext,
-    );
+    tempContext.clearRect(0, 0, canvas.width, canvas.height);
+    stroke(instructionBox.instruction as Stroke, tempContext);
   };
 
   // Browser event handlers.
@@ -192,20 +182,6 @@
       const angleRadians = Math.acos(cos);
       const angleDegrees = (angleRadians / Math.PI) * 180;
       const crossProduct = caX * cbY - caY * cbX;
-      console.table({
-        r: imageInsertion.rotate,
-        caX,
-        caY,
-        cbX,
-        cbY,
-        product,
-        caMag,
-        cbMag,
-        cos,
-        angleRadians,
-        angleDegrees,
-        crossProduct,
-      });
       let rotate;
       if (crossProduct > 0) {
         rotate = (imageInsertion.rotate - angleDegrees) % 360;
@@ -222,7 +198,7 @@
   };
   const onmousemovestroke = () => {
     (gs.instructionBox!.instruction as Stroke).points.push(cursorPosition!);
-    tempDraw(gs.instructionBox!.uuid, gs.brush, prevCursorPosition!, cursorPosition!);
+    tempDraw(gs.instructionBox!);
     gs.server?.drawTemp(
       gs.brush,
       gs.instructionBox!.uuid,
@@ -261,15 +237,14 @@
     layerData.tmps.set(gs.instructionBox.uuid, { canvas: undefined, brush: gs.brush });
     if (e.shiftKey && lastPoint) {
       (gs.instructionBox.instruction as Stroke).points.push(lastPoint);
-      tempDraw(gs.instructionBox.uuid, gs.brush, lastPoint, prevCursorPosition!);
+      tempDraw(gs.instructionBox);
     }
     (gs.instructionBox.instruction as Stroke).points.push(cursorPosition!);
-    tempDraw(gs.instructionBox.uuid, gs.brush, prevCursorPosition!, cursorPosition!);
+    tempDraw(gs.instructionBox);
   };
   const onmousedown = (element: HTMLDivElement, e: MouseEvent) => {
     updateCursorPosition(element, e);
     mousedown = true;
-    console.log(gs.instructionBox);
     if (gs.instructionBox && "point" in gs.instructionBox.instruction) {
       onmousedownimageinsertion(e);
     } else if (!gs.instructionBox) {
@@ -278,7 +253,6 @@
   };
 
   const onmouseupstroke = () => {
-    console.log("omus");
     if (gs.instructionBox) {
       gs.server?.instructionBox(gs.instructionBox, name);
       gs.instructionBox = null;
@@ -338,6 +312,7 @@
   const oninstruction = (data: CustomEvent<InstructionMessage["Instruction"]>) => {
     if (data.detail.layer === name) {
       layerData.tmps.delete(data.detail.instruction.uuid);
+      friendStrokes.delete(data.detail.instruction.uuid);
     }
   };
 
@@ -346,8 +321,21 @@
     if (data.detail.layer === name) {
       if (!layerData.tmps.has(data.detail.uuid)) {
         layerData.tmps.set(data.detail.uuid, { canvas: undefined, brush });
+        const stroke: Stroke = {
+          points: [data.detail.start, data.detail.end],
+          brush: FromServer.brush(data.detail.brush),
+        };
+        friendStrokes.set(data.detail.uuid, {
+          applied: true,
+          uuid: data.detail.uuid,
+          instruction: stroke,
+        });
+      } else {
+        const stroke = friendStrokes.get(data.detail.uuid);
+        (stroke!.instruction as Stroke).points.push(data.detail.end);
       }
-      tempDraw(data.detail.uuid, brush, data.detail.start, data.detail.end);
+      const stroke = friendStrokes.get(data.detail.uuid)!;
+      tempDraw(stroke);
     }
   };
 
@@ -384,23 +372,6 @@
   $effect(() => {
     if (layer.historyIndex != untrack(() => currentIndex))
       untrack(() => renderAt(layer.historyIndex));
-  });
-
-  // Draw things in buffer map.
-  $effect(() => {
-    layerData.tmps.entries().forEach(([uuid, c]) => {
-      if (c.canvas && bufferMap.has(uuid)) {
-        const tempContext = c.canvas.getContext("2d")!;
-        const buffer = bufferMap.get(uuid)!;
-        bufferMap.delete(uuid);
-        for (let i = 0; i < buffer.length - 1; i++) {
-          draw(buffer[i], buffer[i + 1], c.brush, tempContext);
-        }
-        if (buffer.length === 1) {
-          draw(buffer[0], buffer[0], c.brush, tempContext);
-        }
-      }
-    });
   });
 
   $effect(() => {

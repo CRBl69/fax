@@ -1,16 +1,34 @@
-import type { ImageInsertion, Instruction, InstructionBox, Stroke } from "$lib/drinfo";
-import { draw, drawImage } from "./util";
+import type { ImageInsertion, Instruction, Stroke } from "$lib/drinfo";
+import { ToServer } from "$lib/tolower";
+import { drawImage } from "./util";
 
 export const stroke = (
   stroke: Stroke,
   context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
 ) => {
-  if (stroke.points.length === 1) {
-    draw(stroke.points[0], stroke.points[0], stroke.brush, context);
+  if (!context) {
+    console.warn("No context for draw.");
+    return;
   }
-  for (let i = 0; i < stroke.points.length - 1; i++) {
-    draw(stroke.points[i], stroke.points[i + 1], stroke.brush, context);
+  if (stroke.points.length === 0) return;
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  context.lineWidth = stroke.brush.width;
+  const color = ToServer.color(stroke.brush.color);
+  context.strokeStyle = `rgba(${color.r} ${color.g} ${color.b} / ${stroke.brush.opacity / 1000}%)`;
+  if (stroke.brush.erase) {
+    context.globalCompositeOperation = "destination-out";
+  } else {
+    context.globalCompositeOperation = "source-over";
   }
+
+  const start = stroke.points[0];
+  context.beginPath();
+  context.moveTo(start.x, start.y);
+  for (let i = 1; i < stroke.points.length; i++) {
+    context.lineTo(stroke.points[i].x, stroke.points[i].y);
+  }
+  context.stroke();
 };
 
 export const motion = () => {};

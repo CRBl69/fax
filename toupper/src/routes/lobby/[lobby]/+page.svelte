@@ -82,6 +82,14 @@
     gs.server.registerEventHandler("instruction", ({ layer, instruction }) => {
       gs.drawing.instruct(layer, FromServer.instructionBox(instruction));
     });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "x") {
+        const temp = gs.secondaryBrush;
+        gs.secondaryBrush = gs.brush;
+        gs.brush = temp;
+      }
+    });
   });
 
   onDestroy(() => {

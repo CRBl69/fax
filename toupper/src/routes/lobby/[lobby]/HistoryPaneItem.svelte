@@ -106,9 +106,9 @@
           if (!image) {
             image = new Image();
             await new Promise((resolve, reject) => {
-              image.onload = resolve;
-              image.onerror = reject;
-              image.src = imageInsertion.base64;
+              image!.onload = resolve;
+              image!.onerror = reject;
+              image!.src = imageInsertion.base64;
             });
             gs.images.set(imageInsertion.base64, image);
           }
