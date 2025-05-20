@@ -20,8 +20,8 @@ interface GlobalState {
   drawing: Drawing;
   bg: boolean;
   instructionBox: InstructionBox | null;
-  hoveredInstruction: InstructionBox | null,
-  images: Map<string, HTMLImageElement>,
+  hoveredInstruction: InstructionBox | null;
+  images: Map<string, HTMLImageElement>;
 }
 
 export const gs: GlobalState = $state({

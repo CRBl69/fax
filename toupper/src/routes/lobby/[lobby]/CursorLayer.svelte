@@ -2,8 +2,8 @@
   import { type Cursor, getX, getY } from "$lib/toupper";
   import type { SvelteMap } from "svelte/reactivity";
   import { gs } from "./state.svelte";
-    import { onMount, untrack } from "svelte";
-    import { preventDefault } from "svelte/legacy";
+  import { onMount, untrack } from "svelte";
+  import { preventDefault } from "svelte/legacy";
 
   interface Props {
     users: SvelteMap<string, Cursor | null>;
@@ -47,7 +47,7 @@
     };
 
     users.entries().forEach((v) => {
-      drawCursor(v[1], v[0])
+      drawCursor(v[1], v[0]);
     });
 
     if (gs.brush && gs.cursorPosition) {
@@ -85,7 +85,7 @@
   $effect(() => {
     users.entries();
     untrack(() => drawCursor());
-  })
+  });
 
   $effect(() => {
     if (listener) {
@@ -112,11 +112,17 @@
     return () => {
       gs.server?.removeEventListener("cursorout", onfriendcursor);
     };
-  })
+  });
 </script>
 
-<canvas bind:this={cursorCanvas} height={gs.drawing.height} width={gs.drawing.width}
-  oncontextmenu={(e) => {e.preventDefault();return false}}
+<canvas
+  bind:this={cursorCanvas}
+  height={gs.drawing.height}
+  width={gs.drawing.width}
+  oncontextmenu={(e) => {
+    e.preventDefault();
+    return false;
+  }}
 ></canvas>
 
 <style>

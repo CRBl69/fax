@@ -13,7 +13,7 @@
       const thisContext = canvas.getContext("2d")!;
       thisContext.clearRect(0, 0, canvas.width, canvas.height);
     }
-  })
+  });
 </script>
 
 <canvas bind:this={canvas} height={gs.drawing.height} width={gs.drawing.width}></canvas>

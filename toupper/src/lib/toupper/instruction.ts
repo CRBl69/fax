@@ -20,7 +20,7 @@ export const insertImage = async (
   context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
   imageCache: Map<string, HTMLImageElement>,
 ) => {
-  let image = imageCache.get(imageInsertion.base64)
+  let image = imageCache.get(imageInsertion.base64);
   if (!image) {
     image = new Image();
     await new Promise((resolve, reject) => {
@@ -43,4 +43,4 @@ export const applyInstruction = async (
   } else if ("points" in instruction) {
     stroke(instruction, context);
   }
-}
+};

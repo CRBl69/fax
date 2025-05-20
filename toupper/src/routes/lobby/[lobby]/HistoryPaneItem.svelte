@@ -122,8 +122,8 @@
           imageInsertionShifted.scale.x *= ratio;
           imageInsertionShifted.scale.y *= ratio;
           imageInsertionShifted.point = {
-            x: (250 / 2) - (image.width * imageInsertionShifted.scale.x / 2),
-            y: (150 / 2) - (image.height * imageInsertionShifted.scale.y / 2),
+            x: 250 / 2 - (image.width * imageInsertionShifted.scale.x) / 2,
+            y: 150 / 2 - (image.height * imageInsertionShifted.scale.y) / 2,
           };
           // imageInsertionShifted.;
           drawImage(image, imageInsertionShifted, context);
@@ -146,8 +146,8 @@
     width={250}
     bind:this={canvas}
     class="instruction-preview"
-    onmouseenter={() => gs.hoveredInstruction = instruction ?? null}
-    onmouseout={() => gs.hoveredInstruction = null}
+    onmouseenter={() => (gs.hoveredInstruction = instruction ?? null)}
+    onmouseout={() => (gs.hoveredInstruction = null)}
   >
   </canvas>
   <div>

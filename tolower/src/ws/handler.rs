@@ -49,7 +49,13 @@ impl WebSocketHandler {
         if let Ok(m) = serde_json::from_str::<WebSocketMessage>(text) {
             match m.clone() {
                 WebSocketMessage::Instruction(instruction) => {
-                    if self.drawing.lock().unwrap().instruct(&instruction.layer, instruction.instruction).is_ok() {
+                    if self
+                        .drawing
+                        .lock()
+                        .unwrap()
+                        .instruct(&instruction.layer, instruction.instruction)
+                        .is_ok()
+                    {
                         self.server
                             .send(m)
                             .into_actor(self)
@@ -113,7 +119,13 @@ impl WebSocketHandler {
                     }
                 }
                 WebSocketMessage::SetLayerVisibility(data) => {
-                    if self.drawing.lock().unwrap().set_visibility(&data.layer, data.visible).is_ok() {
+                    if self
+                        .drawing
+                        .lock()
+                        .unwrap()
+                        .set_visibility(&data.layer, data.visible)
+                        .is_ok()
+                    {
                         self.server
                             .send(m)
                             .into_actor(self)
@@ -142,7 +154,13 @@ impl WebSocketHandler {
                         .wait(ctx);
                 }
                 WebSocketMessage::Snapshot(data) => {
-                    if self.drawing.lock().unwrap().snapshot(&data.layer, data.index, data.data).is_ok() {
+                    if self
+                        .drawing
+                        .lock()
+                        .unwrap()
+                        .snapshot(&data.layer, data.index, data.data)
+                        .is_ok()
+                    {
                         self.server
                             .send(m)
                             .into_actor(self)
@@ -151,7 +169,10 @@ impl WebSocketHandler {
                     }
                 }
                 WebSocketMessage::SetHistoryElementVisibility(data) => {
-                    if self.drawing.lock().unwrap()
+                    if self
+                        .drawing
+                        .lock()
+                        .unwrap()
                         .set_history_element_visibility(&data.layer, data.index, data.visible)
                         .is_ok()
                     {

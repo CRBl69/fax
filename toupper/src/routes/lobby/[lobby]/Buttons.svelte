@@ -40,13 +40,13 @@
           };
         };
         image.src = base64img;
-        files = undefined
+        files = undefined;
       });
       fileReader.readAsDataURL(files[0]);
     } else {
       files = undefined;
     }
-  })
+  });
 </script>
 
 <div class="container">
@@ -86,7 +86,13 @@
     <div class="inner-container">
       <label for="brush-diffusion">Diffusion:</label>
       <div class="input-group">
-        <input id="brush-diffusion" type="range" min="0" max="100" bind:value={gs.brush.diffusion} />
+        <input
+          id="brush-diffusion"
+          type="range"
+          min="0"
+          max="100"
+          bind:value={gs.brush.diffusion}
+        />
         <input
           type="number"
           oninput={(e) => {
@@ -126,8 +132,7 @@
       <input type="checkbox" bind:checked={gs.bg} />
     </div>
   </div>
-  <div
-    class="inner-container">
+  <div class="inner-container">
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <label for="insertion">Insert picture:</label>
@@ -145,18 +150,26 @@
         }}
       />
     {:else}
-      <button class="button" onclick={() => {
-        gs.server?.instructionBox(gs.instructionBox!, gs.selectedLayer!);
-        gs.instructionBox = null;
-      }}>Confirm</button>
-      <button class="button" onclick={() => {gs.instructionBox = null; files = undefined}}>Abort</button>
+      <button
+        class="button"
+        onclick={() => {
+          gs.server?.instructionBox(gs.instructionBox!, gs.selectedLayer!);
+          gs.instructionBox = null;
+        }}>Confirm</button
+      >
+      <button
+        class="button"
+        onclick={() => {
+          gs.instructionBox = null;
+          files = undefined;
+        }}>Abort</button
+      >
     {/if}
   </div>
   <div class="inner-container">
     <a class="button" href={saveUrl}>Save DrInFo</a>
   </div>
-  <div
-    class="inner-container">
+  <div class="inner-container">
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
@@ -189,7 +202,7 @@
     display: flex;
     flex-direction: row;
     gap: 1em;
-    padding: .5em;
+    padding: 0.5em;
     flex-wrap: wrap;
     border-bottom: 1px solid var(--darkGrey);
   }

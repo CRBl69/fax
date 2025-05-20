@@ -50,7 +50,7 @@
       // Ctrl Y (or Ctrl Shift Z) handler
       if (
         ((e.key === "Z" && e.ctrlKey && e.shiftKey) || (e.key === "y" && e.ctrlKey)) &&
-          layer.historyIndex < layer.history.size
+        layer.historyIndex < layer.history.size
       ) {
         gs.server?.redo(gs.selectedLayer);
         console.log(`sent redo for layer ${name}`);
@@ -163,7 +163,7 @@
 
   // Browser event handlers.
   const onmousemoveimageinsertion = (e: MouseEvent) => {
-    let imageInsertion = (gs.instructionBox!.instruction as ImageInsertion);
+    let imageInsertion = gs.instructionBox!.instruction as ImageInsertion;
     if (e.ctrlKey) {
       imageInsertion.scale.x += (cursorPosition!.x - prevCursorPosition!.x) / 2000;
       imageInsertion.scale.y += (cursorPosition!.y - prevCursorPosition!.y) / 2000;
@@ -171,8 +171,12 @@
       imageInsertion.scale.x += (cursorPosition!.x - prevCursorPosition!.x) / 2000;
       imageInsertion.scale.y = imageInsertion.scale.x;
     } else if (e.altKey) {
-      const centerX = Math.round((imageInsertion.point.x * 2 + image!.width * imageInsertion.scale.x) / 2);
-      const centerY = Math.round((imageInsertion.point.y * 2 + image!.height * imageInsertion.scale.y) / 2);
+      const centerX = Math.round(
+        (imageInsertion.point.x * 2 + image!.width * imageInsertion.scale.x) / 2,
+      );
+      const centerY = Math.round(
+        (imageInsertion.point.y * 2 + image!.height * imageInsertion.scale.y) / 2,
+      );
       const aX = cursorPosition!.x;
       const aY = cursorPosition!.y;
       const bX = prevCursorPosition!.x;
@@ -186,7 +190,7 @@
       const cbMag = Math.sqrt(cbX ** 2 + cbY ** 2);
       const cos = product / (caMag * cbMag);
       const angleRadians = Math.acos(cos);
-      const angleDegrees = angleRadians / Math.PI * 180;
+      const angleDegrees = (angleRadians / Math.PI) * 180;
       const crossProduct = caX * cbY - caY * cbX;
       console.table({
         r: imageInsertion.rotate,
@@ -202,7 +206,7 @@
         angleDegrees,
         crossProduct,
       });
-      let rotate
+      let rotate;
       if (crossProduct > 0) {
         rotate = (imageInsertion.rotate - angleDegrees) % 360;
       } else {
@@ -219,12 +223,18 @@
   const onmousemovestroke = () => {
     (gs.instructionBox!.instruction as Stroke).points.push(cursorPosition!);
     tempDraw(gs.instructionBox!.uuid, gs.brush, prevCursorPosition!, cursorPosition!);
-    gs.server?.drawTemp(gs.brush, gs.instructionBox!.uuid, prevCursorPosition!, cursorPosition!, name);
+    gs.server?.drawTemp(
+      gs.brush,
+      gs.instructionBox!.uuid,
+      prevCursorPosition!,
+      cursorPosition!,
+      name,
+    );
   };
   const onmousemove = (element: HTMLDivElement, e: MouseEvent) => {
     updateCursorPosition(element, e);
     if (mousedown && gs.instructionBox) {
-      if("point" in gs.instructionBox.instruction) {
+      if ("point" in gs.instructionBox.instruction) {
         onmousemoveimageinsertion(e);
       } else if ("points" in gs.instructionBox.instruction) {
         onmousemovestroke();
@@ -234,10 +244,10 @@
 
   const onmousedownimageinsertion = (e: MouseEvent) => {
     if (e.button === 2) {
-      let imageInsertion = (gs.instructionBox!.instruction as ImageInsertion);
+      let imageInsertion = gs.instructionBox!.instruction as ImageInsertion;
       imageInsertion.scale.y = imageInsertion.scale.x;
     }
-  }
+  };
   const onmousedownstroke = (e: MouseEvent) => {
     if (e.button !== 0) return;
     gs.instructionBox = {
@@ -246,7 +256,7 @@
       instruction: {
         points: [],
         brush: gs.brush,
-      }
+      },
     };
     layerData.tmps.set(gs.instructionBox.uuid, { canvas: undefined, brush: gs.brush });
     if (e.shiftKey && lastPoint) {
@@ -255,12 +265,12 @@
     }
     (gs.instructionBox.instruction as Stroke).points.push(cursorPosition!);
     tempDraw(gs.instructionBox.uuid, gs.brush, prevCursorPosition!, cursorPosition!);
-  }
+  };
   const onmousedown = (element: HTMLDivElement, e: MouseEvent) => {
     updateCursorPosition(element, e);
     mousedown = true;
-    console.log(gs.instructionBox);;
-    if(gs.instructionBox && "point" in gs.instructionBox.instruction) {
+    console.log(gs.instructionBox);
+    if (gs.instructionBox && "point" in gs.instructionBox.instruction) {
       onmousedownimageinsertion(e);
     } else if (!gs.instructionBox) {
       onmousedownstroke(e);
@@ -268,16 +278,13 @@
   };
 
   const onmouseupstroke = () => {
-    console.log("omus")
+    console.log("omus");
     if (gs.instructionBox) {
-      gs.server?.instructionBox(
-        gs.instructionBox,
-        name,
-      );
+      gs.server?.instructionBox(gs.instructionBox, name);
       gs.instructionBox = null;
     }
     lastPoint = gs.cursorPosition!;
-  }
+  };
   const onmouseup = (element: HTMLDivElement, e: MouseEvent) => {
     updateCursorPosition(element, e);
     mousedown = false;
@@ -397,9 +404,13 @@
   });
 
   $effect(() => {
-    if (gs.instructionBox && "point" in gs.instructionBox.instruction && gs.selectedLayer === name) {
+    if (
+      gs.instructionBox &&
+      "point" in gs.instructionBox.instruction &&
+      gs.selectedLayer === name
+    ) {
       if (!layerData.tmps.get(gs.instructionBox.uuid)) {
-        lastUuid = gs.instructionBox.uuid
+        lastUuid = gs.instructionBox.uuid;
         layerData.tmps.set(gs.instructionBox.uuid, { canvas: undefined, brush: gs.brush });
       }
       const canvas = layerData.tmps.get(gs.instructionBox.uuid)!.canvas;
@@ -407,14 +418,14 @@
         const tempContext = canvas!.getContext("2d")!;
         tempContext.clearRect(0, 0, tempContext.canvas.width, tempContext.canvas.height);
         const imageInsertion = gs.instructionBox.instruction;
-        if(!image) {
+        if (!image) {
           image = new Image();
           new Promise((resolve, reject) => {
             image!.onload = resolve;
             image!.onerror = reject;
             image!.src = (gs.instructionBox!.instruction as ImageInsertion).base64;
           }).then(() => {
-              drawImage(image!, imageInsertion, tempContext);
+            drawImage(image!, imageInsertion, tempContext);
           });
         } else {
           drawImage(image!, imageInsertion, tempContext);
@@ -427,7 +438,7 @@
       image = undefined;
       lastUuid = undefined;
     }
-  })
+  });
 
   onMount(() => {
     // renderAt(layer.historyIndex);

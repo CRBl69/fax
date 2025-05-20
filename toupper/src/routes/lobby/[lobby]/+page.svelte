@@ -17,10 +17,7 @@
   let users: SvelteMap<string, Cursor | null> = $state(new SvelteMap());
 
   onMount(() => {
-    gs.server = new Server(
-      `${location.protocol.replace(/http/, "ws")}//${SERVER_URL}`,
-      username,
-    );
+    gs.server = new Server(`${location.protocol.replace(/http/, "ws")}//${SERVER_URL}`, username);
 
     gs.server.registerEventHandler("init", (data) => {
       for (const layerName of data.drawing.layer_order) {
