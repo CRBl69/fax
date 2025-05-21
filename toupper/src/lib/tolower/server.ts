@@ -8,13 +8,13 @@ import type {
   JoinMessage,
   LayerDownMessage,
   LayerUpMessage,
-  RedoMessage,
   SnapshotMessage,
   TempDrawMessage,
   SetHistoryElementVisibilityMessage,
   SetLayerVisibilityMessage,
-  UndoMessage,
   WebSocketMessage,
+  MoveInstructionMessage,
+  SetHistoryIndexMessage,
 } from "./server-types";
 import * as TypeConverter from "./type-converter";
 
@@ -29,8 +29,8 @@ interface EventMap {
   addlayer: CustomEvent<AddLayerMessage["AddLayer"]>;
   layerup: CustomEvent<LayerUpMessage["LayerUp"]>;
   layerdown: CustomEvent<LayerDownMessage["LayerDown"]>;
-  undo: CustomEvent<UndoMessage["Undo"]>;
-  redo: CustomEvent<RedoMessage["Redo"]>;
+  moveinstruction: CustomEvent<MoveInstructionMessage["MoveInstruction"]>;
+  sethistoryindex: CustomEvent<SetHistoryIndexMessage["SetHistoryIndex"]>;
   init: CustomEvent<InitMessage["Init"]>;
   join: CustomEvent<JoinMessage["Join"]>;
   tempdraw: CustomEvent<TempDrawMessage["TempDraw"]>;
@@ -101,16 +101,23 @@ export class Server extends typedEventTarget {
     }
   }
 
-  undo(layer: string) {
-    const message: UndoMessage = {
-      Undo: layer,
+  setHistoryIndex(layer: string, index: number) {
+    const message: SetHistoryIndexMessage = {
+      SetHistoryIndex: {
+        layer,
+        new_history_index: index,
+      },
     };
     this.send(message);
   }
 
-  redo(layer: string) {
-    const message: RedoMessage = {
-      Redo: layer,
+  moveInstruction(layer: string, oldInstructionIndex: number, newInstructionIndex: number) {
+    const message: MoveInstructionMessage = {
+      MoveInstruction: {
+        layer,
+        old_instruction_index: oldInstructionIndex,
+        new_instruction_index: newInstructionIndex,
+      },
     };
     this.send(message);
   }

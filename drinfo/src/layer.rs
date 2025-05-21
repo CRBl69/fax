@@ -9,7 +9,7 @@ use crate::{Instruction, InstructionBox};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Layer {
     snapshots: BTreeMap<usize, String>,
-    history: BTreeMap<usize, InstructionBox>,
+    history: Vec<InstructionBox>,
     history_index: usize,
     visible: bool,
 }
@@ -20,6 +20,8 @@ pub enum LayerError {
     MaxUndo,
     #[error("cannot redo anymore")]
     MaxRedo,
+    #[error("cannot move {0} to {1}")]
+    InvalidHistoryMove(usize, usize),
     #[error("history index {0} does not exist")]
     InvalidHistoryIndex(usize),
     #[error("invalid stroke, stroke must have at least 1 point")]
@@ -44,36 +46,35 @@ impl Layer {
         Default::default()
     }
 
-    /// Goes one step back in the history.
-    pub fn undo(&mut self) -> Result<(), LayerError> {
-        if self.history_index == 1 {
-            self.history_index = 0;
+    /// Set the history index.
+    pub fn set_history_index(&mut self, new_history_index: usize) -> Result<(), LayerError> {
+        if new_history_index <= self.history.len() {
+            self.history_index = new_history_index;
             Ok(())
-        } else if self.history.contains_key(&(self.history_index - 1)) {
-            self.history_index -= 1;
+        } else {
+            Err(LayerError::InvalidHistoryIndex(new_history_index))
+        }
+    }
+
+    /// Goes back in the history.
+    pub fn move_instruction(&mut self, old_instruction_index: usize, new_instruction_index: usize) -> Result<(), LayerError> {
+        if old_instruction_index > 0 && old_instruction_index <= self.history.len() && new_instruction_index > 0 && new_instruction_index <= self.history.len() {
+            let instruction = self.history.remove(old_instruction_index - 1);
+            self.history.insert(new_instruction_index - 1, instruction);
             Ok(())
         } else {
             Err(LayerError::MaxUndo)
         }
     }
 
-    /// Goes one step forward in the history.
-    pub fn redo(&mut self) -> Result<(), LayerError> {
-        if self.history.contains_key(&(self.history_index + 1)) {
-            self.history_index += 1;
-            Ok(())
-        } else {
-            Err(LayerError::MaxRedo)
-        }
-    }
-
-    /// Toggle an instruction in the history.
+    /// Set visibility of an instruction in the history.
     pub fn set_history_element_visibility(
         &mut self,
         index: usize,
         visible: bool,
     ) -> Result<(), LayerError> {
-        if let Some(history_element) = self.history.get_mut(&index) {
+        if index <= self.history.len() {
+            let history_element = self.history.get_mut(index - 1).unwrap();
             history_element.applied = visible;
             self.snapshots.split_off(&index);
             Ok(())
@@ -98,9 +99,9 @@ impl Layer {
                 return Err(LayerError::MinStrokePoints);
             }
         }
+        self.history.truncate(self.history_index);
+        self.history.push(instruction);
         self.history_index += 1;
-        self.history.split_off(&self.history_index);
-        self.history.insert(self.history_index, instruction);
         Ok(())
     }
 
@@ -116,11 +117,12 @@ impl Layer {
 
     /// Truncates the history before this index.
     pub fn truncate(&mut self, index: usize) -> Result<(), LayerError> {
-        if self.history.contains_key(&index) {
+        if index <= self.history.len() && index > 0 {
             if !self.snapshots.contains_key(&index) {
                 return Err(LayerError::NoSnapshot(index));
             }
-            self.history = self.history.split_off(&(index + 1));
+            self.history = self.history.split_off(index - 1);
+            self.snapshots = self.snapshots.split_off(&index);
             Ok(())
         } else {
             Err(LayerError::InvalidHistoryIndex(index))
@@ -133,7 +135,7 @@ impl Layer {
     }
 
     /// Returns all the instructions applied to this layer.
-    pub fn history(&self) -> &BTreeMap<usize, InstructionBox> {
+    pub fn history(&self) -> &Vec<InstructionBox> {
         &self.history
     }
 

@@ -60,9 +60,7 @@ export type Layer = {
   snapshots: {
     [n: number]: string;
   };
-  history: {
-    [n: number]: InstructionBox;
-  };
+  history: InstructionBox[];
   history_index: number;
   visible: boolean;
 };
@@ -134,12 +132,19 @@ export type SnapshotMessage = {
   };
 };
 
-export type UndoMessage = {
-  Undo: string;
+export type SetHistoryIndexMessage = {
+  SetHistoryIndex: {
+    layer: string,
+    new_history_index: number,
+  };
 };
 
-export type RedoMessage = {
-  Redo: string;
+export type MoveInstructionMessage = {
+  MoveInstruction: {
+    layer: string,
+    old_instruction_index: number,
+    new_instruction_index: number,
+  };
 };
 
 export type AddLayerMessage = {
@@ -168,8 +173,8 @@ export type WebSocketMessage =
   | AddLayerMessage
   | LayerUpMessage
   | LayerDownMessage
-  | UndoMessage
-  | RedoMessage
+  | SetHistoryIndexMessage
+  | MoveInstructionMessage
   | RequestInitMessage
   | InitMessage
   | JoinMessage

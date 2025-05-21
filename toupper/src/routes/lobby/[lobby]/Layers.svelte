@@ -4,7 +4,6 @@
   import LayerComponent from "./Layer.svelte";
   import type { SvelteMap } from "svelte/reactivity";
   import { gs } from "./state.svelte";
-  import { onMount } from "svelte";
   import PreviewLayer from "./PreviewLayer.svelte";
 
   interface Props {

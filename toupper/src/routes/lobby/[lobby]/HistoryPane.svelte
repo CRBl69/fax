@@ -9,11 +9,56 @@
   let { name }: Props = $props();
 
   let layer = $derived.by(() => gs.drawing.layers.get(name)!);
+
+  let dragged: {i: number, uuid: string} | null = $state(null);
+  let over: {i: number, uuid: string} | null = $state(null);
 </script>
 
 <div class="history">
-  {#each layer.history as [index, instruction] (instruction.uuid)}
-    <HistoryPaneItem {instruction} {index} layerName={name} historyIndex={layer.historyIndex} />
+  {#each layer.history as instruction, i (instruction.uuid)}
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div
+      class="item"
+      draggable={true}
+      ondragstart={() => {dragged = {i, uuid: instruction.uuid}}}
+      ondragend={() => {dragged = null; over = null}}
+      ondragenter={() => {over = {i, uuid: instruction.uuid}}}
+      ondragexit={() => {over = null}}
+    >
+      <HistoryPaneItem
+        {instruction}
+        index={i+1}
+        layerName={name}
+        historyIndex={layer.historyIndex}
+      />
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div
+        ondrop={() => {
+          const oldIndex = dragged!.i + 1;
+          const newIndex = over!.i + 1;
+          gs.server?.moveInstruction(name, oldIndex, newIndex);
+        }}
+        ondragover={(e) => {e.preventDefault()}}
+        class={(over?.i === i && dragged?.i !== i && dragged?.i !== i - 1 ? "over" : "not-over") + " dragarea dragarea-top"}
+      >
+        Drop here
+      </div>
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div
+        ondrop={() => {
+          const oldIndex = dragged!.i + 1;
+          let newIndex = over!.i + 2;
+          if (dragged!.i < over!.i) {
+            newIndex -= 1;
+          }
+          gs.server?.moveInstruction(name, oldIndex, newIndex);
+        }}
+        ondragover={(e) => {e.preventDefault()}}
+        class={(over?.i === i && dragged?.i !== i && dragged?.i !== i + 1 ? "over" : "not-over") + " dragarea dragarea-bottom"}
+      >
+        Drop here
+      </div>
+    </div>
   {/each}
 </div>
 
@@ -23,5 +68,32 @@
     flex-direction: column;
     overflow: scroll;
     height: 100%;
+  }
+  .item {
+    position: relative;
+  }
+  .dragarea {
+    position: absolute;
+    z-index: 5;
+    height: 2em;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    text-align: center;
+    place-content: center;
+  }
+  .over {
+    display: unset;
+  }
+  .not-over {
+    display: none;
+  }
+  .description {
+    user-select: none;
+  }
+  .dragarea-bottom {
+    bottom: -1em;
+  }
+  .dragarea-top {
+    top: -1em;
   }
 </style>

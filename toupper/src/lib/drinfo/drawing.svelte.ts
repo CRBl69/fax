@@ -8,6 +8,7 @@ export const LAYER_REDO_ERROR = "Layer cannot be redone anymore.";
 export const LAYER_DOWN_ERROR = "Layer cannot be moved down anymore.";
 export const LAYER_UP_ERROR = "Layer cannot be moved up anymore.";
 export const LAYER_HISTORY_ERROR = "Layer history element visibility cannot be set.";
+export const LAYER_SET_HISTORY_INDEX_ERROR = "New layer history index is invalid.";
 
 export interface DrawingData {
   layers: SvelteMap<string, Layer>;
@@ -79,10 +80,10 @@ export class Drawing {
     if (!layer) {
       throw LAYER_NOT_FOUND_ERROR;
     }
-    if (!layer.history.has(index)) {
+    if (index > layer.history.length) {
       throw LAYER_HISTORY_ERROR;
     }
-    layer.history.get(index)!.applied = visible;
+    layer.history[index - 1]!.applied = visible;
     for (const snapshotIndex of layer.snapshots.keys()) {
       if (snapshotIndex >= index) {
         layer.snapshots.delete(snapshotIndex);
@@ -95,13 +96,14 @@ export class Drawing {
     if (!layer) {
       throw LAYER_NOT_FOUND_ERROR;
     }
+    layer.history = layer.history.slice(0, layer.historyIndex);
     layer.historyIndex += 1;
-    for (const key of layer.history.keys()) {
-      if (key > layer.historyIndex) {
-        layer.history.delete(key);
+    layer.history.push(instructionBox);
+    for (const snapshotIndex of layer.snapshots.keys()) {
+      if (snapshotIndex >= layer.historyIndex) {
+        layer.snapshots.delete(snapshotIndex);
       }
     }
-    layer.history.set(layer.historyIndex, instructionBox);
   }
 
   snapshot(name: string, data: string, index: number) {
@@ -145,10 +147,11 @@ export class Drawing {
     if (!layer) {
       throw LAYER_NOT_FOUND_ERROR;
     }
-    if (!layer.history.has(layer.historyIndex - 1) && layer.historyIndex != 1) {
+    if (layer.historyIndex > 0) {
+      layer.historyIndex -= 1;
+    } else {
       throw LAYER_UNDO_ERROR;
     }
-    layer.historyIndex -= 1;
   }
 
   redo(layerName: string) {
@@ -156,9 +159,35 @@ export class Drawing {
     if (!layer) {
       throw LAYER_NOT_FOUND_ERROR;
     }
-    if (!layer.history.has(layer.historyIndex + 1)) {
+    if (layer.historyIndex < layer.history.length) {
+      layer.historyIndex += 1;
+    } else {
       throw LAYER_REDO_ERROR;
     }
-    layer.historyIndex += 1;
+  }
+
+  setHistoryIndex(layerName: string, newHistoryIndex: number) {
+    const layer = this.layers.get(layerName);
+    if (!layer) {
+      throw LAYER_NOT_FOUND_ERROR;
+    }
+    if (newHistoryIndex >= 0 && newHistoryIndex <= layer.history.length) {
+      layer.historyIndex = newHistoryIndex;
+    } else {
+      throw LAYER_SET_HISTORY_INDEX_ERROR;
+    }
+  }
+
+  moveInstruction(layerName: string, oldInstructionIndex: number, newInstructionIndex: number) {
+    const layer = this.layers.get(layerName);
+    if (!layer) {
+      throw LAYER_NOT_FOUND_ERROR;
+    }
+    if (newInstructionIndex >= 0 && newInstructionIndex <= layer.history.length && oldInstructionIndex >= 0 && oldInstructionIndex <= layer.history.length) {
+      const [intruction] = layer.history.splice(oldInstructionIndex - 1, 1);
+      layer.history.splice(newInstructionIndex - 1, 0, intruction);
+    } else {
+      throw LAYER_SET_HISTORY_INDEX_ERROR;
+    }
   }
 }

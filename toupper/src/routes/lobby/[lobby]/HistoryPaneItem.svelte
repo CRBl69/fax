@@ -65,7 +65,17 @@
         x: (p.x - deltaX - stroke.brush.width / 2) * magnifier,
         y: (p.y - deltaY - stroke.brush.width / 2) * magnifier,
       })),
-      brush: structuredClone(stroke.brush),
+      brush: {
+          brushShape: {
+              shape: stroke.brush.brushShape.shape,
+              customShape: stroke.brush.brushShape.customShape,
+          },
+          color: stroke.brush.color,
+          width: stroke.brush.width,
+          diffusion: stroke.brush.diffusion,
+          opacity: stroke.brush.opacity,
+          erase: stroke.brush.erase,
+      },
     };
     newStroke.brush.width *= magnifier;
 
@@ -150,7 +160,7 @@
     onmouseout={() => (gs.hoveredInstruction = null)}
   >
   </canvas>
-  <div>
+  <div class="description">
     {#if "points" in instruction.instruction}
       Stroke
     {:else if "selection" in instruction.instruction}
@@ -177,6 +187,7 @@
     justify-content: space-between;
     align-items: center;
     height: 3rem;
+    position: relative;
   }
   .future {
     color: var(--lightGrey);

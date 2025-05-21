@@ -181,22 +181,22 @@ impl Drawing {
         }
     }
 
-    /// Undo an action in the given layer.
-    pub fn undo(&mut self, layer_name: &str) -> Result<(), DrawingError> {
+    /// Set the history index of the given layer.
+    pub fn set_history_index(&mut self, layer_name: &str, new_history_index: usize) -> Result<(), DrawingError> {
         let layer = self.layers.get_mut(layer_name);
         if let Some(l) = layer {
-            l.undo()?;
+            l.set_history_index(new_history_index)?;
             Ok(())
         } else {
             Err(DrawingError::LayerNotFound(layer_name.to_string()))
         }
     }
 
-    /// Redo an action in the given layer.
-    pub fn redo(&mut self, layer_name: &str) -> Result<(), DrawingError> {
+    /// Move an intstruction in the given layer.
+    pub fn move_instruction(&mut self, layer_name: &str, old_instruction_index: usize, new_instruction_index: usize) -> Result<(), DrawingError> {
         let layer = self.layers.get_mut(layer_name);
         if let Some(l) = layer {
-            l.redo()?;
+            l.move_instruction(old_instruction_index, new_instruction_index)?;
             Ok(())
         } else {
             Err(DrawingError::LayerNotFound(layer_name.to_string()))

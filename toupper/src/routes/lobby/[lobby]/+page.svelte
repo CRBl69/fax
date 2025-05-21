@@ -63,12 +63,12 @@
       users.set(data, null);
     });
 
-    gs.server.registerEventHandler("undo", (data) => {
-      gs.drawing.undo(data);
+    gs.server.registerEventHandler("sethistoryindex", (data) => {
+      gs.drawing.setHistoryIndex(data.layer, data.new_history_index);
     });
 
-    gs.server.registerEventHandler("redo", (data) => {
-      gs.drawing.redo(data);
+    gs.server.registerEventHandler("moveinstruction", (data) => {
+      gs.drawing.moveInstruction(data.layer, data.old_instruction_index, data.new_instruction_index);
     });
 
     gs.server.registerEventHandler("snapshot", ({ layer, data, index }) => {

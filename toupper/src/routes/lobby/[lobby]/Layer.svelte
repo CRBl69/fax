@@ -6,10 +6,10 @@
   import {
     FromServer,
     type InstructionMessage,
+    type MoveInstructionMessage,
     type SetHistoryElementVisibilityMessage,
     type TempDrawMessage,
   } from "$lib/tolower";
-  import { SvelteMap } from "svelte/reactivity";
 
   interface Props {
     name: string;
@@ -49,23 +49,23 @@
       // Ctrl Y (or Ctrl Shift Z) handler
       if (
         ((e.key === "Z" && e.ctrlKey && e.shiftKey) || (e.key === "y" && e.ctrlKey)) &&
-        layer.historyIndex < layer.history.size
+        layer.historyIndex < layer.history.length
       ) {
-        gs.server?.redo(gs.selectedLayer);
+        gs.server?.setHistoryIndex(gs.selectedLayer, layer.historyIndex + 1);
         console.log(`sent redo for layer ${name}`);
       }
       // Ctrl Z handler
       if (e.key === "z" && e.ctrlKey && !e.shiftKey && layer.historyIndex > 0) {
-        gs.server?.undo(gs.selectedLayer);
+        gs.server?.setHistoryIndex(gs.selectedLayer, layer.historyIndex - 1);
         console.log(`sent undo for layer ${name}`);
       }
     }
   };
 
-  const renderAt = async (index: number) => {
+  const renderFrom = async (index: number) => {
     const renderFromCurrentIndex = async () => {
       for (let i = currentIndex + 1; i <= layer.historyIndex; i++) {
-        const instructionBox = layer.history.get(i)!;
+        const instructionBox = layer.history[i-1]!;
         await pushToHistory(instructionBox);
         if (currentIndex % 5 == 0) {
           const historyContext = layerData.historyContexts.get(currentIndex)!;
@@ -343,7 +343,15 @@
     data: CustomEvent<SetHistoryElementVisibilityMessage["SetHistoryElementVisibility"]>,
   ) => {
     if (data.detail.layer === name) {
-      renderAt(data.detail.index);
+      renderFrom(data.detail.index);
+    }
+  };
+
+  const onmoveinstruction = (
+    data: CustomEvent<MoveInstructionMessage["MoveInstruction"]>,
+  ) => {
+    if (data.detail.layer === name) {
+      renderFrom(Math.min(data.detail.old_instruction_index, data.detail.new_instruction_index) - 1);
     }
   };
 
@@ -351,11 +359,13 @@
     gs.server?.addEventListener("instruction", oninstruction);
     gs.server?.addEventListener("tempdraw", ontempdraw);
     gs.server?.addEventListener("sethistoryelementvisibility", onsethistoryelementvisibility);
+    gs.server?.addEventListener("moveinstruction", onmoveinstruction);
 
     return () => {
       gs.server?.removeEventListener("instruction", oninstruction);
       gs.server?.removeEventListener("tempdraw", ontempdraw);
       gs.server?.removeEventListener("sethistoryelementvisibility", onsethistoryelementvisibility);
+      gs.server?.removeEventListener("moveinstruction", onmoveinstruction);
     };
   });
 
@@ -371,7 +381,7 @@
   // If historyContexts is not initialized yet, it must be done with a clear context.
   $effect(() => {
     if (layer.historyIndex != untrack(() => currentIndex))
-      untrack(() => renderAt(layer.historyIndex));
+      untrack(() => renderFrom(layer.historyIndex));
   });
 
   $effect(() => {

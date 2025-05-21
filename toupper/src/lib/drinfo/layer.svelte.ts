@@ -3,7 +3,7 @@ import type { InstructionBox } from "./instruction";
 
 export class Layer {
   snapshots = $state(new SvelteMap<number, string>());
-  history = $state(new SvelteMap<number, InstructionBox>());
+  history: InstructionBox[] = $state([]);
   historyIndex = $state(0);
   visible = $state(true);
 }

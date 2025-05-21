@@ -15,8 +15,8 @@ pub enum WebSocketMessage {
     AddLayer(String),
     LayerUp(String),
     LayerDown(String),
-    Undo(String),
-    Redo(String),
+    SetHistoryIndex(SetHistoryIndexData),
+    MoveInstruction(MoveInstructionData),
     RequestInit,
     Init(InitData),
     Join(String),
@@ -35,6 +35,19 @@ pub struct InstructionData {
 pub struct SetLayerVisibilityData {
     pub layer: String,
     pub visible: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct SetHistoryIndexData {
+    pub layer: String,
+    pub new_history_index: usize,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct MoveInstructionData {
+    pub layer: String,
+    pub old_instruction_index: usize,
+    pub new_instruction_index: usize,
 }
 
 #[derive(Serialize, Deserialize, Clone)]

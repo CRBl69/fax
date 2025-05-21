@@ -73,8 +73,8 @@ impl WebSocketHandler {
                         .then(|_, _, _| fut::ready(()))
                         .wait(ctx);
                 }
-                WebSocketMessage::Undo(layer_name) => {
-                    if self.drawing.lock().unwrap().undo(&layer_name).is_ok() {
+                WebSocketMessage::SetHistoryIndex(data) => {
+                    if self.drawing.lock().unwrap().set_history_index(&data.layer, data.new_history_index).is_ok() {
                         self.server
                             .send(m)
                             .into_actor(self)
@@ -82,8 +82,8 @@ impl WebSocketHandler {
                             .wait(ctx);
                     }
                 }
-                WebSocketMessage::Redo(layer_name) => {
-                    if self.drawing.lock().unwrap().redo(&layer_name).is_ok() {
+                WebSocketMessage::MoveInstruction(data) => {
+                    if self.drawing.lock().unwrap().move_instruction(&data.layer, data.old_instruction_index, data.new_instruction_index).is_ok() {
                         self.server
                             .send(m)
                             .into_actor(self)

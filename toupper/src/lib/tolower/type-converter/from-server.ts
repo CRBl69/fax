@@ -85,8 +85,8 @@ export class FromServer {
     const drinfoLayer = new DrInFo.Layer();
     drinfoLayer.historyIndex = layer.history_index;
     drinfoLayer.visible = layer.visible;
-    for (const [index, instructionBox] of Object.entries(layer.history)) {
-      drinfoLayer.history.set(parseInt(index), FromServer.instructionBox(instructionBox));
+    for (const instructionBox of layer.history) {
+      drinfoLayer.history.push(FromServer.instructionBox(instructionBox));
     }
     for (const [index, snapshot] of Object.entries(layer.snapshots)) {
       drinfoLayer.snapshots.set(parseInt(index), snapshot);
