@@ -14,3 +14,10 @@ export type Dimensions = {
   width: number;
   height: number;
 };
+
+export enum Tool {
+  Stroke,
+  InsertImage,
+  PickColor,
+  Bucket,
+}

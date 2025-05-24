@@ -22,7 +22,8 @@ pub enum WebSocketMessage {
     Join(String),
     TempDraw(TempDrawData),
     Snapshot(SnapshotData),
-    SetHistoryElementVisibility(SetHistoryElementData),
+    SetInstructionVisibility(SetInstructionVisibilityData),
+    RemoveInstruction(RemoveInstructionData),
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -87,10 +88,16 @@ pub struct SnapshotData {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct SetHistoryElementData {
+pub struct SetInstructionVisibilityData {
     pub layer: String,
     pub index: usize,
     pub visible: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct RemoveInstructionData {
+    pub layer: String,
+    pub index: usize,
 }
 
 impl CursorDataOut {

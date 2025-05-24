@@ -1,6 +1,6 @@
-import type { ImageInsertion, Instruction, Stroke } from "$lib/drinfo";
+import type { Bucket, ImageInsertion, Instruction, Stroke } from "$lib/drinfo";
 import { ToServer } from "$lib/tolower";
-import { drawImage } from "./util";
+import { drawImage, rgbToStr, strToRgb } from "./util";
 
 export const stroke = (
   stroke: Stroke,
@@ -25,6 +25,7 @@ export const stroke = (
   const start = stroke.points[0];
   context.beginPath();
   context.moveTo(start.x, start.y);
+  context.lineTo(start.x, start.y);
   for (let i = 1; i < stroke.points.length; i++) {
     context.lineTo(stroke.points[i].x, stroke.points[i].y);
   }
@@ -51,14 +52,129 @@ export const insertImage = async (
   drawImage(image, imageInsertion, context);
 };
 
+export const bucket = (
+  bucket: Bucket,
+  context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+) => {
+  const imgd = context.getImageData(bucket.point.x, bucket.point.y, 1, 1);
+  const colorToPaint = {
+    r: imgd.data[0],
+    g: imgd.data[1],
+    b: imgd.data[2],
+    a: imgd.data[3],
+  };
+
+  const imageData = context.getImageData(0, 0, context.canvas.width, context.canvas.height);
+  const fillColor = {
+    ...strToRgb(bucket.brush.color),
+    a: (bucket.brush.opacity * 255) / 100000,
+  };
+
+  const colorMatch = (pixelPos: number) => {
+    const r = imageData.data[pixelPos];
+    const g = imageData.data[pixelPos + 1];
+    const b = imageData.data[pixelPos + 2];
+    const a = imageData.data[pixelPos + 3];
+    let tolerance = 10;
+    return (
+      Math.abs(r - colorToPaint.r) < tolerance &&
+      Math.abs(g - colorToPaint.g) < tolerance &&
+      Math.abs(b - colorToPaint.b) < tolerance &&
+      Math.abs(a - colorToPaint.a) < tolerance
+    );
+  };
+
+  const colorPixel = (pixelPos: number) => {
+    imageData.data[pixelPos] = fillColor.r;
+    imageData.data[pixelPos + 1] = fillColor.g;
+    imageData.data[pixelPos + 2] = fillColor.b;
+    imageData.data[pixelPos + 3] = fillColor.a;
+  };
+
+  let pixelStack = [[Math.floor(bucket.point.x), Math.floor(bucket.point.y)]];
+
+  let atTheEnd: number[] = [];
+  const pushSurroundingToAtTheEnd = (pixelPos: number) => {
+    atTheEnd.push(pixelPos + 4);
+    atTheEnd.push(pixelPos - 4);
+    atTheEnd.push(pixelPos + context.canvas.width * 4);
+    atTheEnd.push(pixelPos - context.canvas.width * 4);
+  };
+
+  while (pixelStack.length) {
+    let newPos, x, y, pixelPos, reachLeft, reachRight;
+    newPos = pixelStack.pop();
+    x = newPos![0];
+    y = newPos![1];
+
+    pixelPos = (y * context.canvas.width + x) * 4;
+    while (y-- >= 0 && colorMatch(pixelPos)) {
+      pixelPos -= context.canvas.width * 4;
+    }
+    if (!colorMatch(pixelPos)) {
+      pushSurroundingToAtTheEnd(pixelPos);
+    }
+    pixelPos += context.canvas.width * 4;
+    ++y;
+    reachLeft = false;
+    reachRight = false;
+    while (y++ < context.canvas.height - 1 && colorMatch(pixelPos)) {
+      colorPixel(pixelPos);
+
+      if (x > 0) {
+        if (colorMatch(pixelPos - 4)) {
+          if (!reachLeft) {
+            pixelStack.push([x - 1, y]);
+            reachLeft = true;
+          }
+        } else {
+          if (!colorMatch(pixelPos)) {
+            pushSurroundingToAtTheEnd(pixelPos);
+          }
+          if (reachLeft) {
+            reachLeft = false;
+          }
+        }
+      }
+
+      if (x < context.canvas.width - 1) {
+        if (colorMatch(pixelPos + 4)) {
+          if (!reachRight) {
+            pixelStack.push([x + 1, y]);
+            reachRight = true;
+          }
+        } else {
+          if (!colorMatch(pixelPos)) {
+            pushSurroundingToAtTheEnd(pixelPos);
+          }
+          if (reachRight) {
+            reachRight = false;
+          }
+        }
+      }
+
+      pixelPos += context.canvas.width * 4;
+    }
+    if (!colorMatch(pixelPos)) {
+      pushSurroundingToAtTheEnd(pixelPos);
+    }
+  }
+  for (const pixel of atTheEnd) {
+    colorPixel(pixel);
+  }
+  context.putImageData(imageData, 0, 0);
+};
+
 export const applyInstruction = async (
   instruction: Instruction,
   context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
   imageCache: Map<string, HTMLImageElement>,
 ) => {
-  if ("point" in instruction) {
+  if ("point" in instruction && "base64" in instruction) {
     await insertImage(instruction, context, imageCache);
   } else if ("points" in instruction) {
     stroke(instruction, context);
+  } else if ("point" in instruction && "brush" in instruction) {
+    bucket(instruction, context);
   }
 };

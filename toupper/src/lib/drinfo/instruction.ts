@@ -19,7 +19,12 @@ export type ImageInsertion = {
   rotate: number;
 };
 
-export type Instruction = Stroke | Motion | ImageInsertion;
+export type Bucket = {
+  point: Point;
+  brush: Brush;
+};
+
+export type Instruction = Stroke | Motion | ImageInsertion | Bucket;
 
 export type InstructionBox = {
   instruction: Instruction;

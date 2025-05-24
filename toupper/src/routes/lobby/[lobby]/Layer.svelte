@@ -1,13 +1,22 @@
 <script lang="ts">
   import type { ImageInsertion, InstructionBox, Point, Stroke } from "$lib/drinfo";
-  import { drawImage, getX, getY, applyInstruction, stroke } from "$lib/toupper";
+  import {
+    drawImage,
+    getX,
+    getY,
+    applyInstruction,
+    stroke,
+    Tool,
+    rgbToStr,
+    strToRgb,
+  } from "$lib/toupper";
   import { onMount, untrack } from "svelte";
   import { gs } from "./state.svelte";
   import {
     FromServer,
     type InstructionMessage,
     type MoveInstructionMessage,
-    type SetHistoryElementVisibilityMessage,
+    type SetInstructionVisibilityMessage,
     type TempDrawMessage,
   } from "$lib/tolower";
 
@@ -65,7 +74,7 @@
   const renderFrom = async (index: number) => {
     const renderFromCurrentIndex = async () => {
       for (let i = currentIndex + 1; i <= layer.historyIndex; i++) {
-        const instructionBox = layer.history[i-1]!;
+        const instructionBox = layer.history[i - 1]!;
         await pushToHistory(instructionBox);
         if (currentIndex % 5 == 0) {
           const historyContext = layerData.historyContexts.get(currentIndex)!;
@@ -135,8 +144,8 @@
   };
 
   const updateCursorPosition = (element: HTMLElement, e: MouseEvent) => {
-    const x = getX(element, e, gs.ratio);
-    const y = getY(element, e, gs.ratio);
+    const x = Math.floor(getX(element, e, gs.ratio));
+    const y = Math.floor(getY(element, e, gs.ratio));
     prevCursorPosition = cursorPosition;
     cursorPosition = { x, y };
   };
@@ -242,12 +251,33 @@
     (gs.instructionBox.instruction as Stroke).points.push(cursorPosition!);
     tempDraw(gs.instructionBox);
   };
+  const onmousedownbucket = () => {
+    gs.server?.instructionBox(
+      {
+        instruction: {
+          point: cursorPosition!,
+          brush: gs.brush,
+        },
+        uuid: crypto.randomUUID(),
+        applied: true,
+      },
+      name,
+    );
+  };
   const onmousedown = (element: HTMLDivElement, e: MouseEvent) => {
     updateCursorPosition(element, e);
     mousedown = true;
-    if (gs.instructionBox && "point" in gs.instructionBox.instruction) {
+    if (gs.tool === Tool.PickColor) {
+      const imgd = context.getImageData(cursorPosition!.x, cursorPosition!.y, 1, 1);
+      const colorStr = rgbToStr(imgd.data[0], imgd.data[1], imgd.data[2]);
+      gs.brush.opacity = Math.floor((imgd.data[3] * 100000) / 255);
+      gs.brush.color = colorStr;
+      gs.tool = Tool.Stroke;
+    } else if (gs.tool === Tool.InsertImage) {
       onmousedownimageinsertion(e);
-    } else if (!gs.instructionBox) {
+    } else if (gs.tool === Tool.Bucket) {
+      onmousedownbucket();
+    } else if (gs.tool === Tool.Stroke && !gs.instructionBox) {
       onmousedownstroke(e);
     }
   };
@@ -262,9 +292,9 @@
   const onmouseup = (element: HTMLDivElement, e: MouseEvent) => {
     updateCursorPosition(element, e);
     mousedown = false;
-    if (gs.instructionBox && "point" in gs.instructionBox.instruction) {
+    if (gs.tool === Tool.InsertImage) {
       // Nothing to do on mouse up in image insertion mode.
-    } else if (gs.instructionBox && "points" in gs.instructionBox.instruction) {
+    } else if (gs.instructionBox && gs.tool === Tool.Stroke) {
       onmouseupstroke();
     }
   };
@@ -339,32 +369,32 @@
     }
   };
 
-  const onsethistoryelementvisibility = (
-    data: CustomEvent<SetHistoryElementVisibilityMessage["SetHistoryElementVisibility"]>,
+  const onsetinstructionvisibility = (
+    data: CustomEvent<SetInstructionVisibilityMessage["SetInstructionVisibility"]>,
   ) => {
     if (data.detail.layer === name) {
       renderFrom(data.detail.index);
     }
   };
 
-  const onmoveinstruction = (
-    data: CustomEvent<MoveInstructionMessage["MoveInstruction"]>,
-  ) => {
+  const onmoveinstruction = (data: CustomEvent<MoveInstructionMessage["MoveInstruction"]>) => {
     if (data.detail.layer === name) {
-      renderFrom(Math.min(data.detail.old_instruction_index, data.detail.new_instruction_index) - 1);
+      renderFrom(
+        Math.min(data.detail.old_instruction_index, data.detail.new_instruction_index) - 1,
+      );
     }
   };
 
   $effect(() => {
     gs.server?.addEventListener("instruction", oninstruction);
     gs.server?.addEventListener("tempdraw", ontempdraw);
-    gs.server?.addEventListener("sethistoryelementvisibility", onsethistoryelementvisibility);
+    gs.server?.addEventListener("setinstructionvisibility", onsetinstructionvisibility);
     gs.server?.addEventListener("moveinstruction", onmoveinstruction);
 
     return () => {
       gs.server?.removeEventListener("instruction", oninstruction);
       gs.server?.removeEventListener("tempdraw", ontempdraw);
-      gs.server?.removeEventListener("sethistoryelementvisibility", onsethistoryelementvisibility);
+      gs.server?.removeEventListener("setinstructionvisibility", onsetinstructionvisibility);
       gs.server?.removeEventListener("moveinstruction", onmoveinstruction);
     };
   });
@@ -385,20 +415,16 @@
   });
 
   $effect(() => {
-    if (
-      gs.instructionBox &&
-      "point" in gs.instructionBox.instruction &&
-      gs.selectedLayer === name
-    ) {
-      if (!layerData.tmps.get(gs.instructionBox.uuid)) {
-        lastUuid = gs.instructionBox.uuid;
-        layerData.tmps.set(gs.instructionBox.uuid, { canvas: undefined, brush: gs.brush });
+    if (gs.tool === Tool.InsertImage && gs.selectedLayer === name) {
+      if (!layerData.tmps.get(gs.instructionBox!.uuid)) {
+        lastUuid = gs.instructionBox!.uuid;
+        layerData.tmps.set(gs.instructionBox!.uuid, { canvas: undefined, brush: gs.brush });
       }
-      const canvas = layerData.tmps.get(gs.instructionBox.uuid)!.canvas;
+      const canvas = layerData.tmps.get(gs.instructionBox!.uuid)!.canvas;
       if (canvas) {
         const tempContext = canvas!.getContext("2d")!;
         tempContext.clearRect(0, 0, tempContext.canvas.width, tempContext.canvas.height);
-        const imageInsertion = gs.instructionBox.instruction;
+        const imageInsertion = gs.instructionBox!.instruction as ImageInsertion;
         if (!image) {
           image = new Image();
           new Promise((resolve, reject) => {

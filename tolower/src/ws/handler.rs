@@ -74,7 +74,13 @@ impl WebSocketHandler {
                         .wait(ctx);
                 }
                 WebSocketMessage::SetHistoryIndex(data) => {
-                    if self.drawing.lock().unwrap().set_history_index(&data.layer, data.new_history_index).is_ok() {
+                    if self
+                        .drawing
+                        .lock()
+                        .unwrap()
+                        .set_history_index(&data.layer, data.new_history_index)
+                        .is_ok()
+                    {
                         self.server
                             .send(m)
                             .into_actor(self)
@@ -83,7 +89,17 @@ impl WebSocketHandler {
                     }
                 }
                 WebSocketMessage::MoveInstruction(data) => {
-                    if self.drawing.lock().unwrap().move_instruction(&data.layer, data.old_instruction_index, data.new_instruction_index).is_ok() {
+                    if self
+                        .drawing
+                        .lock()
+                        .unwrap()
+                        .move_instruction(
+                            &data.layer,
+                            data.old_instruction_index,
+                            data.new_instruction_index,
+                        )
+                        .is_ok()
+                    {
                         self.server
                             .send(m)
                             .into_actor(self)
@@ -168,12 +184,27 @@ impl WebSocketHandler {
                             .wait(ctx);
                     }
                 }
-                WebSocketMessage::SetHistoryElementVisibility(data) => {
+                WebSocketMessage::SetInstructionVisibility(data) => {
                     if self
                         .drawing
                         .lock()
                         .unwrap()
-                        .set_history_element_visibility(&data.layer, data.index, data.visible)
+                        .set_instruction_visibility(&data.layer, data.index, data.visible)
+                        .is_ok()
+                    {
+                        self.server
+                            .send(m)
+                            .into_actor(self)
+                            .then(|_, _, _| fut::ready(()))
+                            .wait(ctx);
+                    }
+                }
+                WebSocketMessage::RemoveInstruction(data) => {
+                    if self
+                        .drawing
+                        .lock()
+                        .unwrap()
+                        .remove_instruction(&data.layer, data.index)
                         .is_ok()
                     {
                         self.server

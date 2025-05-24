@@ -2,14 +2,15 @@ use core::fmt::Debug;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{ImageInsertion, Motion, Stroke};
+use crate::{Bucket, ImageInsertion, Motion, Stroke};
 
 /// An instruction.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Instruction {
-    Stroke(Stroke),
-    Motion(Motion),
+    Bucket(Bucket),
     ImageInsertion(ImageInsertion),
+    Motion(Motion),
+    Stroke(Stroke),
 }
 
 /// An instruction box.

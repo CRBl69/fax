@@ -57,8 +57,16 @@ impl Layer {
     }
 
     /// Goes back in the history.
-    pub fn move_instruction(&mut self, old_instruction_index: usize, new_instruction_index: usize) -> Result<(), LayerError> {
-        if old_instruction_index > 0 && old_instruction_index <= self.history.len() && new_instruction_index > 0 && new_instruction_index <= self.history.len() {
+    pub fn move_instruction(
+        &mut self,
+        old_instruction_index: usize,
+        new_instruction_index: usize,
+    ) -> Result<(), LayerError> {
+        if old_instruction_index > 0
+            && old_instruction_index <= self.history.len()
+            && new_instruction_index > 0
+            && new_instruction_index <= self.history.len()
+        {
             let instruction = self.history.remove(old_instruction_index - 1);
             self.history.insert(new_instruction_index - 1, instruction);
             Ok(())
@@ -68,7 +76,7 @@ impl Layer {
     }
 
     /// Set visibility of an instruction in the history.
-    pub fn set_history_element_visibility(
+    pub fn set_instruction_visibility(
         &mut self,
         index: usize,
         visible: bool,
@@ -76,7 +84,7 @@ impl Layer {
         if index <= self.history.len() {
             let history_element = self.history.get_mut(index - 1).unwrap();
             history_element.applied = visible;
-            self.snapshots.split_off(&index);
+            self.invalidate_snapshots(&index);
             Ok(())
         } else {
             Err(LayerError::InvalidHistoryIndex(index))
@@ -105,6 +113,20 @@ impl Layer {
         Ok(())
     }
 
+    /// Remove an instruction from history.
+    pub fn remove_instruction(&mut self, index: usize) -> Result<(), LayerError> {
+        if index > 0 && index <= self.history.len() {
+            if index <= self.history_index {
+                self.history_index -= 1;
+            }
+            self.history.remove(index - 1);
+            self.invalidate_snapshots(&index);
+            Ok(())
+        } else {
+            Err(LayerError::InvalidHistoryIndex(index))
+        }
+    }
+
     /// Set the layer visibility.
     pub fn set_visibility(&mut self, visible: bool) {
         self.visible = visible;
@@ -118,11 +140,13 @@ impl Layer {
     /// Truncates the history before this index.
     pub fn truncate(&mut self, index: usize) -> Result<(), LayerError> {
         if index <= self.history.len() && index > 0 {
-            if !self.snapshots.contains_key(&index) {
+            let Some(snapshot) = self.snapshots.remove(&index) else {
                 return Err(LayerError::NoSnapshot(index));
-            }
+            };
             self.history = self.history.split_off(index - 1);
-            self.snapshots = self.snapshots.split_off(&index);
+            self.snapshots.clear();
+            self.snapshots.insert(0, snapshot);
+            self.history_index -= index;
             Ok(())
         } else {
             Err(LayerError::InvalidHistoryIndex(index))
@@ -142,5 +166,9 @@ impl Layer {
     /// Returns the current history index.
     pub fn history_index(&self) -> usize {
         self.history_index
+    }
+
+    fn invalidate_snapshots(&mut self, index: &usize) {
+        self.snapshots = self.snapshots.split_off(index);
     }
 }

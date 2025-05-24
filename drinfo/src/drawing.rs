@@ -113,6 +113,20 @@ impl Drawing {
             Err(DrawingError::LayerNotFound(layer_name.to_string()))
         }
     }
+    /// Remove an instruction from a layer's history.
+    pub fn remove_instruction(
+        &mut self,
+        layer_name: &str,
+        index: usize,
+    ) -> Result<(), DrawingError> {
+        let layer = self.layers.get_mut(layer_name);
+        if let Some(l) = layer {
+            l.remove_instruction(index)?;
+            Ok(())
+        } else {
+            Err(DrawingError::LayerNotFound(layer_name.to_string()))
+        }
+    }
 
     /// Clears the given layer.
     ///
@@ -139,7 +153,7 @@ impl Drawing {
     }
 
     /// Set the visibility of an instruction in the history of the given layer.
-    pub fn set_history_element_visibility(
+    pub fn set_instruction_visibility(
         &mut self,
         layer_name: &str,
         index: usize,
@@ -147,7 +161,7 @@ impl Drawing {
     ) -> Result<(), DrawingError> {
         let layer = self.layers.get_mut(layer_name);
         if let Some(l) = layer {
-            l.set_history_element_visibility(index, visible)?;
+            l.set_instruction_visibility(index, visible)?;
             Ok(())
         } else {
             Err(DrawingError::LayerNotFound(layer_name.to_string()))
@@ -182,7 +196,11 @@ impl Drawing {
     }
 
     /// Set the history index of the given layer.
-    pub fn set_history_index(&mut self, layer_name: &str, new_history_index: usize) -> Result<(), DrawingError> {
+    pub fn set_history_index(
+        &mut self,
+        layer_name: &str,
+        new_history_index: usize,
+    ) -> Result<(), DrawingError> {
         let layer = self.layers.get_mut(layer_name);
         if let Some(l) = layer {
             l.set_history_index(new_history_index)?;
@@ -193,7 +211,12 @@ impl Drawing {
     }
 
     /// Move an intstruction in the given layer.
-    pub fn move_instruction(&mut self, layer_name: &str, old_instruction_index: usize, new_instruction_index: usize) -> Result<(), DrawingError> {
+    pub fn move_instruction(
+        &mut self,
+        layer_name: &str,
+        old_instruction_index: usize,
+        new_instruction_index: usize,
+    ) -> Result<(), DrawingError> {
         let layer = self.layers.get_mut(layer_name);
         if let Some(l) = layer {
             l.move_instruction(old_instruction_index, new_instruction_index)?;

@@ -2,6 +2,7 @@ import * as DrInFo from "$lib/drinfo";
 import type {
   Brush,
   BrushShape,
+  Bucket,
   Color,
   ImageInsertion,
   Instruction,
@@ -75,6 +76,15 @@ export class ToServer {
     };
   }
 
+  static bucket(bucket: DrInFo.Bucket): Bucket {
+    return {
+      Bucket: {
+        point: bucket.point,
+        brush: ToServer.brush(bucket.brush),
+      },
+    };
+  }
+
   static instruction(instruction: DrInFo.Instruction): Instruction {
     if ("points" in instruction) {
       return ToServer.stroke(instruction);
@@ -82,7 +92,10 @@ export class ToServer {
     if ("selection" in instruction) {
       return ToServer.motion(instruction);
     }
-    return ToServer.imageInsertion(instruction);
+    if ("base64" in instruction) {
+      return ToServer.imageInsertion(instruction);
+    }
+    return ToServer.bucket(instruction);
   }
 
   static instructionBox(instructionBox: DrInFo.InstructionBox): InstructionBox {

@@ -1,5 +1,6 @@
 <script lang="ts">
-  import type { ImageInsertion, InstructionBox, Stroke } from "$lib/drinfo";
+  import type { Bucket, ImageInsertion, InstructionBox, Stroke } from "$lib/drinfo";
+  import { ToServer } from "$lib/tolower";
   import { drawImage, drawSquares, stroke } from "$lib/toupper";
   import { gs } from "./state.svelte";
 
@@ -66,15 +67,15 @@
         y: (p.y - deltaY - stroke.brush.width / 2) * magnifier,
       })),
       brush: {
-          brushShape: {
-              shape: stroke.brush.brushShape.shape,
-              customShape: stroke.brush.brushShape.customShape,
-          },
-          color: stroke.brush.color,
-          width: stroke.brush.width,
-          diffusion: stroke.brush.diffusion,
-          opacity: stroke.brush.opacity,
-          erase: stroke.brush.erase,
+        brushShape: {
+          shape: stroke.brush.brushShape.shape,
+          customShape: stroke.brush.brushShape.customShape,
+        },
+        color: stroke.brush.color,
+        width: stroke.brush.width,
+        diffusion: stroke.brush.diffusion,
+        opacity: stroke.brush.opacity,
+        erase: stroke.brush.erase,
       },
     };
     newStroke.brush.width *= magnifier;
@@ -109,7 +110,7 @@
           centerize(instruction.instruction, context.canvas.height, context.canvas.width),
           context,
         );
-      } else if ("point" in instruction.instruction) {
+      } else if ("point" in instruction.instruction && "base64" in instruction.instruction) {
         (async () => {
           const imageInsertion = instruction.instruction as ImageInsertion;
           let image = gs.images.get(imageInsertion.base64);
@@ -128,16 +129,31 @@
           } else {
             ratio = 150 / (image.height * imageInsertion.scale.y);
           }
-          const imageInsertionShifted = structuredClone(imageInsertion);
+          const imageInsertionShifted: ImageInsertion = {
+            base64: imageInsertion.base64,
+            point: {
+              x: imageInsertion.point.x,
+              y: imageInsertion.point.y,
+            },
+            scale: {
+              x: imageInsertion.scale.x,
+              y: imageInsertion.scale.y,
+            },
+            rotate: imageInsertion.rotate,
+          };
           imageInsertionShifted.scale.x *= ratio;
           imageInsertionShifted.scale.y *= ratio;
           imageInsertionShifted.point = {
             x: 250 / 2 - (image.width * imageInsertionShifted.scale.x) / 2,
             y: 150 / 2 - (image.height * imageInsertionShifted.scale.y) / 2,
           };
-          // imageInsertionShifted.;
           drawImage(image, imageInsertionShifted, context);
         })();
+      } else if ("point" in instruction.instruction && "brush" in instruction.instruction) {
+        const bucket = instruction.instruction as Bucket;
+        const color = ToServer.color(bucket.brush.color);
+        context.fillStyle = `rgba(${color.r} ${color.g} ${color.b} / ${bucket.brush.opacity / 1000}%)`;
+        context.fillRect(0, 0, 250, 150);
       }
     }
   });
@@ -160,23 +176,33 @@
     onmouseout={() => (gs.hoveredInstruction = null)}
   >
   </canvas>
-  <div class="description">
-    {#if "points" in instruction.instruction}
-      Stroke
-    {:else if "selection" in instruction.instruction}
-      Motion
-    {:else if "base64" in instruction.instruction}
-      ImageInsertion
-    {/if}
-    N°{index}
+  <div class="inner-container">
+    <div class="description">
+      {#if "points" in instruction.instruction}
+        Stroke
+      {:else if "selection" in instruction.instruction}
+        Motion
+      {:else if "base64" in instruction.instruction}
+        ImageInsertion
+      {:else if "point" in instruction.instruction && "brush" in instruction.instruction}
+        Bucket
+      {/if}
+      N°{index}
+    </div>
+    <input
+      type="checkbox"
+      checked={instruction.applied}
+      onclick={(_) => {
+        gs.server?.setHistoryElementVisibility(layerName, index, !instruction.applied);
+      }}
+    />
+    <button
+      class="trash"
+      onclick={(_) => {
+        gs.server?.removeInstruction(layerName, index);
+      }}>X</button
+    >
   </div>
-  <input
-    type="checkbox"
-    checked={instruction.applied}
-    onclick={(_) => {
-      gs.server?.setHistoryElementVisibility(layerName, index, !instruction.applied);
-    }}
-  />
 </div>
 
 <style>
@@ -184,10 +210,15 @@
     border: 1px solid var(--darkGrey);
     border-top: none;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
     height: 3rem;
     position: relative;
+  }
+  .inner-container {
+    padding: 0.2em;
+    width: 100%;
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
   }
   .future {
     color: var(--lightGrey);
@@ -196,5 +227,9 @@
     height: 3rem;
     width: 5rem;
     border: 1px solid var(--darkGrey);
+  }
+  .trash {
+    border: 1px solid var(--lightGrey);
+    border-radius: 0.2em;
   }
 </style>

@@ -41,6 +41,13 @@ export type ImageInsertion = {
   ImageInsertion: DrInFo.ImageInsertion;
 };
 
+export type Bucket = {
+  Bucket: {
+    point: Point;
+    brush: Brush;
+  };
+};
+
 export type Instruction = Stroke | Motion | ImageInsertion;
 
 export type InstructionBox = {
@@ -53,6 +60,13 @@ export type InstructionMessage = {
   Instruction: {
     layer: string;
     instruction: InstructionBox;
+  };
+};
+
+export type RemoveInstructionMessage = {
+  RemoveInstruction: {
+    layer: string;
+    index: number;
   };
 };
 
@@ -116,8 +130,8 @@ export type SetLayerVisibilityMessage = {
   };
 };
 
-export type SetHistoryElementVisibilityMessage = {
-  SetHistoryElementVisibility: {
+export type SetInstructionVisibilityMessage = {
+  SetInstructionVisibility: {
     layer: string;
     index: number;
     visible: boolean;
@@ -134,16 +148,16 @@ export type SnapshotMessage = {
 
 export type SetHistoryIndexMessage = {
   SetHistoryIndex: {
-    layer: string,
-    new_history_index: number,
+    layer: string;
+    new_history_index: number;
   };
 };
 
 export type MoveInstructionMessage = {
   MoveInstruction: {
-    layer: string,
-    old_instruction_index: number,
-    new_instruction_index: number,
+    layer: string;
+    old_instruction_index: number;
+    new_instruction_index: number;
   };
 };
 
@@ -167,8 +181,9 @@ export type WebSocketMessage =
   | CursorInMessage
   | CursorOutMessage
   | InstructionMessage
+  | RemoveInstructionMessage
   | SetLayerVisibilityMessage
-  | SetHistoryElementVisibilityMessage
+  | SetInstructionVisibilityMessage
   | SnapshotMessage
   | AddLayerMessage
   | LayerUpMessage

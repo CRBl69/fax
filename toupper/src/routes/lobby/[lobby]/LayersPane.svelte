@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { type InstructionBox } from "$lib/drinfo";
   import LayersPaneLayer from "./LayersPaneLayer.svelte";
   import { gs } from "./state.svelte";
 
@@ -37,7 +38,28 @@
   </div>
   <div class="layers">
     {#each gs.drawing.layerOrder.toReversed() as layer}
-      <LayersPaneLayer name={layer} visible={getLayer(layer).visible} />
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div
+        ondrop={() => {
+          if (gs.selectedLayer !== null && gs.draggedInstruction !== null) {
+            const instruction = gs.drawing.layers.get(gs.selectedLayer)!.history[
+              gs.draggedInstruction - 1
+            ];
+            const instructionCopy: InstructionBox = {
+              instruction: instruction.instruction,
+              uuid: crypto.randomUUID(),
+              applied: instruction.applied,
+            };
+            gs.server?.instructionBox(instructionCopy, layer);
+            gs.server?.removeInstruction(gs.selectedLayer!, gs.draggedInstruction!);
+          }
+        }}
+        ondragover={(e) => {
+          e.preventDefault();
+        }}
+      >
+        <LayersPaneLayer name={layer} visible={getLayer(layer).visible} />
+      </div>
     {/each}
   </div>
 </div>

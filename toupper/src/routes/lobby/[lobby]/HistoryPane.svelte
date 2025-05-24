@@ -10,8 +10,7 @@
 
   let layer = $derived.by(() => gs.drawing.layers.get(name)!);
 
-  let dragged: {i: number, uuid: string} | null = $state(null);
-  let over: {i: number, uuid: string} | null = $state(null);
+  let over: number | null = $state(null);
 </script>
 
 <div class="history">
@@ -20,41 +19,62 @@
     <div
       class="item"
       draggable={true}
-      ondragstart={() => {dragged = {i, uuid: instruction.uuid}}}
-      ondragend={() => {dragged = null; over = null}}
-      ondragenter={() => {over = {i, uuid: instruction.uuid}}}
-      ondragexit={() => {over = null}}
+      ondragstart={() => {
+        gs.draggedInstruction = i + 1;
+      }}
+      ondragend={() => {
+        gs.draggedInstruction = null;
+        over = null;
+      }}
+      ondragenter={() => {
+        over = i + 1;
+      }}
+      ondragexit={() => {
+        over = null;
+      }}
     >
       <HistoryPaneItem
         {instruction}
-        index={i+1}
+        index={i + 1}
         layerName={name}
         historyIndex={layer.historyIndex}
       />
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div
         ondrop={() => {
-          const oldIndex = dragged!.i + 1;
-          const newIndex = over!.i + 1;
+          const oldIndex = gs.draggedInstruction!;
+          const newIndex = over!;
           gs.server?.moveInstruction(name, oldIndex, newIndex);
         }}
-        ondragover={(e) => {e.preventDefault()}}
-        class={(over?.i === i && dragged?.i !== i && dragged?.i !== i - 1 ? "over" : "not-over") + " dragarea dragarea-top"}
+        ondragover={(e) => {
+          e.preventDefault();
+        }}
+        class={(over === i + 1 &&
+        gs.draggedInstruction !== i + 1 &&
+        gs.draggedInstruction !== i + 1 - 1
+          ? "over"
+          : "not-over") + " dragarea dragarea-top"}
       >
         Drop here
       </div>
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div
         ondrop={() => {
-          const oldIndex = dragged!.i + 1;
-          let newIndex = over!.i + 2;
-          if (dragged!.i < over!.i) {
+          const oldIndex = gs.draggedInstruction!;
+          let newIndex = over! + 1;
+          if (gs.draggedInstruction! < over!) {
             newIndex -= 1;
           }
           gs.server?.moveInstruction(name, oldIndex, newIndex);
         }}
-        ondragover={(e) => {e.preventDefault()}}
-        class={(over?.i === i && dragged?.i !== i && dragged?.i !== i + 1 ? "over" : "not-over") + " dragarea dragarea-bottom"}
+        ondragover={(e) => {
+          e.preventDefault();
+        }}
+        class={(over === i + 1 &&
+        gs.draggedInstruction !== i + 1 &&
+        gs.draggedInstruction !== i + 1 + 1
+          ? "over"
+          : "not-over") + " dragarea dragarea-bottom"}
       >
         Drop here
       </div>

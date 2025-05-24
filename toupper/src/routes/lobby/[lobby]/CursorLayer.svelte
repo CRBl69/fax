@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type Cursor, getX, getY } from "$lib/toupper";
+  import { type Cursor, getX, getY, Tool } from "$lib/toupper";
   import type { SvelteMap } from "svelte/reactivity";
   import { gs } from "./state.svelte";
   import { onMount, untrack } from "svelte";
@@ -24,6 +24,9 @@
       }
       context.beginPath();
       context.strokeStyle = cursor.brush.color;
+      if (username === null && gs.tool === Tool.PickColor) {
+        return;
+      }
       if (cursor.brush.brushShape.shape === "circle") {
         context.arc(cursor.point.x, cursor.point.y, cursor.brush.width / 2, 0, 2 * Math.PI);
       } else if (cursor.brush.brushShape.shape === "square") {

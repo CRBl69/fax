@@ -16,7 +16,28 @@
 
   let users: SvelteMap<string, Cursor | null> = $state(new SvelteMap());
 
+  async function initWebWorker() {
+    // This function initiates the web worker
+    // Check if we are in a browser
+    if (window.Worker) {
+      // Check if the browser supports web worker
+      // We reset some values we use to visualise the progress
+      // This is where we load the worker
+      const BucketWorker = await import("$lib/toupper/bucket-worker.ts?worker");
+      // And initiate the worker
+      gs.bucketWorker = new BucketWorker.default();
+    }
+  }
+
+  function terminateWorker() {
+    // Check if there is a worker present. This is sometimes nessecary when parts of the website reload.
+    if (gs.bucketWorker) {
+      gs.bucketWorker.terminate();
+    }
+  }
+
   onMount(() => {
+    initWebWorker();
     gs.server = new Server(`${location.protocol.replace(/http/, "ws")}//${SERVER_URL}`, username);
 
     gs.server.registerEventHandler("init", (data) => {
@@ -68,19 +89,27 @@
     });
 
     gs.server.registerEventHandler("moveinstruction", (data) => {
-      gs.drawing.moveInstruction(data.layer, data.old_instruction_index, data.new_instruction_index);
+      gs.drawing.moveInstruction(
+        data.layer,
+        data.old_instruction_index,
+        data.new_instruction_index,
+      );
     });
 
     gs.server.registerEventHandler("snapshot", ({ layer, data, index }) => {
       gs.drawing.snapshot(layer, data, index);
     });
 
-    gs.server.registerEventHandler("sethistoryelementvisibility", ({ layer, index, visible }) => {
-      gs.drawing.setHistoryElementVisibility(layer, index, visible);
+    gs.server.registerEventHandler("setinstructionvisibility", ({ layer, index, visible }) => {
+      gs.drawing.setInstructionVisibility(layer, index, visible);
     });
 
     gs.server.registerEventHandler("instruction", ({ layer, instruction }) => {
       gs.drawing.instruct(layer, FromServer.instructionBox(instruction));
+    });
+
+    gs.server.registerEventHandler("removeinstruction", ({ layer, index }) => {
+      gs.drawing.removeInstruction(layer, index);
     });
 
     document.addEventListener("keydown", (e) => {
@@ -93,6 +122,7 @@
   });
 
   onDestroy(() => {
+    terminateWorker();
     if (gs.server) {
       gs.server.close();
       gs.server = null;

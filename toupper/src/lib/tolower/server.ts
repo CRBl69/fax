@@ -10,11 +10,12 @@ import type {
   LayerUpMessage,
   SnapshotMessage,
   TempDrawMessage,
-  SetHistoryElementVisibilityMessage,
+  SetInstructionVisibilityMessage,
   SetLayerVisibilityMessage,
   WebSocketMessage,
   MoveInstructionMessage,
   SetHistoryIndexMessage,
+  RemoveInstructionMessage,
 } from "./server-types";
 import * as TypeConverter from "./type-converter";
 
@@ -22,8 +23,8 @@ interface EventMap {
   cursorout: CustomEvent<CursorOutMessage["CursorOut"]>;
   instruction: CustomEvent<InstructionMessage["Instruction"]>;
   setlayervisibility: CustomEvent<SetLayerVisibilityMessage["SetLayerVisibility"]>;
-  sethistoryelementvisibility: CustomEvent<
-    SetHistoryElementVisibilityMessage["SetHistoryElementVisibility"]
+  setinstructionvisibility: CustomEvent<
+    SetInstructionVisibilityMessage["SetInstructionVisibility"]
   >;
   snapshot: CustomEvent<SnapshotMessage["Snapshot"]>;
   addlayer: CustomEvent<AddLayerMessage["AddLayer"]>;
@@ -31,6 +32,7 @@ interface EventMap {
   layerdown: CustomEvent<LayerDownMessage["LayerDown"]>;
   moveinstruction: CustomEvent<MoveInstructionMessage["MoveInstruction"]>;
   sethistoryindex: CustomEvent<SetHistoryIndexMessage["SetHistoryIndex"]>;
+  removeinstruction: CustomEvent<RemoveInstructionMessage["RemoveInstruction"]>;
   init: CustomEvent<InitMessage["Init"]>;
   join: CustomEvent<JoinMessage["Join"]>;
   tempdraw: CustomEvent<TempDrawMessage["TempDraw"]>;
@@ -156,6 +158,16 @@ export class Server extends typedEventTarget {
     this.send(message);
   }
 
+  removeInstruction(layer: string, index: number) {
+    const message: RemoveInstructionMessage = {
+      RemoveInstruction: {
+        layer,
+        index,
+      },
+    };
+    this.send(message);
+  }
+
   setLayerVisibility(layer: string, visible: boolean) {
     const message: SetLayerVisibilityMessage = {
       SetLayerVisibility: {
@@ -167,8 +179,8 @@ export class Server extends typedEventTarget {
   }
 
   setHistoryElementVisibility(layer: string, index: number, visible: boolean) {
-    const message: SetHistoryElementVisibilityMessage = {
-      SetHistoryElementVisibility: {
+    const message: SetInstructionVisibilityMessage = {
+      SetInstructionVisibility: {
         layer,
         index,
         visible,

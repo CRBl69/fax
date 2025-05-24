@@ -8,6 +8,7 @@ export const LAYER_REDO_ERROR = "Layer cannot be redone anymore.";
 export const LAYER_DOWN_ERROR = "Layer cannot be moved down anymore.";
 export const LAYER_UP_ERROR = "Layer cannot be moved up anymore.";
 export const LAYER_HISTORY_ERROR = "Layer history element visibility cannot be set.";
+export const LAYER_REMOVE_INSTRUCTION_ERROR = "Layer history element visibility cannot be set.";
 export const LAYER_SET_HISTORY_INDEX_ERROR = "New layer history index is invalid.";
 
 export interface DrawingData {
@@ -75,7 +76,7 @@ export class Drawing {
     layer.visible = visible;
   }
 
-  setHistoryElementVisibility(name: string, index: number, visible: boolean) {
+  setInstructionVisibility(name: string, index: number, visible: boolean) {
     const layer = this.layers.get(name);
     if (!layer) {
       throw LAYER_NOT_FOUND_ERROR;
@@ -84,11 +85,7 @@ export class Drawing {
       throw LAYER_HISTORY_ERROR;
     }
     layer.history[index - 1]!.applied = visible;
-    for (const snapshotIndex of layer.snapshots.keys()) {
-      if (snapshotIndex >= index) {
-        layer.snapshots.delete(snapshotIndex);
-      }
-    }
+    this.invalidateSnapshots(name, index);
   }
 
   instruct(name: string, instructionBox: InstructionBox) {
@@ -99,11 +96,22 @@ export class Drawing {
     layer.history = layer.history.slice(0, layer.historyIndex);
     layer.historyIndex += 1;
     layer.history.push(instructionBox);
-    for (const snapshotIndex of layer.snapshots.keys()) {
-      if (snapshotIndex >= layer.historyIndex) {
-        layer.snapshots.delete(snapshotIndex);
-      }
+    this.invalidateSnapshots(name, layer.historyIndex);
+  }
+
+  removeInstruction(name: string, index: number) {
+    const layer = this.layers.get(name);
+    if (!layer) {
+      throw LAYER_NOT_FOUND_ERROR;
     }
+    if (index > layer.history.length) {
+      return LAYER_REMOVE_INSTRUCTION_ERROR;
+    }
+    if (index <= layer.historyIndex) {
+      layer.historyIndex -= 1;
+    }
+    layer.history.splice(index - 1, 1);
+    this.invalidateSnapshots(name, index);
   }
 
   snapshot(name: string, data: string, index: number) {
@@ -183,11 +191,28 @@ export class Drawing {
     if (!layer) {
       throw LAYER_NOT_FOUND_ERROR;
     }
-    if (newInstructionIndex >= 0 && newInstructionIndex <= layer.history.length && oldInstructionIndex >= 0 && oldInstructionIndex <= layer.history.length) {
+    if (
+      newInstructionIndex >= 0 &&
+      newInstructionIndex <= layer.history.length &&
+      oldInstructionIndex >= 0 &&
+      oldInstructionIndex <= layer.history.length
+    ) {
       const [intruction] = layer.history.splice(oldInstructionIndex - 1, 1);
       layer.history.splice(newInstructionIndex - 1, 0, intruction);
     } else {
       throw LAYER_SET_HISTORY_INDEX_ERROR;
+    }
+  }
+
+  private invalidateSnapshots(name: string, index: number) {
+    const layer = this.layers.get(name);
+    if (!layer) {
+      throw LAYER_NOT_FOUND_ERROR;
+    }
+    for (const snapshotIndex of layer.snapshots.keys()) {
+      if (snapshotIndex >= index) {
+        layer.snapshots.delete(snapshotIndex);
+      }
     }
   }
 }

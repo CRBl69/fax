@@ -4,6 +4,7 @@ import { SvelteMap } from "svelte/reactivity";
 import type {
   Brush,
   BrushShape,
+  Bucket,
   Color,
   Cursor,
   Drawing,
@@ -63,6 +64,13 @@ export class FromServer {
     return imageInsertion;
   }
 
+  static bucket({ Bucket: bucket }: Bucket): DrInFo.Bucket {
+    return {
+      point: bucket.point,
+      brush: FromServer.brush(bucket.brush),
+    };
+  }
+
   static instruction(instruction: Instruction): DrInFo.Instruction {
     if ("Stroke" in instruction) {
       return FromServer.stroke(instruction);
@@ -70,7 +78,13 @@ export class FromServer {
     if ("Motion" in instruction) {
       return FromServer.motion(instruction);
     }
-    return FromServer.imageInsertion(instruction);
+    if ("ImageInsertion" in instruction) {
+      return FromServer.imageInsertion(instruction);
+    }
+    if ("Bucket" in instruction) {
+      return FromServer.bucket(instruction);
+    }
+    throw new Error("Unknown instruction type.");
   }
 
   static instructionBox(instructionBox: InstructionBox): DrInFo.InstructionBox {

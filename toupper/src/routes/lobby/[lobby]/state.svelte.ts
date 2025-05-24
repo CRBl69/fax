@@ -1,6 +1,6 @@
 import { Drawing, type Brush, type InstructionBox, type Point } from "$lib/drinfo";
 import type { Server } from "$lib/tolower";
-import { getDefaultBrush, getSecondaryDefaultBrush } from "$lib/toupper";
+import { getDefaultBrush, getSecondaryDefaultBrush, Tool } from "$lib/toupper";
 import { SvelteMap } from "svelte/reactivity";
 
 export type LayerData = {
@@ -23,6 +23,9 @@ interface GlobalState {
   instructionBox: InstructionBox | null;
   hoveredInstruction: InstructionBox | null;
   images: Map<string, HTMLImageElement>;
+  draggedInstruction: number | null;
+  tool: Tool;
+  bucketWorker: Worker | null;
 }
 
 export const gs: GlobalState = $state({
@@ -40,4 +43,7 @@ export const gs: GlobalState = $state({
   instructionBox: null,
   hoveredInstruction: null,
   images: new Map(),
+  draggedInstruction: null,
+  tool: Tool.Stroke,
+  bucketWorker: null,
 });

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { gs } from "./state.svelte";
-  import { stroke } from "$lib/toupper";
+  import { stroke, Tool } from "$lib/toupper";
   import { SERVER_URL } from "$lib/env";
 
   let saveUrl = $state("");
@@ -38,6 +38,7 @@
             },
             uuid: crypto.randomUUID(),
           };
+          gs.tool = Tool.InsertImage;
         };
         image.src = base64img;
         files = undefined;
@@ -139,6 +140,24 @@
   </div>
   <div class="inner-group">
     <div class="inner-container">
+      <label for="brush-type">Color Picker:</label>
+      <input
+        type="checkbox"
+        checked={gs.tool === Tool.PickColor}
+        onchange={(e) => (gs.tool = e.currentTarget.checked ? Tool.PickColor : Tool.Stroke)}
+      />
+    </div>
+    <div class="inner-container">
+      <label for="brush-type">Bucket:</label>
+      <input
+        type="checkbox"
+        checked={gs.tool === Tool.Bucket}
+        onchange={(e) => (gs.tool = e.currentTarget.checked ? Tool.Bucket : Tool.Stroke)}
+      />
+    </div>
+  </div>
+  <div class="inner-group">
+    <div class="inner-container">
       <label for="zoom">Zoom:</label>
       <input type="checkbox" bind:checked={gs.zoom} />
       <input id="zoom" type="range" min="1" max="10" step="0.1" bind:value={gs.zoomRatio} />
@@ -205,8 +224,7 @@
         const context = canvas.getContext("2d")!;
         for (const layerName of gs.drawing.layerOrder) {
           const layer = gs.drawing.layers.get(layerName)!;
-          for (const key of layer.history.keys().toArray().toSorted()) {
-            const instruction = layer.history.get(key)!;
+          for (const instruction of layer.history) {
             if ("points" in instruction.instruction) {
               stroke(instruction.instruction, context);
             }
