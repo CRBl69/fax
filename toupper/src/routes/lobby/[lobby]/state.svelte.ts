@@ -25,7 +25,8 @@ interface GlobalState {
   images: Map<string, HTMLImageElement>;
   draggedInstruction: number | null;
   tool: Tool;
-  bucketWorker: Worker | null;
+  canvasWorker: Worker | null;
+  tolerance: number;
 }
 
 export const gs: GlobalState = $state({
@@ -33,8 +34,8 @@ export const gs: GlobalState = $state({
   brush: getDefaultBrush(),
   secondaryBrush: getSecondaryDefaultBrush(),
   ratio: 0,
-  zoom: true,
-  zoomRatio: 1,
+  zoom: false,
+  zoomRatio: 2,
   server: null,
   selectedLayer: null,
   layerData: new SvelteMap(),
@@ -45,5 +46,6 @@ export const gs: GlobalState = $state({
   images: new Map(),
   draggedInstruction: null,
   tool: Tool.Stroke,
-  bucketWorker: null,
+  canvasWorker: null,
+  tolerance: 0,
 });

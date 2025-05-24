@@ -11,28 +11,24 @@
   import { page } from "$app/stores";
   import { gs, type LayerData } from "./state.svelte";
   import Zoom from "./Zoom.svelte";
+  import ToolSettings from "./toolsettings/ToolSettings.svelte";
 
   let username = $page.params.lobby;
 
   let users: SvelteMap<string, Cursor | null> = $state(new SvelteMap());
 
+  let menu: "tool" | "history" = $state("tool");
+
   async function initWebWorker() {
-    // This function initiates the web worker
-    // Check if we are in a browser
     if (window.Worker) {
-      // Check if the browser supports web worker
-      // We reset some values we use to visualise the progress
-      // This is where we load the worker
-      const BucketWorker = await import("$lib/toupper/bucket-worker.ts?worker");
-      // And initiate the worker
-      gs.bucketWorker = new BucketWorker.default();
+      const CanvasWorker = await import("$lib/toupper/canvas-worker.ts?worker");
+      gs.canvasWorker = new CanvasWorker.default();
     }
   }
 
   function terminateWorker() {
-    // Check if there is a worker present. This is sometimes nessecary when parts of the website reload.
-    if (gs.bucketWorker) {
-      gs.bucketWorker.terminate();
+    if (gs.canvasWorker) {
+      gs.canvasWorker.terminate();
     }
   }
 
@@ -121,6 +117,12 @@
     });
   });
 
+  $effect(() => {
+    if (gs.selectedLayer === null && gs.drawing.layerOrder.length > 0) {
+      gs.selectedLayer = gs.drawing.layerOrder[0];
+    }
+  });
+
   onDestroy(() => {
     terminateWorker();
     if (gs.server) {
@@ -138,25 +140,41 @@
     <LayersPane />
   </div>
   <div class="history-pane">
-    {#if gs.selectedLayer}
-      <HistoryPane name={gs.selectedLayer} />
-    {:else}
-      <div></div>
+    <div class="tool-history-tabs">
+      <div
+        class={`tool-history-tab ${menu === "tool" ? "tool-history-tab-selected" : ""}`}
+        onclick={() => (menu = "tool")}
+      >
+        Tool
+      </div>
+      <div
+        class={`tool-history-tab ${menu === "history" ? "tool-history-tab-selected" : ""}`}
+        onclick={() => (menu = "history")}
+      >
+        History
+      </div>
+    </div>
+    {#if menu === "tool"}
+      <ToolSettings />
+    {:else if menu === "history"}
+      {#if gs.selectedLayer}
+        <HistoryPane name={gs.selectedLayer} />
+      {:else}
+        <div></div>
+      {/if}
     {/if}
   </div>
   <div class="layers">
     <Layers {users} />
   </div>
   <div class="info">
-    <div>
-      Layers: {gs.layerData.size}
-    </div>
-    <div>
-      Users: {users.size + 1}
+    <div class="coordinates">
+      <div>X: {gs.cursorPosition?.x.toFixed(0)}</div>
+      <div>Y: {gs.cursorPosition?.y.toFixed(0)}</div>
     </div>
     <div class="coordinates">
-      <div>X: {gs.cursorPosition?.x.toFixed(3)}</div>
-      <div>Y: {gs.cursorPosition?.y.toFixed(3)}</div>
+      <div>H: {gs.drawing.height}</div>
+      <div>W: {gs.drawing.width}</div>
     </div>
   </div>
   {#if gs.zoom}
@@ -199,5 +217,21 @@
   }
   .coordinates div {
     width: 15ch;
+  }
+  .tool-history-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 1px solid var(--lightGrey);
+    cursor: pointer;
+  }
+  .tool-history-tab {
+    width: 100%;
+    text-align: center;
+  }
+  .tool-history-tab:nth-child(1) {
+    border-right: 1px solid var(--lightGrey);
+  }
+  .tool-history-tab-selected {
+    background-color: var(--lightGrey);
   }
 </style>

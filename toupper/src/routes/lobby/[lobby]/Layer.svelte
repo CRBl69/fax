@@ -1,15 +1,6 @@
 <script lang="ts">
   import type { ImageInsertion, InstructionBox, Point, Stroke } from "$lib/drinfo";
-  import {
-    drawImage,
-    getX,
-    getY,
-    applyInstruction,
-    stroke,
-    Tool,
-    rgbToStr,
-    strToRgb,
-  } from "$lib/toupper";
+  import { drawImage, getX, getY, applyInstruction, stroke, Tool, rgbToStr } from "$lib/toupper";
   import { onMount, untrack } from "svelte";
   import { gs } from "./state.svelte";
   import {
@@ -117,7 +108,6 @@
     }
   };
 
-  // Error here. make this not tourch historyIndex
   const pushToHistory = async (instructionBox: InstructionBox) => {
     const newContext = copyContext(layerData.historyContexts.get(currentIndex)!);
     if (instructionBox.applied) {

@@ -33,7 +33,7 @@
     <button
       onclick={() => {
         gs.server?.addLayer(newLayerName);
-      }}>+</button
+      }}><span class="plus-icon"></span></button
     >
   </div>
   <div class="layers">
@@ -71,7 +71,6 @@
     grid-template-rows: auto 1fr;
   }
   .layers {
-    margin-top: 0.4em;
     display: flex;
     flex-direction: column;
     overflow: scroll;
@@ -80,12 +79,31 @@
     border-bottom: 2px solid var(--darkGrey);
   }
   .layer-name {
-    display: flex;
-    justify-content: space-between;
-    max-height: 2em;
+    display: grid;
+    grid-template-columns: 1fr auto;
+  }
+  .layer-name input {
+    border: none;
+    border-right: 1px solid var(--lightGrey);
+    min-width: 10ch;
+    font-size: 1em;
   }
   .layer-name button {
-    font-size: 16px;
-    margin: auto;
+    display: grid;
+    place-items: center;
+    width: 3em;
+  }
+  .plus-icon {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    --svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M20 14h-6v6h-4v-6H4v-4h6V4h4v6h6z'/%3E%3C/svg%3E");
+    background-color: currentColor;
+    -webkit-mask-image: var(--svg);
+    mask-image: var(--svg);
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
   }
 </style>
