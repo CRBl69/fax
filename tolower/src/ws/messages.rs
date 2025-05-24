@@ -1,12 +1,10 @@
-use actix::Message;
 use drawing::{
     instruction::{Instruction, InstructionBox},
     Color, ImageInsertion, Motion, Point, Stroke,
 };
 use serde::{Deserialize, Serialize};
 
-#[derive(Message, Serialize, Deserialize, Clone)]
-#[rtype(result = "()")]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum WebSocketMessage {
     CursorIn(CursorDataIn),
     CursorOut(CursorDataOut),
@@ -26,32 +24,32 @@ pub enum WebSocketMessage {
     RemoveInstruction(RemoveInstructionData),
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct InstructionData {
     pub layer: String,
     pub instruction: InstructionBox,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SetLayerVisibilityData {
     pub layer: String,
     pub visible: bool,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SetHistoryIndexData {
     pub layer: String,
     pub new_history_index: usize,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct MoveInstructionData {
     pub layer: String,
     pub old_instruction_index: usize,
     pub new_instruction_index: usize,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Cursor {
     pub point: Point,
     pub brush: drawing::Brush,
@@ -59,19 +57,19 @@ pub struct Cursor {
 
 pub type CursorDataIn = Option<Cursor>;
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct CursorDataOut {
     pub cursor: Option<Cursor>,
     pub username: String,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct InitData {
     pub drawing: drawing::Drawing,
     pub users: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TempDrawData {
     brush: drawing::Brush,
     uuid: String,
@@ -80,21 +78,21 @@ pub struct TempDrawData {
     layer: String,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SnapshotData {
     pub layer: String,
     pub data: String,
     pub index: usize,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SetInstructionVisibilityData {
     pub layer: String,
     pub index: usize,
     pub visible: bool,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RemoveInstructionData {
     pub layer: String,
     pub index: usize,

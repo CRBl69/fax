@@ -1,25 +1,21 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::Arc};
 
-use actix_files::NamedFile;
-use actix_web::{get, web::Data, Result};
+use axum::{extract::State, http::{header, HeaderMap, HeaderValue}, response::IntoResponse};
 
 use crate::AppData;
 
-#[get("/")]
-pub async fn index() -> Result<NamedFile> {
-    let path: PathBuf = PathBuf::from("static/index.html");
-    Ok(NamedFile::open(path)?)
+pub async fn save(State(data): State<Arc<AppData>>) -> impl IntoResponse {
+    let headers = HeaderMap::from_iter(vec![
+        (
+            header::CONTENT_DISPOSITION,
+            HeaderValue::from_static("attachment; filename=\"drawing.drinfo\""),
+        ),
+    ].into_iter());
+    (headers, save_drawing(&*data.drawing.lock().await))
 }
 
-#[get("/save")]
-pub async fn save(data: Data<AppData>) -> Result<NamedFile> {
-    let drawig = data.drawing.lock().unwrap();
-    Ok(NamedFile::open(save_drawing(&drawig).as_path())?)
-}
-
-fn save_drawing(drawing: &drawing::Drawing) -> PathBuf {
-    let path = std::env::temp_dir().as_path().join("drawing_temp.drinfo");
-    let file = std::fs::File::create(path.clone()).unwrap();
-    ciborium::ser::into_writer(drawing, file).unwrap();
-    path
+fn save_drawing(drawing: &drawing::Drawing) -> Vec<u8> {
+    let mut test = vec![];
+    ciborium::ser::into_writer(drawing, &mut test).unwrap();
+    test
 }

@@ -1,12 +1,14 @@
 #![allow(unused)]
-use actix::prelude::*;
-use actix_web::web::Data;
-use actix_web::{App, HttpServer};
+use axum::extract::ws::WebSocket;
+use axum::routing::{any, get};
+use axum::Router;
 use clap::Parser;
+use futures::stream::SplitSink;
 use log::*;
+use tokio::sync::Mutex;
 use std::collections::HashMap;
 use std::io::Write;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use drawing::Drawing;
 
@@ -15,11 +17,11 @@ mod routes;
 mod ws;
 
 pub struct AppData {
-    pub drawing: Arc<Mutex<Drawing>>,
-    pub server: Addr<ws::server::WebSocketServer>,
+    pub drawing: Mutex<Drawing>,
+    pub users: Mutex<HashMap<String, Arc<Mutex<SplitSink<WebSocket, axum::extract::ws::Message>>>>>,
 }
 
-#[actix_web::main]
+#[tokio::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init();
     let args = args::Args::parse();
@@ -31,26 +33,24 @@ async fn main() -> std::io::Result<()> {
         Drawing::new(args.height, args.width)
     };
     let drawing = Mutex::new(drawing);
-    let websocket_server = ws::server::WebSocketServer {
-        users: HashMap::new(),
-    }
-    .start();
-    let app_data = Data::new(AppData {
-        drawing: Arc::new(drawing),
-        server: websocket_server.clone(),
+    let app_data = Arc::new(AppData {
+        drawing,
+        users: Default::default(),
     });
     info!("Starting server on port {port}");
-    HttpServer::new(move || {
-        App::new()
-            .app_data(Data::new(args.clone()))
-            .app_data(app_data.clone())
-            .service(routes::pages::index)
-            .service(routes::pages::save)
-            .service(routes::ws::accept_ws)
-    })
-    .bind(format!("0.0.0.0:{port}"))?
-    .run()
-    .await?;
+    let app = Router::new()
+        .route("/ws/{username}", any(routes::ws::ws_handler))
+        .route("/save", get(routes::pages::save))
+        .with_state(app_data);
+    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{port}"))
+        .await
+        .unwrap();
+    axum::serve(
+        listener,
+        app,
+    )
+    .await
+    .unwrap();
     info!("Server stopped");
     Ok(())
 }
