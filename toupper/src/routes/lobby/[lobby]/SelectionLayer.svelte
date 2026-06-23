@@ -24,6 +24,16 @@
     if (!canvas) return;
     const ctx = canvas.getContext("2d")!;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Other users' in-progress selections.
+    ctx.lineWidth = Math.max(1, 2 / gs.ratio);
+    ctx.strokeStyle = "#5b8def";
+    ctx.setLineDash([3 / gs.ratio, 3 / gs.ratio]);
+    for (const s of gs.tempSelects.values()) {
+      strokePoly(ctx, s.points, s.closed);
+    }
+
+    // Local user's selection.
     ctx.lineWidth = Math.max(1, 2 / gs.ratio);
     ctx.strokeStyle = "#000000";
     ctx.setLineDash([6 / gs.ratio, 4 / gs.ratio]);

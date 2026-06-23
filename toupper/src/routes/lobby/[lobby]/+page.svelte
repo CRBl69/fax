@@ -108,6 +108,10 @@
       gs.drawing.removeInstruction(layer, index);
     });
 
+    gs.server.registerEventHandler("tempselect", ({ uuid, points, closed }) => {
+      gs.tempSelects.set(uuid, { points, closed });
+    });
+
     document.addEventListener("keydown", (e) => {
       if (e.key === "x") {
         const temp = gs.secondaryBrush;

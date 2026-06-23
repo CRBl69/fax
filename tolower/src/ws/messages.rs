@@ -19,6 +19,7 @@ pub enum WebSocketMessage {
     Init(InitData),
     Join(String),
     TempDraw(TempDrawData),
+    TempSelect(TempSelectData),
     Snapshot(SnapshotData),
     SetInstructionVisibility(SetInstructionVisibilityData),
     RemoveInstruction(RemoveInstructionData),
@@ -76,6 +77,14 @@ pub struct TempDrawData {
     start: drawing::Point,
     end: drawing::Point,
     layer: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct TempSelectData {
+    pub uuid: String,
+    pub layer: String,
+    pub points: Vec<Point>,
+    pub closed: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

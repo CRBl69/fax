@@ -42,6 +42,8 @@
 
   let lastUuid: string | undefined = $state();
 
+  let tempSelectUuid: string | undefined = $state();
+
   let friendStrokes: Map<string, InstructionBox> = $state(new Map());
 
   const onkeydown = (e: KeyboardEvent) => {
@@ -151,6 +153,15 @@
     stroke(instructionBox.instruction as Stroke, tempContext);
   };
 
+  const sendTempSelect = (points: Point[], closed: boolean) => {
+    if (!tempSelectUuid) tempSelectUuid = crypto.randomUUID();
+    gs.server?.sendTempSelect(tempSelectUuid, name, points, closed);
+  };
+
+  const clearTempSelect = () => {
+    tempSelectUuid = undefined;
+  };
+
   // Browser event handlers.
   const onmousemoveimageinsertion = (e: MouseEvent) => {
     let imageInsertion = gs.instructionBox!.instruction as ImageInsertion;
@@ -216,6 +227,11 @@
         onmousemovestroke();
       }
     }
+    if (gs.tool === Tool.Select && gs.selectionStart) {
+      const s = gs.selectionStart;
+      const c = cursorPosition!;
+      sendTempSelect([s, { x: c.x, y: s.y }, c, { x: s.x, y: c.y }], true);
+    }
   };
 
   const onmousedownimageinsertion = (e: MouseEvent) => {
@@ -258,15 +274,18 @@
   const onmousedownselect = () => {
     if (!gs.selectionStart) {
       gs.selectionStart = cursorPosition!;
+      tempSelectUuid = crypto.randomUUID();
     } else {
       const start = gs.selectionStart;
       const end = cursorPosition!;
       gs.selection = [start, { x: end.x, y: start.y }, end, { x: start.x, y: end.y }];
       gs.selectionStart = null;
+      clearTempSelect();
     }
   };
   const onmousedownpolyselect = () => {
     gs.polyDraft = [...(gs.polyDraft ?? []), cursorPosition!];
+    sendTempSelect(gs.polyDraft, false);
   };
   const onmousedownmove = () => {
     if (gs.selection) {
@@ -444,6 +463,10 @@
       clearContext.clearRect(0, 0, clearContext.canvas.width, clearContext.canvas.height);
       layerData.historyContexts.set(0, clearContext);
     }
+  });
+
+  $effect(() => {
+    if (gs.polyDraft === null) clearTempSelect();
   });
 
   // Whenever the history changes, draw the appropriate history context.

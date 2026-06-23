@@ -10,6 +10,7 @@ import type {
   LayerUpMessage,
   SnapshotMessage,
   TempDrawMessage,
+  TempSelectMessage,
   SetInstructionVisibilityMessage,
   SetLayerVisibilityMessage,
   WebSocketMessage,
@@ -36,6 +37,7 @@ interface EventMap {
   init: CustomEvent<InitMessage["Init"]>;
   join: CustomEvent<JoinMessage["Join"]>;
   tempdraw: CustomEvent<TempDrawMessage["TempDraw"]>;
+  tempselect: CustomEvent<TempSelectMessage["TempSelect"]>;
 }
 
 interface ServerEventTarget extends EventTarget {
@@ -229,6 +231,18 @@ export class Server extends typedEventTarget {
         start,
         end,
         layer,
+      },
+    };
+    this.send(message);
+  }
+
+  sendTempSelect(uuid: string, layer: string, points: DrInFo.Point[], closed: boolean) {
+    const message: TempSelectMessage = {
+      TempSelect: {
+        uuid,
+        layer,
+        points,
+        closed,
       },
     };
     this.send(message);

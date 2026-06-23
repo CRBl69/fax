@@ -31,6 +31,7 @@ interface GlobalState {
   selectionStart: Point | null;
   polyDraft: Point[] | null;
   moveGrab: Point | null;
+  tempSelects: SvelteMap<string, { points: Point[]; closed: boolean }>;
 }
 
 export const gs: GlobalState = $state({
@@ -56,4 +57,5 @@ export const gs: GlobalState = $state({
   selectionStart: null,
   polyDraft: null,
   moveGrab: null,
+  tempSelects: new SvelteMap(),
 });

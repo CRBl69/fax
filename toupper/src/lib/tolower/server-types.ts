@@ -124,6 +124,15 @@ export type TempDrawMessage = {
   };
 };
 
+export type TempSelectMessage = {
+  TempSelect: {
+    uuid: string;
+    layer: string;
+    points: Point[];
+    closed: boolean;
+  };
+};
+
 export type SetLayerVisibilityMessage = {
   SetLayerVisibility: {
     layer: string;
@@ -194,4 +203,5 @@ export type WebSocketMessage =
   | RequestInitMessage
   | InitMessage
   | JoinMessage
-  | TempDrawMessage;
+  | TempDrawMessage
+  | TempSelectMessage;
