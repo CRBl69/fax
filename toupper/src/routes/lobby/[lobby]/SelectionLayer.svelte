@@ -5,28 +5,35 @@
 
   let canvas: HTMLCanvasElement;
 
-  const drawRectOutline = (
+  const strokePoly = (
     ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
-    a: Point,
-    b: Point,
+    points: Point[],
+    close: boolean,
   ) => {
-    const x = Math.min(a.x, b.x);
-    const y = Math.min(a.y, b.y);
-    const w = Math.abs(b.x - a.x);
-    const h = Math.abs(b.y - a.y);
-    ctx.lineWidth = Math.max(1, 2 / gs.ratio);
-    ctx.strokeStyle = "#000000";
-    ctx.setLineDash([6 / gs.ratio, 4 / gs.ratio]);
-    ctx.strokeRect(x, y, w, h);
-    ctx.setLineDash([]);
+    if (points.length === 0) return;
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) {
+      ctx.lineTo(points[i].x, points[i].y);
+    }
+    if (close) ctx.closePath();
+    ctx.stroke();
   };
 
   $effect(() => {
     if (!canvas) return;
     const ctx = canvas.getContext("2d")!;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.lineWidth = Math.max(1, 2 / gs.ratio);
+    ctx.strokeStyle = "#000000";
+    ctx.setLineDash([6 / gs.ratio, 4 / gs.ratio]);
 
-    const moving = gs.tool === Tool.Move && gs.selection && gs.moveGrab && gs.cursorPosition;
+    const moving =
+      gs.tool === Tool.Move &&
+      gs.selection &&
+      gs.selection.length >= 3 &&
+      gs.moveGrab &&
+      gs.cursorPosition;
     const delta = moving
       ? {
           x: gs.cursorPosition!.x - gs.moveGrab!.x,
@@ -35,16 +42,24 @@
       : { x: 0, y: 0 };
 
     if (gs.tool === Tool.Select && gs.selectionStart && gs.cursorPosition) {
-      drawRectOutline(ctx, gs.selectionStart, gs.cursorPosition);
+      const s = gs.selectionStart;
+      const c = gs.cursorPosition;
+      strokePoly(ctx, [s, { x: c.x, y: s.y }, c, { x: s.x, y: c.y }], true);
+    } else if (gs.tool === Tool.PolySelect && gs.polyDraft && gs.polyDraft.length > 0) {
+      const pts = [...gs.polyDraft];
+      if (gs.cursorPosition) pts.push(gs.cursorPosition);
+      strokePoly(ctx, pts, false);
     } else if (moving) {
-      drawRectOutline(
+      strokePoly(
         ctx,
-        { x: gs.selection!.start.x + delta.x, y: gs.selection!.start.y + delta.y },
-        { x: gs.selection!.end.x + delta.x, y: gs.selection!.end.y + delta.y },
+        gs.selection!.map((p) => ({ x: p.x + delta.x, y: p.y + delta.y })),
+        true,
       );
-    } else if (gs.selection) {
-      drawRectOutline(ctx, gs.selection.start, gs.selection.end);
+    } else if (gs.selection && gs.selection.length >= 3) {
+      strokePoly(ctx, gs.selection, true);
     }
+
+    ctx.setLineDash([]);
   });
 </script>
 

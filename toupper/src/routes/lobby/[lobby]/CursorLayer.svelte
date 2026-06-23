@@ -25,7 +25,10 @@
       context.strokeStyle = cursor.brush.color;
       if (
         username === null &&
-        (gs.tool === Tool.PickColor || gs.tool === Tool.Select || gs.tool === Tool.Move)
+        (gs.tool === Tool.PickColor ||
+          gs.tool === Tool.Select ||
+          gs.tool === Tool.PolySelect ||
+          gs.tool === Tool.Move)
       ) {
         return;
       }

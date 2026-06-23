@@ -259,9 +259,14 @@
     if (!gs.selectionStart) {
       gs.selectionStart = cursorPosition!;
     } else {
-      gs.selection = { start: gs.selectionStart, end: cursorPosition! };
+      const start = gs.selectionStart;
+      const end = cursorPosition!;
+      gs.selection = [start, { x: end.x, y: start.y }, end, { x: start.x, y: end.y }];
       gs.selectionStart = null;
     }
+  };
+  const onmousedownpolyselect = () => {
+    gs.polyDraft = [...(gs.polyDraft ?? []), cursorPosition!];
   };
   const onmousedownmove = () => {
     if (gs.selection) {
@@ -283,6 +288,8 @@
       onmousedownbucket();
     } else if (gs.tool === Tool.Select) {
       onmousedownselect();
+    } else if (gs.tool === Tool.PolySelect) {
+      onmousedownpolyselect();
     } else if (gs.tool === Tool.Move) {
       onmousedownmove();
     } else if (gs.tool === Tool.Stroke && !gs.instructionBox) {
@@ -298,17 +305,12 @@
     lastPoint = gs.cursorPosition!;
   };
   const onmouseupmove = () => {
-    if (gs.selection && gs.moveGrab && cursorPosition) {
+    if (gs.selection && gs.selection.length >= 3 && gs.moveGrab && cursorPosition) {
       const delta = {
         x: cursorPosition.x - gs.moveGrab.x,
         y: cursorPosition.y - gs.moveGrab.y,
       };
-      const selection = [
-        gs.selection.start,
-        { x: gs.selection.end.x, y: gs.selection.start.y },
-        gs.selection.end,
-        { x: gs.selection.start.x, y: gs.selection.end.y },
-      ];
+      const selection = gs.selection;
       gs.server?.instructionBox(
         {
           instruction: {
@@ -320,10 +322,7 @@
         },
         name,
       );
-      gs.selection = {
-        start: { x: gs.selection.start.x + delta.x, y: gs.selection.start.y + delta.y },
-        end: { x: gs.selection.end.x + delta.x, y: gs.selection.end.y + delta.y },
-      };
+      gs.selection = selection.map((p) => ({ x: p.x + delta.x, y: p.y + delta.y }));
       gs.moveGrab = null;
     }
   };

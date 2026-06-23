@@ -27,8 +27,9 @@ interface GlobalState {
   tool: Tool;
   canvasWorker: Worker | null;
   tolerance: number;
-  selection: { start: Point; end: Point } | null;
+  selection: Point[] | null;
   selectionStart: Point | null;
+  polyDraft: Point[] | null;
   moveGrab: Point | null;
 }
 
@@ -53,5 +54,6 @@ export const gs: GlobalState = $state({
   tolerance: 0,
   selection: null,
   selectionStart: null,
+  polyDraft: null,
   moveGrab: null,
 });

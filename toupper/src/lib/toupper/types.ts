@@ -21,5 +21,6 @@ export enum Tool {
   PickColor,
   Bucket,
   Select,
+  PolySelect,
   Move,
 }
