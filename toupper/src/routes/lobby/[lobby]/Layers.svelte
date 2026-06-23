@@ -6,6 +6,7 @@
   import { gs } from "./state.svelte";
   import PreviewLayer from "./PreviewLayer.svelte";
   import SelectionLayer from "./SelectionLayer.svelte";
+  import TempImageLayer from "./TempImageLayer.svelte";
 
   interface Props {
     users: SvelteMap<string, Cursor | null>;
@@ -51,6 +52,7 @@
     {/each}
     <PreviewLayer />
     <SelectionLayer />
+    <TempImageLayer />
     <CursorLayer {users} {listener} />
   </div>
 </div>

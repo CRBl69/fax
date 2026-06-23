@@ -147,6 +147,14 @@ pub async fn handle_socket(
                         }
                     }
                 }
+                WebSocketMessage::TempImage(_) => {
+                    let mut users = app_data.users.lock().await;
+                    for (name, user) in users.iter_mut() {
+                        if name != &username {
+                            user.lock().await.send(msg.clone()).await;
+                        }
+                    }
+                }
                 WebSocketMessage::Snapshot(data) => {
                     if app_data
                         .drawing

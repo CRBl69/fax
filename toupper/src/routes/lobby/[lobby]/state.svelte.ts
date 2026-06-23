@@ -1,4 +1,10 @@
-import { Drawing, type Brush, type InstructionBox, type Point } from "$lib/drinfo";
+import {
+  Drawing,
+  type Brush,
+  type ImageInsertion,
+  type InstructionBox,
+  type Point,
+} from "$lib/drinfo";
 import type { Server } from "$lib/tolower";
 import { getDefaultBrush, getSecondaryDefaultBrush, Tool } from "$lib/toupper";
 import { SvelteMap } from "svelte/reactivity";
@@ -32,6 +38,7 @@ interface GlobalState {
   polyDraft: Point[] | null;
   moveGrab: Point | null;
   tempSelects: SvelteMap<string, { points: Point[]; closed: boolean }>;
+  tempImages: SvelteMap<string, ImageInsertion>;
 }
 
 export const gs: GlobalState = $state({
@@ -58,4 +65,5 @@ export const gs: GlobalState = $state({
   polyDraft: null,
   moveGrab: null,
   tempSelects: new SvelteMap(),
+  tempImages: new SvelteMap(),
 });

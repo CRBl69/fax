@@ -20,6 +20,7 @@ pub enum WebSocketMessage {
     Join(String),
     TempDraw(TempDrawData),
     TempSelect(TempSelectData),
+    TempImage(TempImageData),
     Snapshot(SnapshotData),
     SetInstructionVisibility(SetInstructionVisibilityData),
     RemoveInstruction(RemoveInstructionData),
@@ -85,6 +86,13 @@ pub struct TempSelectData {
     pub layer: String,
     pub points: Vec<Point>,
     pub closed: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct TempImageData {
+    pub uuid: String,
+    pub layer: String,
+    pub image_insertion: Option<ImageInsertion>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

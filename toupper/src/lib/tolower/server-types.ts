@@ -133,6 +133,14 @@ export type TempSelectMessage = {
   };
 };
 
+export type TempImageMessage = {
+  TempImage: {
+    uuid: string;
+    layer: string;
+    image_insertion: DrInFo.ImageInsertion | null;
+  };
+};
+
 export type SetLayerVisibilityMessage = {
   SetLayerVisibility: {
     layer: string;
@@ -204,4 +212,5 @@ export type WebSocketMessage =
   | InitMessage
   | JoinMessage
   | TempDrawMessage
-  | TempSelectMessage;
+  | TempSelectMessage
+  | TempImageMessage;

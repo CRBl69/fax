@@ -102,6 +102,7 @@
 
     gs.server.registerEventHandler("instruction", ({ layer, instruction }) => {
       gs.drawing.instruct(layer, FromServer.instructionBox(instruction));
+      gs.tempImages.delete(instruction.uuid);
     });
 
     gs.server.registerEventHandler("removeinstruction", ({ layer, index }) => {
@@ -110,6 +111,14 @@
 
     gs.server.registerEventHandler("tempselect", ({ uuid, points, closed }) => {
       gs.tempSelects.set(uuid, { points, closed });
+    });
+
+    gs.server.registerEventHandler("tempimage", ({ uuid, image_insertion }) => {
+      if (image_insertion) {
+        gs.tempImages.set(uuid, image_insertion);
+      } else {
+        gs.tempImages.delete(uuid);
+      }
     });
 
     document.addEventListener("keydown", (e) => {

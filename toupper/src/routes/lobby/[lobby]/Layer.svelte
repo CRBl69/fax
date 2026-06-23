@@ -349,7 +349,11 @@
     updateCursorPosition(element, e);
     mousedown = false;
     if (gs.tool === Tool.InsertImage) {
-      // Nothing to do on mouse up in image insertion mode.
+      gs.server?.sendTempImage(
+        gs.instructionBox!.uuid,
+        name,
+        gs.instructionBox!.instruction as ImageInsertion,
+      );
     } else if (gs.tool === Tool.Move) {
       onmouseupmove();
     } else if (gs.instructionBox && gs.tool === Tool.Stroke) {
@@ -481,6 +485,11 @@
       if (!layerData.tmps.get(gs.instructionBox!.uuid)) {
         lastUuid = gs.instructionBox!.uuid;
         layerData.tmps.set(gs.instructionBox!.uuid, { canvas: undefined, brush: gs.brush });
+        gs.server?.sendTempImage(
+          gs.instructionBox!.uuid,
+          name,
+          gs.instructionBox!.instruction as ImageInsertion,
+        );
       }
       const canvas = layerData.tmps.get(gs.instructionBox!.uuid)!.canvas;
       if (canvas) {
@@ -503,6 +512,7 @@
     } else if (!gs.instructionBox && lastUuid) {
       if (lastUuid) {
         layerData.tmps.delete(lastUuid);
+        gs.server?.sendTempImage(lastUuid, name, null);
       }
       image = undefined;
       lastUuid = undefined;
