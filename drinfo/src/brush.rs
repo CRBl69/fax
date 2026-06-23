@@ -17,6 +17,8 @@ pub struct Brush {
     pub opacity: u64,
     /// Wether to erase or not.
     pub erase: bool,
+    /// How often to repeat the brush.
+    pub repeat: f64,
 }
 
 impl Default for Brush {
@@ -28,6 +30,7 @@ impl Default for Brush {
             diffusion: 0,
             opacity: 100_000,
             erase: false,
+            repeat: 0.02,
         }
     }
 }
@@ -41,6 +44,7 @@ impl Brush {
         diffusion: u64,
         opacity: u64,
         erase: bool,
+        repeat: f64,
     ) -> Self {
         Brush {
             brush_shape,
@@ -49,6 +53,7 @@ impl Brush {
             diffusion,
             opacity,
             erase,
+            repeat,
         }
     }
 
@@ -80,6 +85,11 @@ impl Brush {
     /// Updates the shape of the brush.
     pub fn set_brush_shape(&mut self, brush_shape: BrushShape) {
         self.brush_shape = brush_shape;
+    }
+
+    /// Updates the repeat of the brush.
+    pub fn set_repeat(&mut self, repeat: f64) {
+        self.repeat = repeat;
     }
 }
 

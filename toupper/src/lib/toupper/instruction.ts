@@ -1,6 +1,38 @@
-import type { Bucket, ImageInsertion, Instruction, Stroke } from "$lib/drinfo";
+import type { Brush, Bucket, ImageInsertion, Instruction, Point, Stroke } from "$lib/drinfo";
 import { ToServer } from "$lib/tolower";
 import { drawImage, strToRgb } from "./util";
+
+const generateShape = (brush: Brush): OffscreenCanvas => {
+  const canvas = new OffscreenCanvas(brush.width, brush.width);
+  const context = canvas.getContext("2d")!;
+  const color = ToServer.color(brush.color);
+  context.strokeStyle = `rgba(${color.r} ${color.g} ${color.b} / ${brush.opacity / 1000}%)`;
+  context.fillStyle = `rgba(${color.r} ${color.g} ${color.b} / ${brush.opacity / 1000}%)`;
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  context.lineWidth = brush.width;
+  if (brush.brushShape.shape === "circle") {
+    context.beginPath();
+    context.moveTo(brush.width / 2, brush.width / 2);
+    context.lineTo(brush.width / 2, brush.width / 2);
+    context.stroke();
+  } else {
+    context.fillRect(0, 0, brush.width, brush.width);
+  }
+  return canvas;
+};
+
+const getDistance = (a: Point, b: Point): number =>
+  Math.sqrt(Math.pow(b.x - a.x, 2) + Math.pow(b.y - a.y, 2));
+
+const getPointOnSegment = (a: Point, b: Point, distance: number): Point => {
+  const l = getDistance(a, b);
+  const u = [(b.x - a.x) / l, (b.y - a.y) / l];
+  return {
+    x: a.x + distance * u[0],
+    y: a.y + distance * u[1],
+  };
+};
 
 export const stroke = (
   stroke: Stroke,
@@ -11,25 +43,58 @@ export const stroke = (
     return;
   }
   if (stroke.points.length === 0) return;
-  context.lineCap = "round";
-  context.lineJoin = "round";
-  context.lineWidth = stroke.brush.width;
-  const color = ToServer.color(stroke.brush.color);
-  context.strokeStyle = `rgba(${color.r} ${color.g} ${color.b} / ${stroke.brush.opacity / 1000}%)`;
   if (stroke.brush.erase) {
     context.globalCompositeOperation = "destination-out";
   } else {
     context.globalCompositeOperation = "source-over";
   }
 
-  const start = stroke.points[0];
-  context.beginPath();
-  context.moveTo(start.x, start.y);
-  context.lineTo(start.x, start.y);
-  for (let i = 1; i < stroke.points.length; i++) {
-    context.lineTo(stroke.points[i].x, stroke.points[i].y);
+  const brushImage = generateShape(stroke.brush);
+
+  let totalDistance = 0;
+  for (let i = 0; i < stroke.points.length - 1; i++) {
+    totalDistance += getDistance(stroke.points[i], stroke.points[i + 1]);
   }
-  context.stroke();
+
+  context.drawImage(
+    brushImage,
+    stroke.points[0].x - stroke.brush.width / 2,
+    stroke.points[0].y - stroke.brush.width / 2,
+  );
+
+  let walkedDistance = 0;
+  let lastDrawDistance = 0;
+  let position;
+  let index = 0;
+  while (walkedDistance < totalDistance) {
+    for (let i = index; i < stroke.points.length - 1; i++) {
+      index = i;
+      const pointsDistance = Math.max(getDistance(stroke.points[i], stroke.points[i + 1]), 1);
+      if (
+        walkedDistance + pointsDistance >=
+        lastDrawDistance + stroke.brush.repeat * stroke.brush.width
+      ) {
+        break;
+      }
+      walkedDistance += pointsDistance;
+    }
+    if (
+      index === stroke.points.length - 2 &&
+      lastDrawDistance + stroke.brush.repeat * stroke.brush.width !== totalDistance
+    )
+      return;
+    position = getPointOnSegment(
+      stroke.points[index],
+      stroke.points[index + 1],
+      lastDrawDistance + stroke.brush.repeat * stroke.brush.width - walkedDistance,
+    );
+    context.drawImage(
+      brushImage,
+      position.x - stroke.brush.width / 2,
+      position.y - stroke.brush.width / 2,
+    );
+    lastDrawDistance += Math.max(stroke.brush.repeat * stroke.brush.width, 1);
+  }
 };
 
 export const motion = () => {};

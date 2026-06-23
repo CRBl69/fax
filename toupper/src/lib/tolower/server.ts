@@ -78,6 +78,7 @@ export class Server extends typedEventTarget {
       const data: WebSocketMessage = JSON.parse(msg.data);
       const eventName = Object.keys(data)[0];
       const event = new CustomEvent(eventName.toLowerCase(), { detail: Object.values(data)[0] });
+      console.log(eventName, Object.values(data)[0]);
       this.dispatchEvent(event);
     };
 

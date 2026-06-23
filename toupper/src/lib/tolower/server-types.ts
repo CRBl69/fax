@@ -24,6 +24,7 @@ export type Brush = {
   diffusion: number;
   opacity: number;
   erase: boolean;
+  repeat: number;
 };
 
 export type Stroke = {
@@ -48,7 +49,7 @@ export type Bucket = {
   };
 };
 
-export type Instruction = Stroke | Motion | ImageInsertion;
+export type Instruction = Stroke | Motion | ImageInsertion | Bucket;
 
 export type InstructionBox = {
   instruction: Instruction;

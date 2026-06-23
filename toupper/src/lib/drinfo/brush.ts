@@ -9,6 +9,7 @@ export type Brush = {
   diffusion: number;
   opacity: number;
   erase: boolean;
+  repeat: number;
 };
 
 export type BrushShape = {

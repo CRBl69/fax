@@ -145,6 +145,7 @@
     if (!canvas) {
       return;
     }
+    // TODO: make it so that we don't redraw the whole shape
     const tempContext = canvas!.getContext("2d")!;
     tempContext.clearRect(0, 0, canvas.width, canvas.height);
     stroke(instructionBox.instruction as Stroke, tempContext);

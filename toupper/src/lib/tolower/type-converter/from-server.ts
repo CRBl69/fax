@@ -46,6 +46,7 @@ export class FromServer {
       diffusion: brush.diffusion,
       opacity: brush.opacity,
       erase: brush.erase,
+      repeat: brush.repeat,
     };
   }
 

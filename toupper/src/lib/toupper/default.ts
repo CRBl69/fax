@@ -9,6 +9,7 @@ export const getDefaultBrush = (): Brush => ({
   },
   opacity: 100000,
   erase: false,
+  repeat: 0.02,
 });
 
 export const getSecondaryDefaultBrush = (): Brush => ({

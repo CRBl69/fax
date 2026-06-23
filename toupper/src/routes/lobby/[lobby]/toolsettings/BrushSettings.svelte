@@ -65,6 +65,22 @@
       />
     </div>
   </div>
+  <div class="inner-container brush-container">
+    <label for="brush-repeat">Repeat:</label>
+    <div class="input-group">
+      <input
+        id="brush-repeat"
+        type="range"
+        min="1"
+        max="1000"
+        bind:value={() => gs.brush.repeat * 1000, (v) => (gs.brush.repeat = v / 1000)}
+      />
+      <input
+        type="number"
+        bind:value={() => gs.brush.repeat * 1000, (v) => (gs.brush.repeat = v / 1000)}
+      />
+    </div>
+  </div>
   <div class="inner-container">
     <label for="brush-shape">Shape:</label>
     <select bind:value={gs.brush.brushShape.shape}>
