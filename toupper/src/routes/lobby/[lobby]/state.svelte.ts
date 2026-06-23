@@ -22,7 +22,7 @@ interface GlobalState {
   bg: boolean;
   instructionBox: InstructionBox | null;
   hoveredInstruction: InstructionBox | null;
-  images: Map<string, HTMLImageElement>;
+  images: SvelteMap<string, HTMLImageElement>;
   draggedInstruction: number | null;
   tool: Tool;
   canvasWorker: Worker | null;
@@ -43,7 +43,7 @@ export const gs: GlobalState = $state({
   bg: true,
   instructionBox: null,
   hoveredInstruction: null,
-  images: new Map(),
+  images: new SvelteMap(),
   draggedInstruction: null,
   tool: Tool.Stroke,
   canvasWorker: null,

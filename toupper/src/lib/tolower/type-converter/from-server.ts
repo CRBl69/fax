@@ -109,7 +109,7 @@ export class FromServer {
   }
 
   static drawing(drawing: Drawing): DrInFo.Drawing {
-    const layers: [string, DrInFo.Layer][] = Object.entries(drawing.layers).map(([k, v], _) => [
+    const layers: [string, DrInFo.Layer][] = Object.entries(drawing.layers).map(([k, v]) => [
       k,
       FromServer.layer(v),
     ]);

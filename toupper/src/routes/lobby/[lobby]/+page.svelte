@@ -15,7 +15,7 @@
 
   let username = $page.params.lobby;
 
-  let users: SvelteMap<string, Cursor | null> = $state(new SvelteMap());
+  let users: SvelteMap<string, Cursor | null> = new SvelteMap();
 
   let menu: "tool" | "history" = $state("tool");
 
@@ -141,12 +141,16 @@
   </div>
   <div class="history-pane">
     <div class="tool-history-tabs">
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
       <div
         class={`tool-history-tab ${menu === "tool" ? "tool-history-tab-selected" : ""}`}
         onclick={() => (menu = "tool")}
       >
         Tool
       </div>
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
       <div
         class={`tool-history-tab ${menu === "history" ? "tool-history-tab-selected" : ""}`}
         onclick={() => (menu = "history")}

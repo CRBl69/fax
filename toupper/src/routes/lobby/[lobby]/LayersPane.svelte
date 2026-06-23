@@ -30,6 +30,7 @@
 <div class="container">
   <div class="layer-name">
     <input type="text" placeholder="layer name" bind:value={newLayerName} />
+    <!-- svelte-ignore a11y_consider_explicit_label -->
     <button
       onclick={() => {
         gs.server?.addLayer(newLayerName);
@@ -37,7 +38,7 @@
     >
   </div>
   <div class="layers">
-    {#each gs.drawing.layerOrder.toReversed() as layer}
+    {#each gs.drawing.layerOrder.toReversed() as layer (layer)}
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div
         ondrop={() => {

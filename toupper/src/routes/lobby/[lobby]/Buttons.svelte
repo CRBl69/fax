@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { gs } from "./state.svelte";
-  import { applyInstruction, stroke, Tool } from "$lib/toupper";
+  import { applyInstruction, Tool } from "$lib/toupper";
   import { SERVER_URL } from "$lib/env";
 
   let saveUrl = $state("");
@@ -11,8 +11,6 @@
   onMount(() => {
     saveUrl = `${location.protocol}//${SERVER_URL}/save`;
   });
-
-  $inspect(gs.tool);
 
   $effect(() => {
     if (gs.selectedLayer && files && files[0]) {
@@ -53,6 +51,8 @@
 </script>
 
 {#snippet icon(name: string, enabled: boolean, onclick?: () => void)}
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
     class={`icon  icon-${enabled ? "enabled" : "disabled"}`}
     onclick={() => {
@@ -93,7 +93,7 @@
       class={`icon  icon-${gs.tool === Tool.InsertImage ? "enabled" : "disabled"}`}
       onclick={() => {}}
     >
-      <label for="insertion"><span class={`insert-icon`}></span></label>
+      <label for="insertion"><span class="insert-icon"></span></label>
       <input
         type="file"
         accept="image/png, image/jpeg"

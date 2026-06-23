@@ -1,6 +1,6 @@
 import type { Bucket, ImageInsertion, Instruction, Stroke } from "$lib/drinfo";
 import { ToServer } from "$lib/tolower";
-import { drawImage, rgbToStr, strToRgb } from "./util";
+import { drawImage, strToRgb } from "./util";
 
 export const stroke = (
   stroke: Stroke,
@@ -75,7 +75,7 @@ export const bucket = (
     const g = imageData.data[pixelPos + 1];
     const b = imageData.data[pixelPos + 2];
     const a = imageData.data[pixelPos + 3];
-    let tolerance = 10;
+    const tolerance = 10;
     return (
       Math.abs(r - colorToPaint.r) < tolerance &&
       Math.abs(g - colorToPaint.g) < tolerance &&
@@ -91,9 +91,9 @@ export const bucket = (
     imageData.data[pixelPos + 3] = fillColor.a;
   };
 
-  let pixelStack = [[Math.floor(bucket.point.x), Math.floor(bucket.point.y)]];
+  const pixelStack = [[Math.floor(bucket.point.x), Math.floor(bucket.point.y)]];
 
-  let atTheEnd: number[] = [];
+  const atTheEnd: number[] = [];
   const pushSurroundingToAtTheEnd = (pixelPos: number) => {
     atTheEnd.push(pixelPos + 4);
     atTheEnd.push(pixelPos - 4);
@@ -102,9 +102,9 @@ export const bucket = (
   };
 
   while (pixelStack.length) {
-    let newPos, x, y, pixelPos, reachLeft, reachRight;
-    newPos = pixelStack.pop();
-    x = newPos![0];
+    const newPos = pixelStack.pop();
+    const x = newPos![0];
+    let y, pixelPos, reachLeft, reachRight;
     y = newPos![1];
 
     pixelPos = (y * context.canvas.width + x) * 4;

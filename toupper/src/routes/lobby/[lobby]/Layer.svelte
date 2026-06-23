@@ -80,7 +80,7 @@
 
     let closestContextIndex = 0;
 
-    for (const [contextIndex, _] of layerData.historyContexts) {
+    for (const contextIndex of layerData.historyContexts.keys()) {
       if (contextIndex > closestContextIndex && contextIndex < index) {
         closestContextIndex = contextIndex;
       }

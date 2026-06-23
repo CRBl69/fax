@@ -1,13 +1,5 @@
 <script lang="ts">
   import { gs } from "../state.svelte";
-
-  let displayOpacity = $state(gs.brush.opacity / 1000);
-  $effect(() => {
-    displayOpacity = gs.brush.opacity / 1000;
-  });
-  $effect(() => {
-    gs.brush.opacity = displayOpacity * 1000;
-  });
 </script>
 
 <div class="container">
@@ -28,17 +20,18 @@
     </div>
   </div>
   <div class="inner-container brush-container">
-    <label for="brush-width">Opacity:</label>
+    <label for="brush-opactiy">Opacity:</label>
     <div class="input-group">
-      <input id="brush-width" type="range" min="1" max="100" bind:value={displayOpacity} />
+      <input
+        id="brush-opactiy"
+        type="range"
+        min="1"
+        max="100"
+        bind:value={() => gs.brush.opacity / 1000, (v) => (gs.brush.opacity = v * 1000)}
+      />
       <input
         type="number"
-        oninput={(e) => {
-          if (e.currentTarget.value && !isNaN(Number(e.currentTarget.value))) {
-            gs.brush.opacity = Number(e.currentTarget.value);
-          }
-        }}
-        value={displayOpacity}
+        bind:value={() => gs.brush.opacity / 1000, (v) => (gs.brush.opacity = v * 1000)}
       />
     </div>
   </div>
@@ -75,8 +68,8 @@
   <div class="inner-container">
     <label for="brush-shape">Shape:</label>
     <select bind:value={gs.brush.brushShape.shape}>
-      <option value={"circle"} selected>Circle</option>
-      <option value={"square"}>Square</option>
+      <option value="circle" selected>Circle</option>
+      <option value="square">Square</option>
     </select>
   </div>
 </div>

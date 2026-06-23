@@ -2,8 +2,7 @@
   import { type Cursor, getX, getY, Tool } from "$lib/toupper";
   import type { SvelteMap } from "svelte/reactivity";
   import { gs } from "./state.svelte";
-  import { onMount, untrack } from "svelte";
-  import { preventDefault } from "svelte/legacy";
+  import { untrack } from "svelte";
 
   interface Props {
     users: SvelteMap<string, Cursor | null>;

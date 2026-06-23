@@ -1,13 +1,5 @@
 <script lang="ts">
   import { gs } from "../state.svelte";
-
-  let displayTolerance = $state(gs.tolerance / 1000);
-  $effect(() => {
-    displayTolerance = gs.tolerance / 1000;
-  });
-  $effect(() => {
-    gs.tolerance = displayTolerance * 1000;
-  });
 </script>
 
 <div class="container">
@@ -30,15 +22,16 @@
   <div class="inner-container">
     <label for="brush-diffusion">Tolerance:</label>
     <div class="input-group">
-      <input id="brush-diffusion" type="range" min="0" max="100" bind:value={displayTolerance} />
+      <input
+        id="brush-diffusion"
+        type="range"
+        min="0"
+        max="100"
+        bind:value={() => gs.tolerance / 1000, (v) => (gs.tolerance = v * 1000)}
+      />
       <input
         type="number"
-        oninput={(e) => {
-          if (e.currentTarget.value && !isNaN(Number(e.currentTarget.value))) {
-            gs.tolerance = Number(e.currentTarget.value);
-          }
-        }}
-        value={displayTolerance}
+        bind:value={() => gs.tolerance / 1000, (v) => (gs.tolerance = v * 1000)}
       />
     </div>
   </div>

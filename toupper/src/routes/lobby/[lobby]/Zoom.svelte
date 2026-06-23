@@ -14,7 +14,7 @@
     moving = true;
   }
 
-  function onMouseMove(e: any) {
+  function onMouseMove(e: MouseEvent) {
     if (moving) {
       left += e.movementX;
       bottom -= e.movementY;
@@ -88,6 +88,7 @@
   });
 </script>
 
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="zoom" onmousedown={onMouseDown} style="left: {left}px; bottom: {bottom}px;">
   <canvas bind:this={canvas} height={200} width={200}></canvas>
 </div>

@@ -167,6 +167,7 @@
     // TODO: undo/redo
   }}
 >
+  <!-- svelte-ignore a11y_mouse_events_have_key_events -->
   <canvas
     height={150}
     width={250}
@@ -192,13 +193,13 @@
     <input
       type="checkbox"
       checked={instruction.applied}
-      onclick={(_) => {
+      onclick={() => {
         gs.server?.setHistoryElementVisibility(layerName, index, !instruction.applied);
       }}
     />
     <button
       class="trash"
-      onclick={(_) => {
+      onclick={() => {
         gs.server?.removeInstruction(layerName, index);
       }}>X</button
     >
