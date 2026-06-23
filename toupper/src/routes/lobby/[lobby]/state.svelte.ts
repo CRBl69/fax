@@ -39,6 +39,7 @@ interface GlobalState {
   moveGrab: Point | null;
   tempSelects: SvelteMap<string, { points: Point[]; closed: boolean }>;
   tempImages: SvelteMap<string, ImageInsertion>;
+  tempMoves: SvelteMap<string, { selection: Point[]; end: Point }>;
 }
 
 export const gs: GlobalState = $state({
@@ -66,4 +67,5 @@ export const gs: GlobalState = $state({
   moveGrab: null,
   tempSelects: new SvelteMap(),
   tempImages: new SvelteMap(),
+  tempMoves: new SvelteMap(),
 });

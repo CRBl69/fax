@@ -44,6 +44,8 @@
 
   let tempSelectUuid: string | undefined = $state();
 
+  let tempMoveUuid: string | undefined = $state();
+
   let friendStrokes: Map<string, InstructionBox> = $state(new Map());
 
   const onkeydown = (e: KeyboardEvent) => {
@@ -162,6 +164,18 @@
     tempSelectUuid = undefined;
   };
 
+  const sendTempMove = (selection: Point[], end: Point) => {
+    if (!tempMoveUuid) tempMoveUuid = crypto.randomUUID();
+    gs.server?.sendTempMove(tempMoveUuid, name, selection, end);
+  };
+
+  const clearTempMove = () => {
+    if (tempMoveUuid) {
+      gs.server?.sendTempMove(tempMoveUuid, name, null, null);
+      tempMoveUuid = undefined;
+    }
+  };
+
   // Browser event handlers.
   const onmousemoveimageinsertion = (e: MouseEvent) => {
     let imageInsertion = gs.instructionBox!.instruction as ImageInsertion;
@@ -232,6 +246,14 @@
       const c = cursorPosition!;
       sendTempSelect([s, { x: c.x, y: s.y }, c, { x: s.x, y: c.y }], true);
     }
+    if (gs.tool === Tool.Move && gs.moveGrab && gs.selection && cursorPosition) {
+      const dx = cursorPosition.x - gs.moveGrab.x;
+      const dy = cursorPosition.y - gs.moveGrab.y;
+      sendTempMove(gs.selection, {
+        x: gs.selection[0].x + dx,
+        y: gs.selection[0].y + dy,
+      });
+    }
   };
 
   const onmousedownimageinsertion = (e: MouseEvent) => {
@@ -290,6 +312,7 @@
   const onmousedownmove = () => {
     if (gs.selection) {
       gs.moveGrab = cursorPosition!;
+      sendTempMove(gs.selection, gs.selection[0]);
     }
   };
   const onmousedown = (element: HTMLDivElement, e: MouseEvent) => {
@@ -343,6 +366,7 @@
       );
       gs.selection = selection.map((p) => ({ x: p.x + delta.x, y: p.y + delta.y }));
       gs.moveGrab = null;
+      clearTempMove();
     }
   };
   const onmouseup = (element: HTMLDivElement, e: MouseEvent) => {

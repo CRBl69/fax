@@ -121,6 +121,14 @@
       }
     });
 
+    gs.server.registerEventHandler("tempmove", ({ uuid, selection, end }) => {
+      if (selection && end) {
+        gs.tempMoves.set(uuid, { selection, end });
+      } else {
+        gs.tempMoves.delete(uuid);
+      }
+    });
+
     document.addEventListener("keydown", (e) => {
       if (e.key === "x") {
         const temp = gs.secondaryBrush;

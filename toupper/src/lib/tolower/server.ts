@@ -12,6 +12,7 @@ import type {
   TempDrawMessage,
   TempSelectMessage,
   TempImageMessage,
+  TempMoveMessage,
   SetInstructionVisibilityMessage,
   SetLayerVisibilityMessage,
   WebSocketMessage,
@@ -40,6 +41,7 @@ interface EventMap {
   tempdraw: CustomEvent<TempDrawMessage["TempDraw"]>;
   tempselect: CustomEvent<TempSelectMessage["TempSelect"]>;
   tempimage: CustomEvent<TempImageMessage["TempImage"]>;
+  tempmove: CustomEvent<TempMoveMessage["TempMove"]>;
 }
 
 interface ServerEventTarget extends EventTarget {
@@ -256,6 +258,23 @@ export class Server extends typedEventTarget {
         uuid,
         layer,
         image_insertion: imageInsertion,
+      },
+    };
+    this.send(message);
+  }
+
+  sendTempMove(
+    uuid: string,
+    layer: string,
+    selection: DrInFo.Point[] | null,
+    end: DrInFo.Point | null,
+  ) {
+    const message: TempMoveMessage = {
+      TempMove: {
+        uuid,
+        layer,
+        selection,
+        end,
       },
     };
     this.send(message);

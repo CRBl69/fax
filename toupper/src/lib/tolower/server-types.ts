@@ -141,6 +141,15 @@ export type TempImageMessage = {
   };
 };
 
+export type TempMoveMessage = {
+  TempMove: {
+    uuid: string;
+    layer: string;
+    selection: Point[] | null;
+    end: Point | null;
+  };
+};
+
 export type SetLayerVisibilityMessage = {
   SetLayerVisibility: {
     layer: string;
@@ -213,4 +222,5 @@ export type WebSocketMessage =
   | JoinMessage
   | TempDrawMessage
   | TempSelectMessage
-  | TempImageMessage;
+  | TempImageMessage
+  | TempMoveMessage;

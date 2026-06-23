@@ -33,6 +33,18 @@
       strokePoly(ctx, s.points, s.closed);
     }
 
+    // Other users' in-progress moves.
+    ctx.strokeStyle = "#ef8e5b";
+    for (const m of gs.tempMoves.values()) {
+      const dx = m.end.x - m.selection[0].x;
+      const dy = m.end.y - m.selection[0].y;
+      strokePoly(
+        ctx,
+        m.selection.map((p) => ({ x: p.x + dx, y: p.y + dy })),
+        true,
+      );
+    }
+
     // Local user's selection.
     ctx.lineWidth = Math.max(1, 2 / gs.ratio);
     ctx.strokeStyle = "#000000";
