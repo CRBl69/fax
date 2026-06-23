@@ -1,7 +1,6 @@
 # Short term
 
 - Finish brush implementations
-  - brush diffusion
   - custom brushes
     - support import
     - add 2 or 3 default custom ones

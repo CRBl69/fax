@@ -51,17 +51,17 @@
     </div>
   </div>
   <div class="inner-container">
-    <label for="brush-diffusion">Diffusion:</label>
+    <label for="brush-hardness">hardness:</label>
     <div class="input-group">
-      <input id="brush-diffusion" type="range" min="0" max="100" bind:value={gs.brush.diffusion} />
+      <input id="brush-hardness" type="range" min="0" max="100" bind:value={gs.brush.hardness} />
       <input
         type="number"
         oninput={(e) => {
           if (e.currentTarget.value && !isNaN(Number(e.currentTarget.value))) {
-            gs.brush.diffusion = Number(e.currentTarget.value);
+            gs.brush.hardness = Number(e.currentTarget.value);
           }
         }}
-        value={gs.brush.diffusion}
+        value={gs.brush.hardness}
       />
     </div>
   </div>

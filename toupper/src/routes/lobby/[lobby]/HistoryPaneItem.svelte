@@ -73,7 +73,7 @@
         },
         color: stroke.brush.color,
         width: stroke.brush.width,
-        diffusion: stroke.brush.diffusion,
+        hardness: stroke.brush.hardness,
         opacity: stroke.brush.opacity,
         erase: stroke.brush.erase,
       },

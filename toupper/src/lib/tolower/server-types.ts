@@ -21,7 +21,7 @@ export type Brush = {
   brush_shape: BrushShape;
   color: Color;
   width: number;
-  diffusion: number;
+  hardness: number;
   opacity: number;
   erase: boolean;
   repeat: number;

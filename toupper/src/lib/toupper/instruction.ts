@@ -12,10 +12,16 @@ const generateShape = (brush: Brush): OffscreenCanvas => {
   context.lineJoin = "round";
   context.lineWidth = brush.width;
   if (brush.brushShape.shape === "circle") {
-    context.beginPath();
-    context.moveTo(brush.width / 2, brush.width / 2);
-    context.lineTo(brush.width / 2, brush.width / 2);
-    context.stroke();
+    const radius = brush.width / 2;
+    const grad = context.createRadialGradient(radius, radius, 0, radius, radius, radius);
+    grad.addColorStop(
+      1 - brush.hardness / 100,
+      `rgba(${color.r} ${color.g} ${color.b} / ${brush.opacity / 1000}%)`,
+    );
+    grad.addColorStop(1, `rgba(${color.r} ${color.g} ${color.b} / 0%)`);
+    context.fillStyle = grad;
+    context.arc(radius, radius, radius, 0, Math.PI * 2);
+    context.fill();
   } else {
     context.fillRect(0, 0, brush.width, brush.width);
   }

@@ -43,7 +43,7 @@ export class FromServer {
       brushShape: FromServer.brushShape(brush.brush_shape),
       color: FromServer.color(brush.color),
       width: brush.width,
-      diffusion: brush.diffusion,
+      hardness: brush.hardness,
       opacity: brush.opacity,
       erase: brush.erase,
       repeat: brush.repeat,

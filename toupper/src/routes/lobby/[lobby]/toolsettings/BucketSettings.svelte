@@ -20,10 +20,10 @@
     </div>
   </div>
   <div class="inner-container">
-    <label for="brush-diffusion">Tolerance:</label>
+    <label for="bucket-tolerance">Tolerance:</label>
     <div class="input-group">
       <input
-        id="brush-diffusion"
+        id="bucket-tolerance"
         type="range"
         min="0"
         max="100"

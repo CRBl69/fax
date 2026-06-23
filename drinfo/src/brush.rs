@@ -11,8 +11,8 @@ pub struct Brush {
     pub color: Color,
     /// The width of the brush (diameter).
     pub width: f32,
-    /// The diffusion of the brush.
-    pub diffusion: u64,
+    /// The hardness of the brush.
+    pub hardness: u64,
     /// The opacity of the brush.
     pub opacity: u64,
     /// Wether to erase or not.
@@ -27,7 +27,7 @@ impl Default for Brush {
             brush_shape: BrushShape::Circle,
             color: Color::default(),
             width: 1.0,
-            diffusion: 0,
+            hardness: 0,
             opacity: 100_000,
             erase: false,
             repeat: 0.02,
@@ -41,7 +41,7 @@ impl Brush {
         brush_shape: BrushShape,
         color: Color,
         width: f32,
-        diffusion: u64,
+        hardness: u64,
         opacity: u64,
         erase: bool,
         repeat: f64,
@@ -50,7 +50,7 @@ impl Brush {
             brush_shape,
             color,
             width,
-            diffusion,
+            hardness,
             opacity,
             erase,
             repeat,
@@ -68,8 +68,8 @@ impl Brush {
     }
 
     /// Updates the opacity of the brush.
-    pub fn set_diffusion(&mut self, diffusion: u64) {
-        self.diffusion = diffusion;
+    pub fn set_hardness(&mut self, hardness: u64) {
+        self.hardness = hardness;
     }
 
     /// Updates the opacity of the brush.

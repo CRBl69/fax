@@ -49,7 +49,7 @@ export class ToServer {
       brush_shape: ToServer.brushShape(brush.brushShape),
       color: ToServer.color(brush.color),
       width: brush.width,
-      diffusion: brush.diffusion,
+      hardness: brush.hardness,
       opacity: brush.opacity,
       erase: brush.erase,
       repeat: brush.repeat,
