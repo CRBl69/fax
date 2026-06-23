@@ -24,12 +24,12 @@ fax has many features, including:
 - saving and reopening a drawing
 - eraser
 - zoom
+- image insertion
 
 ### Planned
 
 fax also has some planned features:
 
-- image insertion
 - selection tool
 - file optimization
 - layer export
