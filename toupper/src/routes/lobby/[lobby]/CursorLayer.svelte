@@ -23,7 +23,10 @@
       }
       context.beginPath();
       context.strokeStyle = cursor.brush.color;
-      if (username === null && gs.tool === Tool.PickColor) {
+      if (
+        username === null &&
+        (gs.tool === Tool.PickColor || gs.tool === Tool.Select || gs.tool === Tool.Move)
+      ) {
         return;
       }
       if (cursor.brush.brushShape.shape === "circle") {

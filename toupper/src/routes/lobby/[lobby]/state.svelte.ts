@@ -27,6 +27,9 @@ interface GlobalState {
   tool: Tool;
   canvasWorker: Worker | null;
   tolerance: number;
+  selection: { start: Point; end: Point } | null;
+  selectionStart: Point | null;
+  moveGrab: Point | null;
 }
 
 export const gs: GlobalState = $state({
@@ -48,4 +51,7 @@ export const gs: GlobalState = $state({
   tool: Tool.Stroke,
   canvasWorker: null,
   tolerance: 0,
+  selection: null,
+  selectionStart: null,
+  moveGrab: null,
 });

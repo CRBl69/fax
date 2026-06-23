@@ -20,4 +20,6 @@ export enum Tool {
   InsertImage,
   PickColor,
   Bucket,
+  Select,
+  Move,
 }

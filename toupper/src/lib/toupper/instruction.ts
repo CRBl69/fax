@@ -1,4 +1,12 @@
-import type { Brush, Bucket, ImageInsertion, Instruction, Point, Stroke } from "$lib/drinfo";
+import type {
+  Brush,
+  Bucket,
+  ImageInsertion,
+  Instruction,
+  Motion,
+  Point,
+  Stroke,
+} from "$lib/drinfo";
 import { ToServer } from "$lib/tolower";
 import { drawImage, strToRgb } from "./util";
 
@@ -103,7 +111,46 @@ export const stroke = (
   }
 };
 
-export const motion = () => {};
+const traceSelection = (
+  motion: Motion,
+  context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+) => {
+  context.beginPath();
+  context.moveTo(motion.selection[0].x, motion.selection[0].y);
+  for (let i = 1; i < motion.selection.length; i++) {
+    context.lineTo(motion.selection[i].x, motion.selection[i].y);
+  }
+  context.closePath();
+};
+
+export const motion = (
+  motion: Motion,
+  context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+) => {
+  if (!context) {
+    console.warn("No context for draw.");
+    return;
+  }
+  if (motion.selection.length < 3) return;
+
+  const dx = motion.end.x - motion.selection[0].x;
+  const dy = motion.end.y - motion.selection[0].y;
+
+  const tempCanvas = new OffscreenCanvas(context.canvas.width, context.canvas.height);
+  const tempContext = tempCanvas.getContext("2d")!;
+  traceSelection(motion, tempContext);
+  tempContext.clip();
+  tempContext.drawImage(context.canvas, 0, 0);
+
+  context.globalCompositeOperation = "destination-out";
+  traceSelection(motion, context);
+  context.fill();
+
+  context.globalCompositeOperation = "source-over";
+  context.translate(dx, dy);
+  context.drawImage(tempCanvas, 0, 0);
+  context.resetTransform();
+};
 
 export const insertImage = async (
   imageInsertion: ImageInsertion,
@@ -241,10 +288,12 @@ export const applyInstruction = async (
   context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
   imageCache: Map<string, HTMLImageElement>,
 ) => {
-  if ("point" in instruction && "base64" in instruction) {
-    await insertImage(instruction, context, imageCache);
-  } else if ("points" in instruction) {
+  if ("points" in instruction) {
     stroke(instruction, context);
+  } else if ("selection" in instruction) {
+    motion(instruction, context);
+  } else if ("point" in instruction && "base64" in instruction) {
+    await insertImage(instruction, context, imageCache);
   } else if ("point" in instruction && "brush" in instruction) {
     bucket(instruction, context);
   }

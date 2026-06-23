@@ -255,6 +255,19 @@
       name,
     );
   };
+  const onmousedownselect = () => {
+    if (!gs.selectionStart) {
+      gs.selectionStart = cursorPosition!;
+    } else {
+      gs.selection = { start: gs.selectionStart, end: cursorPosition! };
+      gs.selectionStart = null;
+    }
+  };
+  const onmousedownmove = () => {
+    if (gs.selection) {
+      gs.moveGrab = cursorPosition!;
+    }
+  };
   const onmousedown = (element: HTMLDivElement, e: MouseEvent) => {
     updateCursorPosition(element, e);
     mousedown = true;
@@ -268,6 +281,10 @@
       onmousedownimageinsertion(e);
     } else if (gs.tool === Tool.Bucket) {
       onmousedownbucket();
+    } else if (gs.tool === Tool.Select) {
+      onmousedownselect();
+    } else if (gs.tool === Tool.Move) {
+      onmousedownmove();
     } else if (gs.tool === Tool.Stroke && !gs.instructionBox) {
       onmousedownstroke(e);
     }
@@ -280,11 +297,43 @@
     }
     lastPoint = gs.cursorPosition!;
   };
+  const onmouseupmove = () => {
+    if (gs.selection && gs.moveGrab && cursorPosition) {
+      const delta = {
+        x: cursorPosition.x - gs.moveGrab.x,
+        y: cursorPosition.y - gs.moveGrab.y,
+      };
+      const selection = [
+        gs.selection.start,
+        { x: gs.selection.end.x, y: gs.selection.start.y },
+        gs.selection.end,
+        { x: gs.selection.start.x, y: gs.selection.end.y },
+      ];
+      gs.server?.instructionBox(
+        {
+          instruction: {
+            end: { x: selection[0].x + delta.x, y: selection[0].y + delta.y },
+            selection,
+          },
+          uuid: crypto.randomUUID(),
+          applied: true,
+        },
+        name,
+      );
+      gs.selection = {
+        start: { x: gs.selection.start.x + delta.x, y: gs.selection.start.y + delta.y },
+        end: { x: gs.selection.end.x + delta.x, y: gs.selection.end.y + delta.y },
+      };
+      gs.moveGrab = null;
+    }
+  };
   const onmouseup = (element: HTMLDivElement, e: MouseEvent) => {
     updateCursorPosition(element, e);
     mousedown = false;
     if (gs.tool === Tool.InsertImage) {
       // Nothing to do on mouse up in image insertion mode.
+    } else if (gs.tool === Tool.Move) {
+      onmouseupmove();
     } else if (gs.instructionBox && gs.tool === Tool.Stroke) {
       onmouseupstroke();
     }

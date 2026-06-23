@@ -5,6 +5,7 @@
   import type { SvelteMap } from "svelte/reactivity";
   import { gs } from "./state.svelte";
   import PreviewLayer from "./PreviewLayer.svelte";
+  import SelectionLayer from "./SelectionLayer.svelte";
 
   interface Props {
     users: SvelteMap<string, Cursor | null>;
@@ -49,6 +50,7 @@
       <LayerComponent {listener} name={layer} />
     {/each}
     <PreviewLayer />
+    <SelectionLayer />
     <CursorLayer {users} {listener} />
   </div>
 </div>
