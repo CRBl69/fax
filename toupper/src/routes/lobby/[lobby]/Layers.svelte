@@ -1,17 +1,10 @@
 <script lang="ts">
   import { drawSquares } from "$lib/render";
-  import { getRatio, type Cursor } from "$lib/toupper";
+  import { getRatio } from "$lib/toupper";
   import CursorLayer from "./CursorLayer.svelte";
   import LayerComponent from "./Layer.svelte";
-  import type { SvelteMap } from "svelte/reactivity";
   import { gs } from "./state.svelte";
   import PreviewLayer from "./PreviewLayer.svelte";
-
-  interface Props {
-    users: SvelteMap<string, Cursor | null>;
-  }
-
-  const { users }: Props = $props();
 
   let realHeight = $state(0);
   let realWidth = $state(0);
@@ -50,7 +43,7 @@
       <LayerComponent {listener} name={layer} />
     {/each}
     <PreviewLayer />
-    <CursorLayer {users} {listener} />
+    <CursorLayer {listener} />
   </div>
 </div>
 

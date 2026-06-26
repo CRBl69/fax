@@ -27,8 +27,8 @@
 
   $effect(() => {
     const cursorPosition = gs.cursorPosition;
-    gs.inProgress;
-    gs.instructionBox;
+    void gs.inProgressTick;
+    void gs.instructionBox;
     if (context && cursorPosition !== null) {
       context.clearRect(0, 0, canvas.width, canvas.height);
       drawSquares(context);

@@ -451,11 +451,10 @@
     if (!historyContext) return;
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     ctx.drawImage(historyContext.canvas, 0, 0);
-    for (const [, entry] of gs.inProgress) {
-      if (entry.layer !== name) continue;
+    for (const [, entry] of layerData.inProgress) {
       applyInstruction(entry.instructionBox.instruction, ctx, gs.images);
     }
-    if (gs.instructionBox) {
+    if (gs.selectedLayer === name && gs.instructionBox) {
       applyInstruction(gs.instructionBox.instruction, ctx, gs.images);
     }
   });

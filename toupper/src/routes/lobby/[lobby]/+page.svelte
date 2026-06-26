@@ -8,15 +8,12 @@
   import Buttons from "./Buttons.svelte";
   import HistoryPane from "./HistoryPane.svelte";
   import LayersPane from "./LayersPane.svelte";
-  import type { Cursor } from "$lib/toupper";
   import { page } from "$app/stores";
   import { gs, type LayerData } from "./state.svelte";
   import Zoom from "./Zoom.svelte";
   import ToolSettings from "./toolsettings/ToolSettings.svelte";
 
   let username = $page.params.lobby;
-
-  let users: SvelteMap<string, Cursor | null> = new SvelteMap();
 
   let menu: "tool" | "history" = $state("tool");
 
@@ -42,23 +39,25 @@
         const x: LayerData = $state({
           historyContexts: new SvelteMap(),
           currentCanvas: null,
+          inProgress: new SvelteMap(),
         });
         gs.layerData.set(layerName, x);
       }
       gs.drawing = FromServer.drawing(data.drawing);
       data.users.forEach((u) => {
-        if (u !== username) users.set(u, null);
+        if (u !== username) gs.users.set(u, null);
       });
     });
 
     gs.server.registerEventHandler("cursorout", (data) => {
-      users.set(data.username, data.cursor ? FromServer.cursor(data.cursor) : null);
+      gs.users.set(data.username, data.cursor ? FromServer.cursor(data.cursor) : null);
     });
 
     gs.server.registerEventHandler("addlayer", (data) => {
       gs.layerData.set(data, {
         historyContexts: new SvelteMap(),
         currentCanvas: null,
+        inProgress: new SvelteMap(),
       });
       gs.drawing.addLayer(data);
     });
@@ -76,7 +75,7 @@
     });
 
     gs.server.registerEventHandler("join", (data) => {
-      users.set(data, null);
+      gs.users.set(data, null);
     });
 
     gs.server.registerEventHandler("sethistoryindex", (data) => {
@@ -101,7 +100,8 @@
 
     gs.server.registerEventHandler("instruction", ({ layer, instruction }) => {
       gs.drawing.instruct(layer, FromServer.instructionBox(instruction));
-      gs.inProgress.delete(instruction.uuid);
+      gs.layerData.get(layer)?.inProgress.delete(instruction.uuid);
+      gs.inProgressTick++;
     });
 
     gs.server.registerEventHandler("removeinstruction", ({ layer, index }) => {
@@ -114,21 +114,23 @@
 
     gs.server.registerEventHandler("tempdraw", (data) => {
       if (data.layer !== gs.selectedLayer) return;
+      const ip = gs.layerData.get(data.layer)?.inProgress;
+      if (!ip) return;
       const brush = FromServer.brush(data.brush);
-      const existing = gs.inProgress.get(data.uuid);
+      const existing = ip.get(data.uuid);
       if (!existing) {
         const stroke: Stroke = {
           points: [data.start, data.end],
           brush,
         };
-        gs.inProgress.set(data.uuid, {
+        ip.set(data.uuid, {
           instructionBox: { uuid: data.uuid, applied: true, instruction: stroke },
           layer: data.layer,
           username: "",
         });
       } else {
         const stroke = existing.instructionBox.instruction as Stroke;
-        gs.inProgress.set(data.uuid, {
+        ip.set(data.uuid, {
           ...existing,
           instructionBox: {
             ...existing.instructionBox,
@@ -139,35 +141,45 @@
           },
         });
       }
+      gs.inProgressTick++;
     });
 
     gs.server.registerEventHandler("tempimagestart", ({ uuid, image_insertion, layer }) => {
-      gs.inProgress.set(uuid, {
+      const ip = gs.layerData.get(layer)?.inProgress;
+      if (!ip) return;
+      ip.set(uuid, {
         instructionBox: { uuid, applied: true, instruction: image_insertion as ImageInsertion },
         layer,
         username: "",
       });
+      gs.inProgressTick++;
     });
 
     gs.server.registerEventHandler("tempimage", ({ uuid, point, rotate, scale }) => {
-      const entry = gs.inProgress.get(uuid);
-      if (entry) {
-        const img = entry.instructionBox.instruction as ImageInsertion;
-        gs.inProgress.set(uuid, {
-          ...entry,
-          instructionBox: {
-            ...entry.instructionBox,
-            instruction: { ...img, point, rotate, scale },
-          },
-        });
+      for (const ld of gs.layerData.values()) {
+        const entry = ld.inProgress.get(uuid);
+        if (entry) {
+          const img = entry.instructionBox.instruction as ImageInsertion;
+          ld.inProgress.set(uuid, {
+            ...entry,
+            instructionBox: {
+              ...entry.instructionBox,
+              instruction: { ...img, point, rotate, scale },
+            },
+          });
+          break;
+        }
       }
+      gs.inProgressTick++;
     });
 
     gs.server.registerEventHandler("tempmove", ({ uuid, username, end, layer }) => {
+      const ip = gs.layerData.get(layer)?.inProgress;
+      if (!ip) return;
       if (end) {
-        const existing = gs.inProgress.get(uuid);
+        const existing = ip.get(uuid);
         if (!existing) {
-          gs.inProgress.set(uuid, {
+          ip.set(uuid, {
             instructionBox: {
               uuid,
               applied: true,
@@ -178,7 +190,7 @@
           });
         } else {
           const motion = existing.instructionBox.instruction as Motion;
-          gs.inProgress.set(uuid, {
+          ip.set(uuid, {
             ...existing,
             instructionBox: {
               ...existing.instructionBox,
@@ -187,8 +199,9 @@
           });
         }
       } else {
-        gs.inProgress.delete(uuid);
+        ip.delete(uuid);
       }
+      gs.inProgressTick++;
     });
 
     document.addEventListener("keydown", (e) => {
@@ -252,7 +265,7 @@
     {/if}
   </div>
   <div class="layers">
-    <Layers {users} />
+    <Layers />
   </div>
   <div class="info">
     <div class="coordinates">

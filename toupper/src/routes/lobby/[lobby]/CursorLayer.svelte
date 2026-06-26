@@ -1,16 +1,14 @@
 <script lang="ts">
-  import { type Cursor, getX, getY } from "$lib/toupper";
+  import { getX, getY } from "$lib/toupper";
   import { renderTool } from "$lib/render";
-  import type { SvelteMap } from "svelte/reactivity";
   import { getStateTool, gs } from "./state.svelte";
   import { untrack } from "svelte";
 
   interface Props {
-    users: SvelteMap<string, Cursor | null>;
     listener: HTMLDivElement | undefined;
   }
 
-  const { users, listener }: Props = $props();
+  const { listener }: Props = $props();
 
   let cursorCanvas: HTMLCanvasElement;
 
@@ -18,7 +16,7 @@
     const context = cursorCanvas.getContext("2d")!;
     context.clearRect(0, 0, gs.drawing.width, gs.drawing.height);
 
-    users.entries().forEach((v) => {
+    gs.users.entries().forEach((v) => {
       renderTool(context, v[1], v[0]);
     });
 
@@ -56,7 +54,7 @@
   };
 
   $effect(() => {
-    users.entries();
+    gs.users.entries();
     untrack(() => drawAllCursors());
   });
 

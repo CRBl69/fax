@@ -1,11 +1,18 @@
 import { Drawing, type Brush, type InstructionBox, type Point } from "$lib/drinfo";
 import type { Server } from "$lib/tolower";
-import { getDefaultBrush, getSecondaryDefaultBrush, type Tool, ToolType } from "$lib/toupper";
+import {
+  getDefaultBrush,
+  getSecondaryDefaultBrush,
+  type Cursor,
+  type Tool,
+  ToolType,
+} from "$lib/toupper";
 import { SvelteMap } from "svelte/reactivity";
 
 export type LayerData = {
   historyContexts: SvelteMap<number, CanvasRenderingContext2D>;
   currentCanvas: HTMLCanvasElement | null;
+  inProgress: SvelteMap<string, InProgressEntry>;
 };
 
 export type InProgressEntry = {
@@ -35,7 +42,8 @@ interface GlobalState {
   tolerance: number;
   userMoveStart: Point | null;
   selections: SvelteMap<string, { points: Point[]; closed: boolean }>;
-  inProgress: SvelteMap<string, InProgressEntry>;
+  users: SvelteMap<string, Cursor | null>;
+  inProgressTick: number;
 }
 
 export const gs: GlobalState = $state({
@@ -59,7 +67,8 @@ export const gs: GlobalState = $state({
   tolerance: 0,
   userMoveStart: null,
   selections: new SvelteMap(),
-  inProgress: new SvelteMap(),
+  users: new SvelteMap(),
+  inProgressTick: 0,
 });
 
 export const getStateTool = (gs: GlobalState): Tool => {
