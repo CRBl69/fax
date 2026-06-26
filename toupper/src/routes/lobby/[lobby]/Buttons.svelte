@@ -1,10 +1,14 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { gs } from "./state.svelte";
-  import { applyInstruction, Tool } from "$lib/toupper";
+  import { applyInstruction, ToolType } from "$lib/toupper";
   import { SERVER_URL } from "$lib/env";
+  import { page } from "$app/state";
+    import type { ImageInsertion } from "$lib/drinfo";
 
   let saveUrl = $state("");
+
+  let username = page.params.lobby;
 
   let files: FileList | undefined = $state(undefined);
 
@@ -38,7 +42,8 @@
             },
             uuid: crypto.randomUUID(),
           };
-          gs.tool = Tool.InsertImage;
+          gs.toolType = ToolType.InsertImage;
+          gs.server?.sendTempImageStart(gs.instructionBox.uuid, gs.selectedLayer!, gs.instructionBox.instruction as ImageInsertion);
         };
         image.src = base64img;
         files = undefined;
@@ -66,41 +71,44 @@
 {/snippet}
 
 <div class="container">
-  {@render icon("brush", gs.tool === Tool.Stroke && !gs.brush.erase, () => {
-    gs.tool = Tool.Stroke;
+  {@render icon("brush", gs.toolType === ToolType.Stroke && !gs.brush.erase, () => {
+    gs.toolType = ToolType.Stroke;
     gs.brush.erase = false;
   })}
-  {@render icon("eraser", gs.tool === Tool.Stroke && gs.brush.erase, () => {
-    gs.tool = Tool.Stroke;
+  {@render icon("eraser", gs.toolType === ToolType.Stroke && gs.brush.erase, () => {
+    gs.toolType = ToolType.Stroke;
     gs.brush.erase = true;
   })}
-  {@render icon("bucket", gs.tool === Tool.Bucket, () => {
-    gs.tool = Tool.Bucket;
+  {@render icon("bucket", gs.toolType === ToolType.Bucket, () => {
+    gs.toolType = ToolType.Bucket;
   })}
-  {@render icon("pipette", gs.tool === Tool.PickColor, () => {
-    gs.tool = Tool.PickColor;
+  {@render icon("pipette", gs.toolType === ToolType.PickColor, () => {
+    gs.toolType = ToolType.PickColor;
   })}
-  {@render icon("select", gs.tool === Tool.Select, () => {
-    gs.tool = Tool.Select;
-    gs.selectionStart = null;
+  {@render icon("select", gs.toolType === ToolType.Select, () => {
+    gs.toolType = ToolType.Select;
   })}
-  {#if gs.tool === Tool.PolySelect && gs.polyDraft && gs.polyDraft.length >= 3}
+  {#if gs.toolType === ToolType.PolySelect && gs.selections.get(username)!.points.length >= 3}
     {@render icon("poly-confirm", false, () => {
-      gs.selection = [...gs.polyDraft!];
-      gs.polyDraft = null;
+      if (username) {
+        const selection = gs.selections.get(username)!;
+        selection.closed = false;
+        gs.server?.sendSelection(selection.points, true);
+      }
     })}
     {@render icon("poly-cancel", false, () => {
-      gs.polyDraft = null;
+      if (username) {
+        gs.selections.delete(username);
+        gs.server?.sendSelection([], true);
+      }
     })}
   {:else}
-    {@render icon("poly-select", gs.tool === Tool.PolySelect, () => {
-      gs.tool = Tool.PolySelect;
-      gs.polyDraft = null;
+    {@render icon("poly-select", gs.toolType === ToolType.PolySelect, () => {
+      gs.toolType = ToolType.PolySelect;
     })}
   {/if}
-  {@render icon("move", gs.tool === Tool.Move, () => {
-    gs.tool = Tool.Move;
-    gs.moveGrab = null;
+  {@render icon("move", gs.toolType === ToolType.Move, () => {
+    gs.toolType = ToolType.Move;
   })}
   {@render icon("zoom", gs.zoom, () => {
     gs.zoom = !gs.zoom;
@@ -112,7 +120,7 @@
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   {#if !(gs.instructionBox && "point" in gs.instructionBox.instruction)}
     <div
-      class={`icon  icon-${gs.tool === Tool.InsertImage ? "enabled" : "disabled"}`}
+      class={`icon  icon-${gs.toolType === ToolType.InsertImage ? "enabled" : "disabled"}`}
       onclick={() => {}}
     >
       <label for="insertion"><span class="insert-icon"></span></label>
@@ -130,12 +138,12 @@
     </div>
   {:else}
     {@render icon("insert-confirm", false, () => {
-      gs.tool = Tool.Stroke;
+      gs.toolType = ToolType.Stroke;
       gs.server?.instructionBox(gs.instructionBox!, gs.selectedLayer!);
       gs.instructionBox = null;
     })}
     {@render icon("insert-cancel", false, () => {
-      gs.tool = Tool.Stroke;
+      gs.toolType = ToolType.Stroke;
       gs.instructionBox = null;
       files = undefined;
     })}

@@ -5,9 +5,8 @@ use drawing::{
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub enum WebSocketMessage {
-    CursorIn(CursorDataIn),
-    CursorOut(CursorDataOut),
+pub enum WebSocketClientMessage {
+    Cursor(CursorClientData),
     Instruction(InstructionData),
     SetLayerVisibility(SetLayerVisibilityData),
     AddLayer(String),
@@ -16,12 +15,35 @@ pub enum WebSocketMessage {
     SetHistoryIndex(SetHistoryIndexData),
     MoveInstruction(MoveInstructionData),
     RequestInit,
+    TempDraw(TempDrawData),
+    Selection(SelectionClientData),
+    Unselect,
+    TempImageStart(TempImageStartClientData),
+    TempImage(TempImageClientData),
+    TempMove(MoveClientData),
+    Snapshot(SnapshotData),
+    SetInstructionVisibility(SetInstructionVisibilityData),
+    RemoveInstruction(RemoveInstructionData),
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum WebSocketServerMessage {
+    Cursor(CursorServerData),
+    Instruction(InstructionData),
+    SetLayerVisibility(SetLayerVisibilityData),
+    AddLayer(String),
+    LayerUp(String),
+    LayerDown(String),
+    SetHistoryIndex(SetHistoryIndexData),
+    MoveInstruction(MoveInstructionData),
     Init(InitData),
     Join(String),
     TempDraw(TempDrawData),
-    TempSelect(TempSelectData),
-    TempImage(TempImageData),
-    TempMove(TempMoveData),
+    Selection(SelectionServerData),
+    Unselect(String),
+    TempImageStart(TempImageStartServerData),
+    TempImage(TempImageServerData),
+    TempMove(MoveServerData),
     Snapshot(SnapshotData),
     SetInstructionVisibility(SetInstructionVisibilityData),
     RemoveInstruction(RemoveInstructionData),
@@ -53,15 +75,26 @@ pub struct MoveInstructionData {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Cursor {
-    pub point: Point,
-    pub brush: drawing::Brush,
+pub enum Tool {
+    Brush(drawing::Brush),
+    Selection,
+    Bucket(drawing::Brush),
+    Eraser(drawing::Brush),
+    ColorPicker,
+    Move,
+    ImageInsertion,
 }
 
-pub type CursorDataIn = Option<Cursor>;
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Cursor {
+    pub point: Point,
+    pub tool: Tool,
+}
+
+pub type CursorClientData = Option<Cursor>;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct CursorDataOut {
+pub struct CursorServerData {
     pub cursor: Option<Cursor>,
     pub username: String,
 }
@@ -82,26 +115,65 @@ pub struct TempDrawData {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct TempSelectData {
-    pub uuid: String,
-    pub layer: String,
+pub struct SelectionClientData {
     pub points: Vec<Point>,
     pub closed: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct TempImageData {
-    pub uuid: String,
-    pub layer: String,
-    pub image_insertion: Option<ImageInsertion>,
+pub struct SelectionServerData {
+    pub username: String,
+    pub points: Vec<Point>,
+    pub closed: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct TempMoveData {
+pub struct TempImageStartClientData {
     pub uuid: String,
     pub layer: String,
-    pub selection: Option<Vec<Point>>,
-    pub end: Option<Point>,
+    pub image_insertion: ImageInsertion,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct TempImageStartServerData {
+    pub username: String,
+    pub uuid: String,
+    pub layer: String,
+    pub image_insertion: ImageInsertion,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct TempImageClientData {
+    pub uuid: String,
+    pub layer: String,
+    pub point: Point,
+    pub scale: Point,
+    pub rotate: f64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct TempImageServerData {
+    pub username: String,
+    pub uuid: String,
+    pub layer: String,
+    pub point: Point,
+    pub scale: Point,
+    pub rotate: f64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct MoveClientData {
+    pub uuid: String,
+    pub layer: String,
+    pub end: Point,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct MoveServerData {
+    pub username: String,
+    pub uuid: String,
+    pub layer: String,
+    pub end: Point,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -124,8 +196,8 @@ pub struct RemoveInstructionData {
     pub index: usize,
 }
 
-impl CursorDataOut {
-    pub fn from_recieved(cursor: CursorDataIn, username: String) -> Self {
-        CursorDataOut { cursor, username }
+impl CursorServerData {
+    pub fn from_recieved(cursor: CursorClientData, username: String) -> Self {
+        CursorServerData { cursor, username }
     }
 }

@@ -6,7 +6,7 @@ import {
   type Point,
 } from "$lib/drinfo";
 import type { Server } from "$lib/tolower";
-import { getDefaultBrush, getSecondaryDefaultBrush, Tool } from "$lib/toupper";
+import { getDefaultBrush, getSecondaryDefaultBrush, type Tool, ToolType } from "$lib/toupper";
 import { SvelteMap } from "svelte/reactivity";
 
 export type LayerData = {
@@ -30,16 +30,15 @@ interface GlobalState {
   hoveredInstruction: InstructionBox | null;
   images: SvelteMap<string, HTMLImageElement>;
   draggedInstruction: number | null;
-  tool: Tool;
+  toolType: ToolType;
   canvasWorker: Worker | null;
   tolerance: number;
-  selection: Point[] | null;
-  selectionStart: Point | null;
-  polyDraft: Point[] | null;
-  moveGrab: Point | null;
-  tempSelects: SvelteMap<string, { points: Point[]; closed: boolean }>;
+  userMove: string | null;
+  userMoveStart: Point | null;
+  userImage: string | null;
+  selections: SvelteMap<string, { points: Point[]; closed: boolean }>;
   tempImages: SvelteMap<string, ImageInsertion>;
-  tempMoves: SvelteMap<string, { selection: Point[]; end: Point }>;
+  moves: SvelteMap<string, { user: string; end: Point, layer: string }>;
 }
 
 export const gs: GlobalState = $state({
@@ -58,14 +57,23 @@ export const gs: GlobalState = $state({
   hoveredInstruction: null,
   images: new SvelteMap(),
   draggedInstruction: null,
-  tool: Tool.Stroke,
+  toolType: ToolType.Stroke,
   canvasWorker: null,
   tolerance: 0,
-  selection: null,
-  selectionStart: null,
-  polyDraft: null,
-  moveGrab: null,
-  tempSelects: new SvelteMap(),
+  userMove: null,
+  userMoveStart: null,
+  userImage: null,
+  selections: new SvelteMap(),
   tempImages: new SvelteMap(),
-  tempMoves: new SvelteMap(),
+  moves: new SvelteMap(),
 });
+
+export const getStateTool = (gs: GlobalState): Tool => {
+  if (gs.toolType === ToolType.Bucket || gs.toolType === ToolType.Eraser || gs.toolType === ToolType.Stroke) {
+    return {
+      type: gs.toolType,
+      brush: gs.brush
+    };
+  }
+  return { type: gs.toolType };
+}

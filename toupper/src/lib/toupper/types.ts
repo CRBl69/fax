@@ -1,7 +1,7 @@
 import type { Brush, Point } from "$lib/drinfo";
 
 export type Cursor = {
-  brush: Brush;
+  tool: Tool;
   point: Point;
 };
 
@@ -15,8 +15,30 @@ export type Dimensions = {
   height: number;
 };
 
-export enum Tool {
+export type Tool = {
+  type: ToolType.Stroke,
+  brush: Brush,
+} | {
+  type: ToolType.Eraser,
+  brush: Brush,
+} | {
+  type: ToolType.InsertImage,
+} | {
+  type: ToolType.PickColor,
+} | {
+  type: ToolType.Bucket,
+  brush: Brush,
+} | {
+  type: ToolType.Select,
+} | {
+  type: ToolType.PolySelect,
+} | {
+  type: ToolType.Move,
+};
+
+export enum ToolType {
   Stroke,
+  Eraser,
   InsertImage,
   PickColor,
   Bucket,

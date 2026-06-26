@@ -1,4 +1,5 @@
 import * as DrInFo from "$lib/drinfo";
+import * as ToUpper from "$lib/toupper";
 import type {
   Brush,
   BrushShape,
@@ -9,6 +10,7 @@ import type {
   InstructionBox,
   Motion,
   Stroke,
+  Tool,
 } from "../server-types";
 
 export class ToServer {
@@ -54,6 +56,37 @@ export class ToServer {
       erase: brush.erase,
       repeat: brush.repeat,
     };
+  }
+
+  static tool(tool: ToUpper.Tool): Tool {
+    if (tool.type === ToUpper.ToolType.Bucket) {
+      return {
+        Bucket: ToServer.brush(tool.brush),
+      }
+    }
+    if (tool.type === ToUpper.ToolType.Stroke) {
+      return {
+        Brush: ToServer.brush(tool.brush),
+      }
+    }
+    if (tool.type === ToUpper.ToolType.Eraser) {
+      return {
+        Eraser: ToServer.brush(tool.brush),
+      }
+    }
+    if (tool.type === ToUpper.ToolType.Select) {
+      return "Selection";
+    }
+    if (tool.type === ToUpper.ToolType.InsertImage) {
+      return "ImageInsertion";
+    }
+    if (tool.type === ToUpper.ToolType.PickColor) {
+      return "ColorPicker";
+    }
+    if (tool.type === ToUpper.ToolType.Move) {
+      return "Move";
+    }
+    return "Selection";
   }
 
   static stroke(stroke: DrInFo.Stroke): Stroke {

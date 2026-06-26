@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { type Cursor, getX, getY, Tool } from "$lib/toupper";
+  import { type Cursor, getX, getY } from "$lib/toupper";
+  import { renderTool } from "$lib/render";
   import type { SvelteMap } from "svelte/reactivity";
-  import { gs } from "./state.svelte";
+  import { getStateTool, gs } from "./state.svelte";
   import { untrack } from "svelte";
 
   interface Props {
@@ -13,55 +14,19 @@
 
   let cursorCanvas: HTMLCanvasElement;
 
-  const drawCursor = () => {
+  const drawAllCursors = () => {
     const context = cursorCanvas.getContext("2d")!;
     context.clearRect(0, 0, gs.drawing.width, gs.drawing.height);
 
-    const drawCursor = (cursor: Cursor | null, username: string | null) => {
-      if (!cursor) {
-        return;
-      }
-      context.beginPath();
-      context.strokeStyle = cursor.brush.color;
-      if (
-        username === null &&
-        (gs.tool === Tool.PickColor ||
-          gs.tool === Tool.Select ||
-          gs.tool === Tool.PolySelect ||
-          gs.tool === Tool.Move)
-      ) {
-        return;
-      }
-      if (cursor.brush.brushShape.shape === "circle") {
-        context.arc(cursor.point.x, cursor.point.y, cursor.brush.width / 2, 0, 2 * Math.PI);
-      } else if (cursor.brush.brushShape.shape === "square") {
-        context.strokeRect(
-          cursor.point.x - cursor.brush.width / 2,
-          cursor.point.y - cursor.brush.width / 2,
-          cursor.brush.width,
-          cursor.brush.width,
-        );
-      }
-      if (username !== null) {
-        context.font = "20px Arial";
-        context.fillStyle = "#000000";
-        const offset =
-          cursor.brush.brushShape.shape === "square"
-            ? cursor.brush.width / 2 + 10
-            : Math.max(cursor.brush.width / 2, 15);
-        context.fillText(username, cursor.point.x + offset, cursor.point.y + offset);
-      }
-      context.stroke();
-    };
-
     users.entries().forEach((v) => {
-      drawCursor(v[1], v[0]);
+      renderTool(context, v[1], v[0]);
     });
 
-    if (gs.brush && gs.cursorPosition) {
-      drawCursor(
+    if (gs.cursorPosition) {
+      renderTool(
+        context,
         {
-          brush: gs.brush,
+          tool: getStateTool(gs),
           point: gs.cursorPosition,
         },
         null,
@@ -80,19 +45,19 @@
 
   const onmousemove = (element: HTMLDivElement, e: MouseEvent) => {
     updateCursorPosition(element, e);
-    gs.server?.cursor(gs.brush, gs.cursorPosition);
-    drawCursor();
+    gs.server?.cursor(getStateTool(gs), gs.cursorPosition);
+    drawAllCursors();
   };
 
   const onmouseout = () => {
     gs.cursorPosition = null;
-    gs.server?.cursor(gs.brush, gs.cursorPosition);
-    drawCursor();
+    gs.server?.cursor(getStateTool(gs), gs.cursorPosition);
+    drawAllCursors();
   };
 
   $effect(() => {
     users.entries();
-    untrack(() => drawCursor());
+    untrack(() => drawAllCursors());
   });
 
   $effect(() => {
@@ -111,7 +76,7 @@
   });
 
   const onfriendcursor = () => {
-    drawCursor();
+    drawAllCursors();
   };
 
   $effect(() => {

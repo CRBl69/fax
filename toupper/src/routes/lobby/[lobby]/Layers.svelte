@@ -5,7 +5,6 @@
   import type { SvelteMap } from "svelte/reactivity";
   import { gs } from "./state.svelte";
   import PreviewLayer from "./PreviewLayer.svelte";
-  import SelectionLayer from "./SelectionLayer.svelte";
   import TempImageLayer from "./TempImageLayer.svelte";
 
   interface Props {
@@ -51,7 +50,6 @@
       <LayerComponent {listener} name={layer} />
     {/each}
     <PreviewLayer />
-    <SelectionLayer />
     <TempImageLayer />
     <CursorLayer {users} {listener} />
   </div>

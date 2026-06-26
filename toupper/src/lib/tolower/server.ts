@@ -1,8 +1,7 @@
+import type { Tool } from "$lib/toupper";
 import * as DrInFo from "../drinfo";
 import type {
   AddLayerMessage,
-  CursorInMessage,
-  CursorOutMessage,
   InitMessage,
   InstructionMessage,
   JoinMessage,
@@ -10,20 +9,28 @@ import type {
   LayerUpMessage,
   SnapshotMessage,
   TempDrawMessage,
-  TempSelectMessage,
-  TempImageMessage,
-  TempMoveMessage,
   SetInstructionVisibilityMessage,
   SetLayerVisibilityMessage,
-  WebSocketMessage,
   MoveInstructionMessage,
   SetHistoryIndexMessage,
   RemoveInstructionMessage,
+  CursorServerMessage,
+  SelectionServerMessage,
+  TempImageServerMessage,
+  TempMoveServerMessage,
+  WebSocketServerMessage,
+  WebSocketClientMessage,
+  CursorClientMessage,
+  SelectionClientMessage,
+  TempImageClientMessage,
+  TempMoveClientMessage,
+  TempImageStartClientMessage,
+  TempImageStartServerMessage,
 } from "./server-types";
 import * as TypeConverter from "./type-converter";
 
 interface EventMap {
-  cursorout: CustomEvent<CursorOutMessage["CursorOut"]>;
+  cursorout: CustomEvent<CursorServerMessage["Cursor"]>;
   instruction: CustomEvent<InstructionMessage["Instruction"]>;
   setlayervisibility: CustomEvent<SetLayerVisibilityMessage["SetLayerVisibility"]>;
   setinstructionvisibility: CustomEvent<
@@ -39,9 +46,10 @@ interface EventMap {
   init: CustomEvent<InitMessage["Init"]>;
   join: CustomEvent<JoinMessage["Join"]>;
   tempdraw: CustomEvent<TempDrawMessage["TempDraw"]>;
-  tempselect: CustomEvent<TempSelectMessage["TempSelect"]>;
-  tempimage: CustomEvent<TempImageMessage["TempImage"]>;
-  tempmove: CustomEvent<TempMoveMessage["TempMove"]>;
+  selection: CustomEvent<SelectionServerMessage["Selection"]>;
+  tempimagestart: CustomEvent<TempImageStartServerMessage["TempImageStart"]>;
+  tempimage: CustomEvent<TempImageServerMessage["TempImage"]>;
+  tempmove: CustomEvent<TempMoveServerMessage["TempMove"]>;
 }
 
 interface ServerEventTarget extends EventTarget {
@@ -81,7 +89,7 @@ export class Server extends typedEventTarget {
     };
 
     const onmessage = (msg: MessageEvent) => {
-      const data: WebSocketMessage = JSON.parse(msg.data);
+      const data: WebSocketServerMessage = JSON.parse(msg.data);
       const eventName = Object.keys(data)[0];
       const event = new CustomEvent(eventName.toLowerCase(), { detail: Object.values(data)[0] });
       console.log(eventName, Object.values(data)[0]);
@@ -102,7 +110,7 @@ export class Server extends typedEventTarget {
     };
   }
 
-  private send(obj: WebSocketMessage) {
+  private send(obj: WebSocketClientMessage) {
     try {
       this._websocket.send(JSON.stringify(obj));
     } catch (e) {
@@ -138,16 +146,16 @@ export class Server extends typedEventTarget {
     this.send(message);
   }
 
-  cursor(brush: DrInFo.Brush, point: DrInFo.Point | null) {
+  cursor(tool: Tool, point: DrInFo.Point | null) {
     if (point === null) {
-      const message: CursorInMessage = {
-        CursorIn: null,
+      const message: CursorClientMessage = {
+        Cursor: null,
       };
       this.send(message);
     } else {
-      const message: CursorInMessage = {
-        CursorIn: {
-          brush: TypeConverter.ToServer.brush(brush),
+      const message: CursorClientMessage = {
+        Cursor: {
+          tool: TypeConverter.ToServer.tool(tool),
           point,
         },
       };
@@ -240,11 +248,9 @@ export class Server extends typedEventTarget {
     this.send(message);
   }
 
-  sendTempSelect(uuid: string, layer: string, points: DrInFo.Point[], closed: boolean) {
-    const message: TempSelectMessage = {
-      TempSelect: {
-        uuid,
-        layer,
+  sendSelection(points: DrInFo.Point[], closed: boolean) {
+    const message: SelectionClientMessage = {
+      Selection: {
         points,
         closed,
       },
@@ -252,9 +258,9 @@ export class Server extends typedEventTarget {
     this.send(message);
   }
 
-  sendTempImage(uuid: string, layer: string, imageInsertion: DrInFo.ImageInsertion | null) {
-    const message: TempImageMessage = {
-      TempImage: {
+  sendTempImageStart(uuid: string, layer: string, imageInsertion: DrInFo.ImageInsertion) {
+    const message: TempImageStartClientMessage = {
+      TempImageStart: {
         uuid,
         layer,
         image_insertion: imageInsertion,
@@ -263,17 +269,28 @@ export class Server extends typedEventTarget {
     this.send(message);
   }
 
-  sendTempMove(
+  sendTempImage(uuid: string, layer: string, imageInsertion: DrInFo.ImageInsertion) {
+    const message: TempImageClientMessage = {
+      TempImage: {
+        uuid,
+        layer,
+        point: imageInsertion.point,
+        scale: imageInsertion.scale,
+        rotate: imageInsertion.rotate,
+      },
+    };
+    this.send(message);
+  }
+
+  sendMove(
     uuid: string,
     layer: string,
-    selection: DrInFo.Point[] | null,
-    end: DrInFo.Point | null,
+    end: DrInFo.Point,
   ) {
-    const message: TempMoveMessage = {
+    const message: TempMoveClientMessage = {
       TempMove: {
         uuid,
         layer,
-        selection,
         end,
       },
     };

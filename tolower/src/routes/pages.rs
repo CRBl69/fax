@@ -1,16 +1,21 @@
 use std::{path::PathBuf, sync::Arc};
 
-use axum::{extract::State, http::{header, HeaderMap, HeaderValue}, response::IntoResponse};
+use axum::{
+    extract::State,
+    http::{header, HeaderMap, HeaderValue},
+    response::IntoResponse,
+};
 
 use crate::AppData;
 
 pub async fn save(State(data): State<Arc<AppData>>) -> impl IntoResponse {
-    let headers = HeaderMap::from_iter(vec![
-        (
+    let headers = HeaderMap::from_iter(
+        vec![(
             header::CONTENT_DISPOSITION,
             HeaderValue::from_static("attachment; filename=\"drawing.drinfo\""),
-        ),
-    ].into_iter());
+        )]
+        .into_iter(),
+    );
     (headers, save_drawing(&*data.drawing.lock().await))
 }
 

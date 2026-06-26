@@ -14,6 +14,7 @@ import type {
   Layer,
   Motion,
   Stroke,
+  Tool,
 } from "../server-types";
 
 export class FromServer {
@@ -122,9 +123,48 @@ export class FromServer {
     });
   }
 
+  static tool(tool: Tool): ToUpper.Tool {
+    if (tool === "Selection") {
+      return {
+        type: ToUpper.ToolType.Select,
+      }
+    }
+    if (tool === "ColorPicker") {
+      return {
+        type: ToUpper.ToolType.PickColor,
+      }
+    }
+    if (tool === "Move") {
+      return {
+        type: ToUpper.ToolType.Move,
+      }
+    }
+    if (tool === "ImageInsertion") {
+      return {
+        type: ToUpper.ToolType.InsertImage,
+      }
+    }
+    if ('Brush' in tool) {
+      return {
+        type: ToUpper.ToolType.Stroke,
+        brush: FromServer.brush(tool.Brush),
+      }
+    }
+    if ('Bucket' in tool) {
+      return {
+        type: ToUpper.ToolType.Bucket,
+        brush: FromServer.brush(tool.Bucket),
+      }
+    }
+    return {
+      type: ToUpper.ToolType.Eraser,
+      brush: FromServer.brush(tool.Eraser),
+    };
+  }
+
   static cursor(cursor: Cursor): ToUpper.Cursor {
     return {
-      brush: FromServer.brush(cursor.brush),
+      tool: FromServer.tool(cursor.tool),
       point: cursor.point,
     };
   }

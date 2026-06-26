@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { ImageInsertion, InstructionBox, Point, Stroke } from "$lib/drinfo";
-  import { drawImage, getX, getY, applyInstruction, stroke, Tool, rgbToStr } from "$lib/toupper";
+  import { drawImage, getX, getY, applyInstruction, stroke, rgbToStr, ToolType } from "$lib/toupper";
   import { onMount, untrack } from "svelte";
   import { gs } from "./state.svelte";
   import {
@@ -10,11 +10,14 @@
     type SetInstructionVisibilityMessage,
     type TempDrawMessage,
   } from "$lib/tolower";
+    import { page } from "$app/state";
 
   interface Props {
     name: string;
     listener: HTMLDivElement | undefined;
   }
+
+  let username = page.params.lobby;
 
   let { name, listener }: Props = $props();
 
@@ -42,9 +45,7 @@
 
   let lastUuid: string | undefined = $state();
 
-  let tempSelectUuid: string | undefined = $state();
-
-  let tempMoveUuid: string | undefined = $state();
+  let moveUuid: string | undefined = $state();
 
   let friendStrokes: Map<string, InstructionBox> = $state(new Map());
 
@@ -71,7 +72,7 @@
       for (let i = currentIndex + 1; i <= layer.historyIndex; i++) {
         const instructionBox = layer.history[i - 1]!;
         await pushToHistory(instructionBox);
-        if (currentIndex % 5 == 0) {
+        if (currentIndex % 20 == 0) {
           const historyContext = layerData.historyContexts.get(currentIndex)!;
           const data = historyContext.canvas.toDataURL("image/png");
           gs.server?.snapshot(name, data, currentIndex);
@@ -155,24 +156,13 @@
     stroke(instructionBox.instruction as Stroke, tempContext);
   };
 
-  const sendTempSelect = (points: Point[], closed: boolean) => {
-    if (!tempSelectUuid) tempSelectUuid = crypto.randomUUID();
-    gs.server?.sendTempSelect(tempSelectUuid, name, points, closed);
+  const sendSelection = (points: Point[], closed: boolean) => {
+    gs.server?.sendSelection(points, closed);
   };
 
-  const clearTempSelect = () => {
-    tempSelectUuid = undefined;
-  };
-
-  const sendTempMove = (selection: Point[], end: Point) => {
-    if (!tempMoveUuid) tempMoveUuid = crypto.randomUUID();
-    gs.server?.sendTempMove(tempMoveUuid, name, selection, end);
-  };
-
-  const clearTempMove = () => {
-    if (tempMoveUuid) {
-      gs.server?.sendTempMove(tempMoveUuid, name, null, null);
-      tempMoveUuid = undefined;
+  const sendMove = (end: Point) => {
+    if (moveUuid) {
+      gs.server?.sendMove(moveUuid, name, end);
     }
   };
 
@@ -241,18 +231,29 @@
         onmousemovestroke();
       }
     }
-    if (gs.tool === Tool.Select && gs.selectionStart) {
-      const s = gs.selectionStart;
-      const c = cursorPosition!;
-      sendTempSelect([s, { x: c.x, y: s.y }, c, { x: s.x, y: c.y }], true);
+    if (gs.toolType === ToolType.Select && cursorPosition) {
+      const selection = gs.selections.get(username)!;
+      if (selection.points.length === 1) {
+        const s = selection.points[0];
+        const c = cursorPosition;
+        sendSelection([s, { x: c.x, y: s.y }, c, { x: s.x, y: c.y }], true);
+      }
     }
-    if (gs.tool === Tool.Move && gs.moveGrab && gs.selection && cursorPosition) {
-      const dx = cursorPosition.x - gs.moveGrab.x;
-      const dy = cursorPosition.y - gs.moveGrab.y;
-      sendTempMove(gs.selection, {
-        x: gs.selection[0].x + dx,
-        y: gs.selection[0].y + dy,
+    if (gs.toolType === ToolType.Move && gs.userMove && cursorPosition) {
+      const dx = cursorPosition.x - gs.userMoveStart!.x;
+      const dy = cursorPosition.y - gs.userMoveStart!.y;
+      const selectionStart = gs.selections.get(username)!.points[0];
+      sendMove({
+        x: selectionStart.x + dx,
+        y: selectionStart.y + dy,
       });
+    }
+    if (gs.toolType === ToolType.InsertImage) {
+      gs.server?.sendTempImage(
+        gs.instructionBox!.uuid,
+        name,
+        gs.instructionBox!.instruction as ImageInsertion,
+      );
     }
   };
 
@@ -294,47 +295,53 @@
     );
   };
   const onmousedownselect = () => {
-    if (!gs.selectionStart) {
-      gs.selectionStart = cursorPosition!;
-      tempSelectUuid = crypto.randomUUID();
+    if (!gs.selections.has(username)) {
+      gs.selections.set(username, {points: [
+        cursorPosition!,
+        cursorPosition!,
+        cursorPosition!,
+        cursorPosition!,
+      ], closed: true});
     } else {
-      const start = gs.selectionStart;
+      const selection = gs.selections.get(username)!;
+      const start = selection.points[0];
       const end = cursorPosition!;
-      gs.selection = [start, { x: end.x, y: start.y }, end, { x: start.x, y: end.y }];
-      gs.selectionStart = null;
-      clearTempSelect();
+      gs.selections.set(username, { points: [start, { x: end.x, y: start.y }, end, { x: start.x, y: end.y }], closed: true });
     }
   };
   const onmousedownpolyselect = () => {
-    gs.polyDraft = [...(gs.polyDraft ?? []), cursorPosition!];
-    sendTempSelect(gs.polyDraft, false);
+    const prev = gs.selections.get(username);
+    const newPoints = [...(prev?.points ?? []), cursorPosition!];
+    gs.selections.set(username, { points: newPoints, closed: false});
+    sendSelection(newPoints, false);
   };
   const onmousedownmove = () => {
-    if (gs.selection) {
-      gs.moveGrab = cursorPosition!;
-      sendTempMove(gs.selection, gs.selection[0]);
+    if ((gs.selections.get(username)?.points.length ?? 0) >= 3) {
+      gs.userMoveStart = cursorPosition!;
+      moveUuid = crypto.randomUUID();
+      sendMove(cursorPosition!);
     }
   };
   const onmousedown = (element: HTMLDivElement, e: MouseEvent) => {
     updateCursorPosition(element, e);
     mousedown = true;
-    if (gs.tool === Tool.PickColor) {
+    if (gs.toolType === ToolType.PickColor) {
       const imgd = context.getImageData(cursorPosition!.x, cursorPosition!.y, 1, 1);
       const colorStr = rgbToStr(imgd.data[0], imgd.data[1], imgd.data[2]);
       gs.brush.opacity = Math.floor((imgd.data[3] * 100000) / 255);
       gs.brush.color = colorStr;
-      gs.tool = Tool.Stroke;
-    } else if (gs.tool === Tool.InsertImage) {
+      gs.toolType = ToolType.Stroke;
+    } else if (gs.toolType === ToolType.InsertImage) {
       onmousedownimageinsertion(e);
-    } else if (gs.tool === Tool.Bucket) {
+    } else if (gs.toolType === ToolType.Bucket) {
       onmousedownbucket();
-    } else if (gs.tool === Tool.Select) {
+    } else if (gs.toolType === ToolType.Select) {
       onmousedownselect();
-    } else if (gs.tool === Tool.PolySelect) {
+    } else if (gs.toolType === ToolType.PolySelect) {
       onmousedownpolyselect();
-    } else if (gs.tool === Tool.Move) {
+    } else if (gs.toolType === ToolType.Move) {
       onmousedownmove();
-    } else if (gs.tool === Tool.Stroke && !gs.instructionBox) {
+    } else if (gs.toolType === ToolType.Stroke && !gs.instructionBox) {
       onmousedownstroke(e);
     }
   };
@@ -347,40 +354,33 @@
     lastPoint = gs.cursorPosition!;
   };
   const onmouseupmove = () => {
-    if (gs.selection && gs.selection.length >= 3 && gs.moveGrab && cursorPosition) {
-      const delta = {
-        x: cursorPosition.x - gs.moveGrab.x,
-        y: cursorPosition.y - gs.moveGrab.y,
-      };
-      const selection = gs.selection;
-      gs.server?.instructionBox(
-        {
-          instruction: {
-            end: { x: selection[0].x + delta.x, y: selection[0].y + delta.y },
-            selection,
-          },
-          uuid: crypto.randomUUID(),
-          applied: true,
+    const delta = {
+      x: cursorPosition!.x - gs.userMoveStart!.x,
+      y: cursorPosition!.y - gs.userMoveStart!.y,
+    };
+    const selection = gs.selections.get(username)!;
+    gs.server?.instructionBox(
+      {
+        instruction: {
+          end: { x: selection.points[0].x + delta.x, y: selection.points[0].y + delta.y },
+          selection: selection.points,
         },
-        name,
-      );
-      gs.selection = selection.map((p) => ({ x: p.x + delta.x, y: p.y + delta.y }));
-      gs.moveGrab = null;
-      clearTempMove();
-    }
+        uuid: crypto.randomUUID(),
+        applied: true,
+      },
+      name,
+    );
+    gs.selections.set(username, { closed: true, points: selection.points.map((p) => ({ x: p.x + delta.x, y: p.y + delta.y })) });
+    gs.userMoveStart = null;
+    moveUuid = undefined;
   };
   const onmouseup = (element: HTMLDivElement, e: MouseEvent) => {
     updateCursorPosition(element, e);
     mousedown = false;
-    if (gs.tool === Tool.InsertImage) {
-      gs.server?.sendTempImage(
-        gs.instructionBox!.uuid,
-        name,
-        gs.instructionBox!.instruction as ImageInsertion,
-      );
-    } else if (gs.tool === Tool.Move) {
+    if (gs.toolType === ToolType.InsertImage) {
+    } else if (gs.toolType === ToolType.Move) {
       onmouseupmove();
-    } else if (gs.instructionBox && gs.tool === Tool.Stroke) {
+    } else if (gs.instructionBox && gs.toolType === ToolType.Stroke) {
       onmouseupstroke();
     }
   };
@@ -493,10 +493,6 @@
     }
   });
 
-  $effect(() => {
-    if (gs.polyDraft === null) clearTempSelect();
-  });
-
   // Whenever the history changes, draw the appropriate history context.
   // If historyContexts is not initialized yet, it must be done with a clear context.
   $effect(() => {
@@ -505,7 +501,7 @@
   });
 
   $effect(() => {
-    if (gs.tool === Tool.InsertImage && gs.selectedLayer === name) {
+    if (gs.toolType === ToolType.InsertImage && gs.selectedLayer === name) {
       if (!layerData.tmps.get(gs.instructionBox!.uuid)) {
         lastUuid = gs.instructionBox!.uuid;
         layerData.tmps.set(gs.instructionBox!.uuid, { canvas: undefined, brush: gs.brush });
@@ -536,7 +532,6 @@
     } else if (!gs.instructionBox && lastUuid) {
       if (lastUuid) {
         layerData.tmps.delete(lastUuid);
-        gs.server?.sendTempImage(lastUuid, name, null);
       }
       image = undefined;
       lastUuid = undefined;

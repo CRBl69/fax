@@ -103,29 +103,35 @@
     gs.server.registerEventHandler("instruction", ({ layer, instruction }) => {
       gs.drawing.instruct(layer, FromServer.instructionBox(instruction));
       gs.tempImages.delete(instruction.uuid);
+      gs.moves.delete(instruction.uuid);
     });
 
     gs.server.registerEventHandler("removeinstruction", ({ layer, index }) => {
       gs.drawing.removeInstruction(layer, index);
     });
 
-    gs.server.registerEventHandler("tempselect", ({ uuid, points, closed }) => {
-      gs.tempSelects.set(uuid, { points, closed });
+    gs.server.registerEventHandler("selection", ({ points, closed, username }) => {
+      gs.selections.set(username, { points, closed });
     });
 
-    gs.server.registerEventHandler("tempimage", ({ uuid, image_insertion }) => {
-      if (image_insertion) {
-        gs.tempImages.set(uuid, image_insertion);
-      } else {
-        gs.tempImages.delete(uuid);
+    gs.server.registerEventHandler("tempimagestart", ({ uuid, image_insertion }) => {
+      gs.tempImages.set(uuid, image_insertion);
+    });
+
+    gs.server.registerEventHandler("tempimage", ({ uuid, point, rotate, scale }) => {
+      const tempImage = gs.tempImages.get(uuid);
+      if (tempImage) {
+        tempImage.point = point;
+        tempImage.rotate = rotate;
+        tempImage.scale = scale;
       }
     });
 
-    gs.server.registerEventHandler("tempmove", ({ uuid, selection, end }) => {
-      if (selection && end) {
-        gs.tempMoves.set(uuid, { selection, end });
+    gs.server.registerEventHandler("tempmove", ({ uuid, username, end, layer }) => {
+      if (end) {
+        gs.moves.set(uuid, { user: username, end, layer });
       } else {
-        gs.tempMoves.delete(uuid);
+        gs.moves.delete(uuid);
       }
     });
 

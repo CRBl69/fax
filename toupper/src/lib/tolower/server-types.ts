@@ -98,17 +98,39 @@ export type InitMessage = {
   };
 };
 
+    // Brush(drawing::Brush),
+    // Selection,
+    // Bucket,
+    // Eraser,
+    // ColorPicker,
+    // Move,
+
+export type BrushTool = {
+  Brush: Brush,
+}
+export type SelectionTool = "Selection";
+export type BucketTool = {
+  Bucket: Brush,
+}
+export type EraserTool = {
+  Eraser: Brush,
+}
+export type ColorPickerTool = "ColorPicker";
+export type MoveTool = "Move";
+export type ImageInsertionTool = "ImageInsertion";
+export type Tool = BrushTool | SelectionTool | BucketTool | EraserTool | ColorPickerTool | MoveTool | ImageInsertionTool;
+
 export type Cursor = {
   point: Point;
-  brush: Brush;
+  tool: Tool;
 };
 
-export type CursorInMessage = {
-  CursorIn: Cursor | null;
+export type CursorClientMessage = {
+  Cursor: Cursor | null;
 };
 
-export type CursorOutMessage = {
-  CursorOut: {
+export type CursorServerMessage = {
+  Cursor: {
     cursor: Cursor | null;
     username: string;
   };
@@ -124,29 +146,79 @@ export type TempDrawMessage = {
   };
 };
 
-export type TempSelectMessage = {
-  TempSelect: {
-    uuid: string;
-    layer: string;
+export type SelectionClientMessage = {
+  Selection: {
     points: Point[];
     closed: boolean;
   };
 };
 
-export type TempImageMessage = {
-  TempImage: {
-    uuid: string;
-    layer: string;
-    image_insertion: DrInFo.ImageInsertion | null;
+export type SelectionServerMessage = {
+  Selection: {
+    username: string;
+    points: Point[];
+    closed: boolean;
   };
 };
 
-export type TempMoveMessage = {
+export type UnselectClientMessage = "Unselect";
+
+export type UnselectServerMessage = {
+  Unselect: string;
+};
+
+export type TempImageStartClientMessage = {
+  TempImageStart: {
+    uuid: string;
+    layer: string;
+    image_insertion: DrInFo.ImageInsertion;
+  };
+};
+
+export type TempImageStartServerMessage = {
+  TempImageStart: {
+    username: string;
+    uuid: string;
+    layer: string;
+    image_insertion: DrInFo.ImageInsertion;
+  };
+};
+
+export type TempImageClientMessage = {
+  TempImage: {
+    uuid: string;
+    layer: string;
+    point: Point;
+    scale: Point;
+    rotate: number;
+  };
+};
+
+export type TempImageServerMessage = {
+  TempImage: {
+    username: string;
+    uuid: string;
+    layer: string;
+    point: Point;
+    scale: Point;
+    rotate: number;
+  };
+};
+
+export type TempMoveClientMessage = {
   TempMove: {
     uuid: string;
     layer: string;
-    selection: Point[] | null;
-    end: Point | null;
+    end: Point;
+  };
+};
+
+export type TempMoveServerMessage = {
+  TempMove: {
+    username: string;
+    uuid: string;
+    layer: string;
+    end: Point;
   };
 };
 
@@ -204,23 +276,43 @@ export type JoinMessage = {
   Join: string;
 };
 
-export type WebSocketMessage =
-  | CursorInMessage
-  | CursorOutMessage
+export type WebSocketClientMessage =
+  | CursorClientMessage
   | InstructionMessage
-  | RemoveInstructionMessage
   | SetLayerVisibilityMessage
-  | SetInstructionVisibilityMessage
-  | SnapshotMessage
   | AddLayerMessage
   | LayerUpMessage
   | LayerDownMessage
   | SetHistoryIndexMessage
   | MoveInstructionMessage
   | RequestInitMessage
+  | TempDrawMessage
+  | SelectionClientMessage
+  | UnselectClientMessage
+  | TempImageStartClientMessage
+  | TempImageClientMessage
+  | TempMoveClientMessage
+  | SnapshotMessage
+  | SetInstructionVisibilityMessage
+  | RemoveInstructionMessage;
+
+export type WebSocketServerMessage =
+  | CursorServerMessage
+  | InstructionMessage
+  | SetLayerVisibilityMessage
+  | AddLayerMessage
+  | LayerUpMessage
+  | LayerDownMessage
+  | SetHistoryIndexMessage
+  | MoveInstructionMessage
   | InitMessage
   | JoinMessage
   | TempDrawMessage
-  | TempSelectMessage
-  | TempImageMessage
-  | TempMoveMessage;
+  | SelectionServerMessage
+  | UnselectServerMessage
+  | TempImageStartServerMessage
+  | TempImageServerMessage
+  | TempMoveServerMessage
+  | SnapshotMessage
+  | SetInstructionVisibilityMessage
+  | RemoveInstructionMessage;

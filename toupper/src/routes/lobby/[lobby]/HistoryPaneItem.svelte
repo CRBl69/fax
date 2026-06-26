@@ -76,6 +76,7 @@
         hardness: stroke.brush.hardness,
         opacity: stroke.brush.opacity,
         erase: stroke.brush.erase,
+        repeat: stroke.brush.repeat,
       },
     };
     newStroke.brush.width *= magnifier;

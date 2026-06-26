@@ -5,10 +5,10 @@ use axum::Router;
 use clap::Parser;
 use futures::stream::SplitSink;
 use log::*;
-use tokio::sync::Mutex;
 use std::collections::HashMap;
 use std::io::Write;
 use std::sync::Arc;
+use tokio::sync::Mutex;
 
 use drawing::Drawing;
 
@@ -45,12 +45,7 @@ async fn main() -> std::io::Result<()> {
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{port}"))
         .await
         .unwrap();
-    axum::serve(
-        listener,
-        app,
-    )
-    .await
-    .unwrap();
+    axum::serve(listener, app).await.unwrap();
     info!("Server stopped");
     Ok(())
 }
