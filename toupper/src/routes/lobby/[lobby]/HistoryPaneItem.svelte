@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Bucket, ImageInsertion, InstructionBox, Stroke } from "$lib/drinfo";
   import { ToServer } from "$lib/tolower";
-  import { drawImage, drawSquares, stroke } from "$lib/toupper";
+  import { drawImage, drawSquares, stroke } from "$lib/render";
   import { gs } from "./state.svelte";
 
   interface Props {

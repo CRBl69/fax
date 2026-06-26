@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { drawSquares, applyInstruction } from "$lib/toupper";
+  import { drawSquares, applyInstruction } from "$lib/render";
   import { gs } from "./state.svelte";
 
   let canvas: HTMLCanvasElement;

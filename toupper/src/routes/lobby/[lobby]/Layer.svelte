@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { ImageInsertion, InstructionBox, Point, Stroke } from "$lib/drinfo";
-  import { getX, getY, applyInstruction, rgbToStr, ToolType } from "$lib/toupper";
+  import { getX, getY, ToolType } from "$lib/toupper";
+  import { applyInstruction, rgbToStr } from "$lib/render";
   import { onMount, untrack } from "svelte";
   import { gs } from "./state.svelte";
   import { type MoveInstructionMessage, type SetInstructionVisibilityMessage } from "$lib/tolower";
@@ -35,8 +36,6 @@
   // Used for shift click straight line drawing.
   let lastPoint: Point | undefined = $state(undefined);
 
-  let lastUuid: string | undefined = $state();
-
   let moveUuid: string | undefined = $state();
 
   const onkeydown = (e: KeyboardEvent) => {
@@ -68,9 +67,6 @@
           gs.server?.snapshot(name, data, currentIndex);
         }
       }
-      const historyContext = layerData.historyContexts.get(layer.historyIndex)!;
-      context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-      context.drawImage(historyContext.canvas, 0, 0);
     };
 
     let closestContextIndex = 0;
@@ -253,7 +249,6 @@
         brush: gs.brush,
       },
     };
-    layerData.tmps.set(gs.instructionBox.uuid, { canvas: undefined });
     if (e.shiftKey && lastPoint) {
       (gs.instructionBox.instruction as Stroke).points.push(lastPoint);
     }
@@ -438,6 +433,7 @@
       let clearContext = copyContext(context);
       clearContext.clearRect(0, 0, clearContext.canvas.width, clearContext.canvas.height);
       layerData.historyContexts.set(0, clearContext);
+      layerData.currentCanvas = canvas;
     }
   });
 
@@ -448,58 +444,19 @@
       untrack(() => renderFrom(layer.historyIndex));
   });
 
-  // Sync tmps with gs.inProgress for remote entries on this layer.
+  // Render: draw history context, then all in-progress on top.
   $effect(() => {
-    for (const [uuid, entry] of gs.inProgress) {
-      if (entry.layer === name && !layerData.tmps.has(uuid)) {
-        layerData.tmps.set(uuid, { canvas: undefined });
-      }
-    }
-    for (const uuid of layerData.tmps.keys()) {
-      if (!gs.inProgress.has(uuid) && uuid !== gs.instructionBox?.uuid) {
-        layerData.tmps.delete(uuid);
-      }
-    }
-  });
-
-  // Unified temp rendering: draw every inProgress entry for this layer.
-  $effect(() => {
-    for (const [uuid, entry] of gs.inProgress) {
+    const ctx = context;
+    const historyContext = layerData.historyContexts.get(layer.historyIndex);
+    if (!historyContext) return;
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.drawImage(historyContext.canvas, 0, 0);
+    for (const [, entry] of gs.inProgress) {
       if (entry.layer !== name) continue;
-      const tmp = layerData.tmps.get(uuid);
-      if (!tmp?.canvas) continue;
-      const ctx = tmp.canvas.getContext("2d")!;
-      ctx.clearRect(0, 0, tmp.canvas.width, tmp.canvas.height);
       applyInstruction(entry.instructionBox.instruction, ctx, gs.images);
     }
-    // Also draw the local instructionBox if it has a tmps entry.
     if (gs.instructionBox) {
-      const tmp = layerData.tmps.get(gs.instructionBox.uuid);
-      if (tmp?.canvas) {
-        const ctx = tmp.canvas.getContext("2d")!;
-        ctx.clearRect(0, 0, tmp.canvas.width, tmp.canvas.height);
-        applyInstruction(gs.instructionBox.instruction, ctx, gs.images);
-      }
-    }
-  });
-
-  $effect(() => {
-    if (gs.toolType === ToolType.InsertImage && gs.selectedLayer === name && gs.instructionBox) {
-      const uuid = gs.instructionBox.uuid;
-      if (!layerData.tmps.has(uuid)) {
-        lastUuid = uuid;
-        layerData.tmps.set(uuid, { canvas: undefined });
-        gs.server?.sendTempImage(uuid, name, gs.instructionBox.instruction as ImageInsertion);
-      }
-      const img = gs.instructionBox.instruction as ImageInsertion;
-      if (!gs.images.has(img.base64)) {
-        const image = new Image();
-        image.onload = () => gs.images.set(img.base64, image);
-        image.src = img.base64;
-      }
-    } else if (!gs.instructionBox && lastUuid) {
-      layerData.tmps.delete(lastUuid);
-      lastUuid = undefined;
+      applyInstruction(gs.instructionBox.instruction, ctx, gs.images);
     }
   });
 
@@ -517,11 +474,6 @@
   height={gs.drawing.height}
   width={gs.drawing.width}
 ></canvas>
-{#if layerData}
-  {#each layerData.tmps.entries() as [uuid, canvas] (uuid)}
-    <canvas bind:this={canvas.canvas} height={gs.drawing.height} width={gs.drawing.width}></canvas>
-  {/each}
-{/if}
 
 <style>
   canvas {

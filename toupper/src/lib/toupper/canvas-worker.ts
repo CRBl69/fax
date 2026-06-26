@@ -1,4 +1,4 @@
-import { applyInstruction } from "./instruction";
+import { applyInstruction } from "$lib/render";
 
 const images = new Map();
 

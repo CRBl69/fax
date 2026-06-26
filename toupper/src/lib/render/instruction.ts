@@ -8,7 +8,7 @@ import type {
   Stroke,
 } from "$lib/drinfo";
 import { ToServer } from "$lib/tolower";
-import { drawImage, strToRgb } from "./util";
+import { drawImage, strToRgb } from "./draw";
 
 const generateShape = (brush: Brush): OffscreenCanvas => {
   const canvas = new OffscreenCanvas(brush.width, brush.width);

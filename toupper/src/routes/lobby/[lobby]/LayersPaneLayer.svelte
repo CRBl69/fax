@@ -17,12 +17,10 @@
   });
 
   $effect(() => {
-    if (canvas) {
+    if (canvas && original) {
       const context = canvas.getContext("2d");
       context?.clearRect(0, 0, canvas.width, canvas.height);
-      if (original) {
-        context?.drawImage(original?.canvas, 0, 0);
-      }
+      context?.drawImage(original.canvas, 0, 0);
     }
   });
 </script>

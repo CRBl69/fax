@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { gs } from "./state.svelte";
-  import { applyInstruction, ToolType } from "$lib/toupper";
+  import { applyInstruction } from "$lib/render";
+  import { ToolType } from "$lib/toupper";
   import { SERVER_URL } from "$lib/env";
   import { page } from "$app/state";
   import type { ImageInsertion } from "$lib/drinfo";

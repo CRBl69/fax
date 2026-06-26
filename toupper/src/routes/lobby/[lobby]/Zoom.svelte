@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { drawSquares } from "$lib/toupper";
+  import { drawSquares } from "$lib/render";
   import { onMount } from "svelte";
   import { gs } from "./state.svelte";
 
@@ -27,18 +27,17 @@
 
   $effect(() => {
     const cursorPosition = gs.cursorPosition;
+    gs.inProgress;
+    gs.instructionBox;
     if (context && cursorPosition !== null) {
       context.clearRect(0, 0, canvas.width, canvas.height);
       drawSquares(context);
       gs.drawing.layerOrder.forEach((name) => {
         if (!gs.drawing.layers.get(name)?.visible) return;
         const layerData = gs.layerData.get(name);
-        const layer = gs.drawing.layers.get(name);
-        if (layerData) {
-          const layerContext = layerData.historyContexts.get(layer!.historyIndex);
-          if (!layerContext) return;
+        if (layerData?.currentCanvas) {
           context.drawImage(
-            layerContext.canvas,
+            layerData.currentCanvas,
             cursorPosition.x - 100 / gs.zoomRatio,
             cursorPosition.y - 100 / gs.zoomRatio,
             200 / gs.zoomRatio,
@@ -48,20 +47,6 @@
             200,
             200,
           );
-          layerData.tmps.values().forEach(({ canvas }) => {
-            if (!canvas) return;
-            context.drawImage(
-              canvas,
-              cursorPosition.x - 100 / gs.zoomRatio,
-              cursorPosition.y - 100 / gs.zoomRatio,
-              200 / gs.zoomRatio,
-              200 / gs.zoomRatio,
-              0,
-              0,
-              200,
-              200,
-            );
-          });
         }
       });
       context.beginPath();

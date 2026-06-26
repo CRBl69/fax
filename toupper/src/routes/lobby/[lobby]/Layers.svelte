@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { drawSquares, getRatio, type Cursor } from "$lib/toupper";
+  import { drawSquares } from "$lib/render";
+  import { getRatio, type Cursor } from "$lib/toupper";
   import CursorLayer from "./CursorLayer.svelte";
   import LayerComponent from "./Layer.svelte";
   import type { SvelteMap } from "svelte/reactivity";

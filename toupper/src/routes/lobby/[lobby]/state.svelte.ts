@@ -5,7 +5,7 @@ import { SvelteMap } from "svelte/reactivity";
 
 export type LayerData = {
   historyContexts: SvelteMap<number, CanvasRenderingContext2D>;
-  tmps: SvelteMap<string, { canvas: HTMLCanvasElement | undefined }>;
+  currentCanvas: HTMLCanvasElement | null;
 };
 
 export type InProgressEntry = {

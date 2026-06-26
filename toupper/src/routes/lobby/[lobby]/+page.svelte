@@ -41,7 +41,7 @@
       for (const layerName of data.drawing.layer_order) {
         const x: LayerData = $state({
           historyContexts: new SvelteMap(),
-          tmps: new SvelteMap(),
+          currentCanvas: null,
         });
         gs.layerData.set(layerName, x);
       }
@@ -58,7 +58,7 @@
     gs.server.registerEventHandler("addlayer", (data) => {
       gs.layerData.set(data, {
         historyContexts: new SvelteMap(),
-        tmps: new SvelteMap(),
+        currentCanvas: null,
       });
       gs.drawing.addLayer(data);
     });
