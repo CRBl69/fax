@@ -282,11 +282,7 @@ export class Server extends typedEventTarget {
     this.send(message);
   }
 
-  sendMove(
-    uuid: string,
-    layer: string,
-    end: DrInFo.Point,
-  ) {
+  sendMove(uuid: string, layer: string, end: DrInFo.Point) {
     const message: TempMoveClientMessage = {
       TempMove: {
         uuid,

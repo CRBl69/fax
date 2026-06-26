@@ -4,7 +4,7 @@ import { type Cursor, ToolType } from "$lib/toupper";
 const renderSelectionCursor = (
   context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
   point: Point,
-  username: string | null
+  username: string | null,
 ) => {
   context.lineWidth = 2;
   context.strokeStyle = "#000000";
@@ -22,13 +22,13 @@ const renderSelectionCursor = (
   if (username !== null) {
     renderUsername(context, { x: point.x + 5, y: point.y + 5 }, username);
   }
-}
+};
 
 const renderStrokeCursor = (
   context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
   point: Point | undefined,
   brush: Brush,
-  username: string | null
+  username: string | null,
 ) => {
   if (!point) {
     return;
@@ -47,9 +47,7 @@ const renderStrokeCursor = (
   }
   if (username !== null) {
     const offset =
-      brush.brushShape.shape === "square"
-        ? brush.width / 2 + 10
-        : Math.max(brush.width / 2, 15);
+      brush.brushShape.shape === "square" ? brush.width / 2 + 10 : Math.max(brush.width / 2, 15);
     renderUsername(context, { x: point.x + offset, y: point.y + offset }, username);
   }
   context.stroke();
@@ -58,17 +56,17 @@ const renderStrokeCursor = (
 const renderUsername = (
   context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
   point: Point,
-  username: string
+  username: string,
 ) => {
-    context.font = "20px Arial";
-    context.fillStyle = "#000000";
-    context.fillText(username, point.x, point.y);
-}
+  context.font = "20px Arial";
+  context.fillStyle = "#000000";
+  context.fillText(username, point.x, point.y);
+};
 
 export const renderTool = (
   context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
   cursor: Cursor | null,
-  username: string | null
+  username: string | null,
 ) => {
   if (cursor?.tool.type === ToolType.Stroke) {
     renderStrokeCursor(context, cursor.point, cursor.tool.brush, username);
@@ -102,4 +100,4 @@ export const renderSelection = (
   if (username) {
     renderUsername(context, { x: points[0].x + 5, y: points[0].y + 5 }, username);
   }
-}
+};

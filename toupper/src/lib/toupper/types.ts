@@ -15,26 +15,34 @@ export type Dimensions = {
   height: number;
 };
 
-export type Tool = {
-  type: ToolType.Stroke,
-  brush: Brush,
-} | {
-  type: ToolType.Eraser,
-  brush: Brush,
-} | {
-  type: ToolType.InsertImage,
-} | {
-  type: ToolType.PickColor,
-} | {
-  type: ToolType.Bucket,
-  brush: Brush,
-} | {
-  type: ToolType.Select,
-} | {
-  type: ToolType.PolySelect,
-} | {
-  type: ToolType.Move,
-};
+export type Tool =
+  | {
+      type: ToolType.Stroke;
+      brush: Brush;
+    }
+  | {
+      type: ToolType.Eraser;
+      brush: Brush;
+    }
+  | {
+      type: ToolType.InsertImage;
+    }
+  | {
+      type: ToolType.PickColor;
+    }
+  | {
+      type: ToolType.Bucket;
+      brush: Brush;
+    }
+  | {
+      type: ToolType.Select;
+    }
+  | {
+      type: ToolType.PolySelect;
+    }
+  | {
+      type: ToolType.Move;
+    };
 
 export enum ToolType {
   Stroke,

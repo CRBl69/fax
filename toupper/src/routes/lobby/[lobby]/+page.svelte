@@ -3,6 +3,7 @@
   import { SvelteMap } from "svelte/reactivity";
   import { SERVER_URL } from "$lib/env";
   import { FromServer, Server } from "$lib/tolower";
+  import type { Stroke, Motion, ImageInsertion } from "$lib/drinfo";
   import Layers from "./Layers.svelte";
   import Buttons from "./Buttons.svelte";
   import HistoryPane from "./HistoryPane.svelte";
@@ -39,9 +40,7 @@
     gs.server.registerEventHandler("init", (data) => {
       for (const layerName of data.drawing.layer_order) {
         const x: LayerData = $state({
-          historyIndex: 0,
           historyContexts: new SvelteMap(),
-          history: [],
           tmps: new SvelteMap(),
         });
         gs.layerData.set(layerName, x);
@@ -102,8 +101,7 @@
 
     gs.server.registerEventHandler("instruction", ({ layer, instruction }) => {
       gs.drawing.instruct(layer, FromServer.instructionBox(instruction));
-      gs.tempImages.delete(instruction.uuid);
-      gs.moves.delete(instruction.uuid);
+      gs.inProgress.delete(instruction.uuid);
     });
 
     gs.server.registerEventHandler("removeinstruction", ({ layer, index }) => {
@@ -114,24 +112,82 @@
       gs.selections.set(username, { points, closed });
     });
 
-    gs.server.registerEventHandler("tempimagestart", ({ uuid, image_insertion }) => {
-      gs.tempImages.set(uuid, image_insertion);
+    gs.server.registerEventHandler("tempdraw", (data) => {
+      if (data.layer !== gs.selectedLayer) return;
+      const brush = FromServer.brush(data.brush);
+      const existing = gs.inProgress.get(data.uuid);
+      if (!existing) {
+        const stroke: Stroke = {
+          points: [data.start, data.end],
+          brush,
+        };
+        gs.inProgress.set(data.uuid, {
+          instructionBox: { uuid: data.uuid, applied: true, instruction: stroke },
+          layer: data.layer,
+          username: "",
+        });
+      } else {
+        const stroke = existing.instructionBox.instruction as Stroke;
+        gs.inProgress.set(data.uuid, {
+          ...existing,
+          instructionBox: {
+            ...existing.instructionBox,
+            instruction: {
+              ...stroke,
+              points: [...stroke.points, data.end],
+            },
+          },
+        });
+      }
+    });
+
+    gs.server.registerEventHandler("tempimagestart", ({ uuid, image_insertion, layer }) => {
+      gs.inProgress.set(uuid, {
+        instructionBox: { uuid, applied: true, instruction: image_insertion as ImageInsertion },
+        layer,
+        username: "",
+      });
     });
 
     gs.server.registerEventHandler("tempimage", ({ uuid, point, rotate, scale }) => {
-      const tempImage = gs.tempImages.get(uuid);
-      if (tempImage) {
-        tempImage.point = point;
-        tempImage.rotate = rotate;
-        tempImage.scale = scale;
+      const entry = gs.inProgress.get(uuid);
+      if (entry) {
+        const img = entry.instructionBox.instruction as ImageInsertion;
+        gs.inProgress.set(uuid, {
+          ...entry,
+          instructionBox: {
+            ...entry.instructionBox,
+            instruction: { ...img, point, rotate, scale },
+          },
+        });
       }
     });
 
     gs.server.registerEventHandler("tempmove", ({ uuid, username, end, layer }) => {
       if (end) {
-        gs.moves.set(uuid, { user: username, end, layer });
+        const existing = gs.inProgress.get(uuid);
+        if (!existing) {
+          gs.inProgress.set(uuid, {
+            instructionBox: {
+              uuid,
+              applied: true,
+              instruction: { end, selection: [] } as Motion,
+            },
+            layer,
+            username,
+          });
+        } else {
+          const motion = existing.instructionBox.instruction as Motion;
+          gs.inProgress.set(uuid, {
+            ...existing,
+            instructionBox: {
+              ...existing.instructionBox,
+              instruction: { ...motion, end },
+            },
+          });
+        }
       } else {
-        gs.moves.delete(uuid);
+        gs.inProgress.delete(uuid);
       }
     });
 

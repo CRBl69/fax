@@ -62,17 +62,17 @@ export class ToServer {
     if (tool.type === ToUpper.ToolType.Bucket) {
       return {
         Bucket: ToServer.brush(tool.brush),
-      }
+      };
     }
     if (tool.type === ToUpper.ToolType.Stroke) {
       return {
         Brush: ToServer.brush(tool.brush),
-      }
+      };
     }
     if (tool.type === ToUpper.ToolType.Eraser) {
       return {
         Eraser: ToServer.brush(tool.brush),
-      }
+      };
     }
     if (tool.type === ToUpper.ToolType.Select) {
       return "Selection";

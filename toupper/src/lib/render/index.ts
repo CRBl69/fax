@@ -1,6 +1,3 @@
-import { renderTool, renderSelection } from './cursor';
+import { renderTool, renderSelection } from "./cursor";
 
-export {
-  renderTool,
-  renderSelection,
-};
+export { renderTool, renderSelection };

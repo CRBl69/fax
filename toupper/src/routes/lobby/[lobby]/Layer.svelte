@@ -1,16 +1,10 @@
 <script lang="ts">
   import type { ImageInsertion, InstructionBox, Point, Stroke } from "$lib/drinfo";
-  import { drawImage, getX, getY, applyInstruction, stroke, rgbToStr, ToolType } from "$lib/toupper";
+  import { getX, getY, applyInstruction, rgbToStr, ToolType } from "$lib/toupper";
   import { onMount, untrack } from "svelte";
   import { gs } from "./state.svelte";
-  import {
-    FromServer,
-    type InstructionMessage,
-    type MoveInstructionMessage,
-    type SetInstructionVisibilityMessage,
-    type TempDrawMessage,
-  } from "$lib/tolower";
-    import { page } from "$app/state";
+  import { type MoveInstructionMessage, type SetInstructionVisibilityMessage } from "$lib/tolower";
+  import { page } from "$app/state";
 
   interface Props {
     name: string;
@@ -38,16 +32,12 @@
   let prevCursorPosition: Point | undefined = $state();
   let cursorPosition: Point | undefined = $state();
 
-  let image: HTMLImageElement | undefined = $state();
-
   // Used for shift click straight line drawing.
   let lastPoint: Point | undefined = $state(undefined);
 
   let lastUuid: string | undefined = $state();
 
   let moveUuid: string | undefined = $state();
-
-  let friendStrokes: Map<string, InstructionBox> = $state(new Map());
 
   const onkeydown = (e: KeyboardEvent) => {
     if (gs.selectedLayer === name) {
@@ -145,17 +135,6 @@
     cursorPosition = { x, y };
   };
 
-  const tempDraw = (instructionBox: InstructionBox) => {
-    const canvas = layerData.tmps.get(instructionBox.uuid)!.canvas;
-    if (!canvas) {
-      return;
-    }
-    // TODO: make it so that we don't redraw the whole shape
-    const tempContext = canvas!.getContext("2d")!;
-    tempContext.clearRect(0, 0, canvas.width, canvas.height);
-    stroke(instructionBox.instruction as Stroke, tempContext);
-  };
-
   const sendSelection = (points: Point[], closed: boolean) => {
     gs.server?.sendSelection(points, closed);
   };
@@ -176,11 +155,13 @@
       imageInsertion.scale.x += (cursorPosition!.x - prevCursorPosition!.x) / 2000;
       imageInsertion.scale.y = imageInsertion.scale.x;
     } else if (e.altKey) {
+      const img = gs.images.get(imageInsertion.base64);
+      if (!img) return;
       const centerX = Math.round(
-        (imageInsertion.point.x * 2 + image!.width * imageInsertion.scale.x) / 2,
+        (imageInsertion.point.x * 2 + img.width * imageInsertion.scale.x) / 2,
       );
       const centerY = Math.round(
-        (imageInsertion.point.y * 2 + image!.height * imageInsertion.scale.y) / 2,
+        (imageInsertion.point.y * 2 + img.height * imageInsertion.scale.y) / 2,
       );
       const aX = cursorPosition!.x;
       const aY = cursorPosition!.y;
@@ -213,7 +194,6 @@
   };
   const onmousemovestroke = () => {
     (gs.instructionBox!.instruction as Stroke).points.push(cursorPosition!);
-    tempDraw(gs.instructionBox!);
     gs.server?.drawTemp(
       gs.brush,
       gs.instructionBox!.uuid,
@@ -239,7 +219,7 @@
         sendSelection([s, { x: c.x, y: s.y }, c, { x: s.x, y: c.y }], true);
       }
     }
-    if (gs.toolType === ToolType.Move && gs.userMove && cursorPosition) {
+    if (gs.toolType === ToolType.Move && gs.userMoveStart && cursorPosition) {
       const dx = cursorPosition.x - gs.userMoveStart!.x;
       const dy = cursorPosition.y - gs.userMoveStart!.y;
       const selectionStart = gs.selections.get(username)!.points[0];
@@ -273,13 +253,11 @@
         brush: gs.brush,
       },
     };
-    layerData.tmps.set(gs.instructionBox.uuid, { canvas: undefined, brush: gs.brush });
+    layerData.tmps.set(gs.instructionBox.uuid, { canvas: undefined });
     if (e.shiftKey && lastPoint) {
       (gs.instructionBox.instruction as Stroke).points.push(lastPoint);
-      tempDraw(gs.instructionBox);
     }
     (gs.instructionBox.instruction as Stroke).points.push(cursorPosition!);
-    tempDraw(gs.instructionBox);
   };
   const onmousedownbucket = () => {
     gs.server?.instructionBox(
@@ -296,23 +274,24 @@
   };
   const onmousedownselect = () => {
     if (!gs.selections.has(username)) {
-      gs.selections.set(username, {points: [
-        cursorPosition!,
-        cursorPosition!,
-        cursorPosition!,
-        cursorPosition!,
-      ], closed: true});
+      gs.selections.set(username, {
+        points: [cursorPosition!, cursorPosition!, cursorPosition!, cursorPosition!],
+        closed: true,
+      });
     } else {
       const selection = gs.selections.get(username)!;
       const start = selection.points[0];
       const end = cursorPosition!;
-      gs.selections.set(username, { points: [start, { x: end.x, y: start.y }, end, { x: start.x, y: end.y }], closed: true });
+      gs.selections.set(username, {
+        points: [start, { x: end.x, y: start.y }, end, { x: start.x, y: end.y }],
+        closed: true,
+      });
     }
   };
   const onmousedownpolyselect = () => {
     const prev = gs.selections.get(username);
     const newPoints = [...(prev?.points ?? []), cursorPosition!];
-    gs.selections.set(username, { points: newPoints, closed: false});
+    gs.selections.set(username, { points: newPoints, closed: false });
     sendSelection(newPoints, false);
   };
   const onmousedownmove = () => {
@@ -370,7 +349,10 @@
       },
       name,
     );
-    gs.selections.set(username, { closed: true, points: selection.points.map((p) => ({ x: p.x + delta.x, y: p.y + delta.y })) });
+    gs.selections.set(username, {
+      closed: true,
+      points: selection.points.map((p) => ({ x: p.x + delta.x, y: p.y + delta.y })),
+    });
     gs.userMoveStart = null;
     moveUuid = undefined;
   };
@@ -425,36 +407,6 @@
   });
 
   // Server event handlers.
-  const oninstruction = (data: CustomEvent<InstructionMessage["Instruction"]>) => {
-    if (data.detail.layer === name) {
-      layerData.tmps.delete(data.detail.instruction.uuid);
-      friendStrokes.delete(data.detail.instruction.uuid);
-    }
-  };
-
-  const ontempdraw = (data: CustomEvent<TempDrawMessage["TempDraw"]>) => {
-    const brush = FromServer.brush(data.detail.brush);
-    if (data.detail.layer === name) {
-      if (!layerData.tmps.has(data.detail.uuid)) {
-        layerData.tmps.set(data.detail.uuid, { canvas: undefined, brush });
-        const stroke: Stroke = {
-          points: [data.detail.start, data.detail.end],
-          brush: FromServer.brush(data.detail.brush),
-        };
-        friendStrokes.set(data.detail.uuid, {
-          applied: true,
-          uuid: data.detail.uuid,
-          instruction: stroke,
-        });
-      } else {
-        const stroke = friendStrokes.get(data.detail.uuid);
-        (stroke!.instruction as Stroke).points.push(data.detail.end);
-      }
-      const stroke = friendStrokes.get(data.detail.uuid)!;
-      tempDraw(stroke);
-    }
-  };
-
   const onsetinstructionvisibility = (
     data: CustomEvent<SetInstructionVisibilityMessage["SetInstructionVisibility"]>,
   ) => {
@@ -472,14 +424,10 @@
   };
 
   $effect(() => {
-    gs.server?.addEventListener("instruction", oninstruction);
-    gs.server?.addEventListener("tempdraw", ontempdraw);
     gs.server?.addEventListener("setinstructionvisibility", onsetinstructionvisibility);
     gs.server?.addEventListener("moveinstruction", onmoveinstruction);
 
     return () => {
-      gs.server?.removeEventListener("instruction", oninstruction);
-      gs.server?.removeEventListener("tempdraw", ontempdraw);
       gs.server?.removeEventListener("setinstructionvisibility", onsetinstructionvisibility);
       gs.server?.removeEventListener("moveinstruction", onmoveinstruction);
     };
@@ -500,40 +448,57 @@
       untrack(() => renderFrom(layer.historyIndex));
   });
 
+  // Sync tmps with gs.inProgress for remote entries on this layer.
   $effect(() => {
-    if (gs.toolType === ToolType.InsertImage && gs.selectedLayer === name) {
-      if (!layerData.tmps.get(gs.instructionBox!.uuid)) {
-        lastUuid = gs.instructionBox!.uuid;
-        layerData.tmps.set(gs.instructionBox!.uuid, { canvas: undefined, brush: gs.brush });
-        gs.server?.sendTempImage(
-          gs.instructionBox!.uuid,
-          name,
-          gs.instructionBox!.instruction as ImageInsertion,
-        );
+    for (const [uuid, entry] of gs.inProgress) {
+      if (entry.layer === name && !layerData.tmps.has(uuid)) {
+        layerData.tmps.set(uuid, { canvas: undefined });
       }
-      const canvas = layerData.tmps.get(gs.instructionBox!.uuid)!.canvas;
-      if (canvas) {
-        const tempContext = canvas!.getContext("2d")!;
-        tempContext.clearRect(0, 0, tempContext.canvas.width, tempContext.canvas.height);
-        const imageInsertion = gs.instructionBox!.instruction as ImageInsertion;
-        if (!image) {
-          image = new Image();
-          new Promise((resolve, reject) => {
-            image!.onload = resolve;
-            image!.onerror = reject;
-            image!.src = (gs.instructionBox!.instruction as ImageInsertion).base64;
-          }).then(() => {
-            drawImage(image!, imageInsertion, tempContext);
-          });
-        } else {
-          drawImage(image!, imageInsertion, tempContext);
-        }
+    }
+    for (const uuid of layerData.tmps.keys()) {
+      if (!gs.inProgress.has(uuid) && uuid !== gs.instructionBox?.uuid) {
+        layerData.tmps.delete(uuid);
+      }
+    }
+  });
+
+  // Unified temp rendering: draw every inProgress entry for this layer.
+  $effect(() => {
+    for (const [uuid, entry] of gs.inProgress) {
+      if (entry.layer !== name) continue;
+      const tmp = layerData.tmps.get(uuid);
+      if (!tmp?.canvas) continue;
+      const ctx = tmp.canvas.getContext("2d")!;
+      ctx.clearRect(0, 0, tmp.canvas.width, tmp.canvas.height);
+      applyInstruction(entry.instructionBox.instruction, ctx, gs.images);
+    }
+    // Also draw the local instructionBox if it has a tmps entry.
+    if (gs.instructionBox) {
+      const tmp = layerData.tmps.get(gs.instructionBox.uuid);
+      if (tmp?.canvas) {
+        const ctx = tmp.canvas.getContext("2d")!;
+        ctx.clearRect(0, 0, tmp.canvas.width, tmp.canvas.height);
+        applyInstruction(gs.instructionBox.instruction, ctx, gs.images);
+      }
+    }
+  });
+
+  $effect(() => {
+    if (gs.toolType === ToolType.InsertImage && gs.selectedLayer === name && gs.instructionBox) {
+      const uuid = gs.instructionBox.uuid;
+      if (!layerData.tmps.has(uuid)) {
+        lastUuid = uuid;
+        layerData.tmps.set(uuid, { canvas: undefined });
+        gs.server?.sendTempImage(uuid, name, gs.instructionBox.instruction as ImageInsertion);
+      }
+      const img = gs.instructionBox.instruction as ImageInsertion;
+      if (!gs.images.has(img.base64)) {
+        const image = new Image();
+        image.onload = () => gs.images.set(img.base64, image);
+        image.src = img.base64;
       }
     } else if (!gs.instructionBox && lastUuid) {
-      if (lastUuid) {
-        layerData.tmps.delete(lastUuid);
-      }
-      image = undefined;
+      layerData.tmps.delete(lastUuid);
       lastUuid = undefined;
     }
   });

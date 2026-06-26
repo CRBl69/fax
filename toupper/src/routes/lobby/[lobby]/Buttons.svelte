@@ -4,7 +4,7 @@
   import { applyInstruction, ToolType } from "$lib/toupper";
   import { SERVER_URL } from "$lib/env";
   import { page } from "$app/state";
-    import type { ImageInsertion } from "$lib/drinfo";
+  import type { ImageInsertion } from "$lib/drinfo";
 
   let saveUrl = $state("");
 
@@ -43,7 +43,11 @@
             uuid: crypto.randomUUID(),
           };
           gs.toolType = ToolType.InsertImage;
-          gs.server?.sendTempImageStart(gs.instructionBox.uuid, gs.selectedLayer!, gs.instructionBox.instruction as ImageInsertion);
+          gs.server?.sendTempImageStart(
+            gs.instructionBox.uuid,
+            gs.selectedLayer!,
+            gs.instructionBox.instruction as ImageInsertion,
+          );
         };
         image.src = base64img;
         files = undefined;

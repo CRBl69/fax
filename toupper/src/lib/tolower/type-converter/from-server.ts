@@ -127,34 +127,34 @@ export class FromServer {
     if (tool === "Selection") {
       return {
         type: ToUpper.ToolType.Select,
-      }
+      };
     }
     if (tool === "ColorPicker") {
       return {
         type: ToUpper.ToolType.PickColor,
-      }
+      };
     }
     if (tool === "Move") {
       return {
         type: ToUpper.ToolType.Move,
-      }
+      };
     }
     if (tool === "ImageInsertion") {
       return {
         type: ToUpper.ToolType.InsertImage,
-      }
+      };
     }
-    if ('Brush' in tool) {
+    if ("Brush" in tool) {
       return {
         type: ToUpper.ToolType.Stroke,
         brush: FromServer.brush(tool.Brush),
-      }
+      };
     }
-    if ('Bucket' in tool) {
+    if ("Bucket" in tool) {
       return {
         type: ToUpper.ToolType.Bucket,
         brush: FromServer.brush(tool.Bucket),
-      }
+      };
     }
     return {
       type: ToUpper.ToolType.Eraser,

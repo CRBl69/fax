@@ -98,27 +98,34 @@ export type InitMessage = {
   };
 };
 
-    // Brush(drawing::Brush),
-    // Selection,
-    // Bucket,
-    // Eraser,
-    // ColorPicker,
-    // Move,
+// Brush(drawing::Brush),
+// Selection,
+// Bucket,
+// Eraser,
+// ColorPicker,
+// Move,
 
 export type BrushTool = {
-  Brush: Brush,
-}
+  Brush: Brush;
+};
 export type SelectionTool = "Selection";
 export type BucketTool = {
-  Bucket: Brush,
-}
+  Bucket: Brush;
+};
 export type EraserTool = {
-  Eraser: Brush,
-}
+  Eraser: Brush;
+};
 export type ColorPickerTool = "ColorPicker";
 export type MoveTool = "Move";
 export type ImageInsertionTool = "ImageInsertion";
-export type Tool = BrushTool | SelectionTool | BucketTool | EraserTool | ColorPickerTool | MoveTool | ImageInsertionTool;
+export type Tool =
+  | BrushTool
+  | SelectionTool
+  | BucketTool
+  | EraserTool
+  | ColorPickerTool
+  | MoveTool
+  | ImageInsertionTool;
 
 export type Cursor = {
   point: Point;
