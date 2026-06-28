@@ -1,2 +1,5 @@
+packages:
+  - "toupper"
+
 allowBuilds:
   esbuild: true

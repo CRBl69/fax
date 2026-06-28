@@ -1,0 +1,13 @@
+{
+  "name": "fax",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter toupper dev",
+    "build": "pnpm --filter toupper build",
+    "preview": "pnpm --filter toupper preview",
+    "check": "pnpm --filter toupper check",
+    "check:watch": "pnpm --filter toupper check:watch",
+    "format": "pnpm --filter toupper format",
+    "lint": "pnpm --filter toupper lint"
+  }
+}

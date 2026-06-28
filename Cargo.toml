@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "drinfo",
+    "tolower",
+]
+default-members = ["tolower"]
+resolver = "2"

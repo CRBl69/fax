@@ -309,8 +309,8 @@
         instruction: {
           selection: gs.selections.get(username)!.points,
           end: gs.selections.get(username)!.points[0],
-        }
-      }
+        },
+      };
       sendMove(cursorPosition!);
     }
   };
@@ -351,10 +351,7 @@
       y: cursorPosition!.y - gs.userMoveStart!.y,
     };
     const selection = gs.selections.get(username)!;
-    gs.server?.instructionBox(
-      gs.instructionBox!,
-      name,
-    );
+    gs.server?.instructionBox(gs.instructionBox!, name);
     gs.selections.set(username, {
       closed: true,
       points: selection.points.map((p) => ({ x: p.x + delta.x, y: p.y + delta.y })),
