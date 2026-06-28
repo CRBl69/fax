@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getX, getY } from "$lib/toupper";
-  import { renderTool } from "$lib/render";
+  import { renderSelection, renderTool } from "$lib/render";
   import { getStateTool, gs } from "./state.svelte";
   import { untrack } from "svelte";
 
@@ -16,8 +16,12 @@
     const context = cursorCanvas.getContext("2d")!;
     context.clearRect(0, 0, gs.drawing.width, gs.drawing.height);
 
-    gs.users.entries().forEach((v) => {
+    gs.cursors.entries().forEach((v) => {
       renderTool(context, v[1], v[0]);
+    });
+
+    gs.selections.entries().forEach((v) => {
+      renderSelection(context, v[1].points, v[1].closed, 1, v[0]);
     });
 
     if (gs.cursorPosition) {
@@ -54,7 +58,8 @@
   };
 
   $effect(() => {
-    gs.users.entries();
+    gs.cursors.entries();
+    gs.selections.entries();
     untrack(() => drawAllCursors());
   });
 
@@ -99,5 +104,6 @@
 <style>
   canvas {
     position: absolute;
+    cursor: none;
   }
 </style>

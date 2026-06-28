@@ -93,7 +93,7 @@
   {@render icon("select", gs.toolType === ToolType.Select, () => {
     gs.toolType = ToolType.Select;
   })}
-  {#if gs.toolType === ToolType.PolySelect && gs.selections.get(username)!.points.length >= 3}
+  {#if gs.toolType === ToolType.PolySelect && (gs.selections.get(username)?.points.length ?? 0) >= 3}
     {@render icon("poly-confirm", false, () => {
       if (username) {
         const selection = gs.selections.get(username)!;

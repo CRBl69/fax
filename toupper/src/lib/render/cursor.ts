@@ -10,13 +10,13 @@ const renderSelectionCursor = (
   context.strokeStyle = "#000000";
 
   context.beginPath();
-  context.moveTo(point.x - 6, point.y);
-  context.moveTo(point.x + 6, point.y);
+  context.moveTo(point.x - 12, point.y);
+  context.lineTo(point.x + 12, point.y);
   context.stroke();
 
   context.beginPath();
-  context.moveTo(point.x, point.y - 6);
-  context.moveTo(point.x, point.y + 6);
+  context.moveTo(point.x, point.y - 12);
+  context.lineTo(point.x, point.y + 12);
   context.stroke();
 
   if (username !== null) {
@@ -33,6 +33,7 @@ const renderStrokeCursor = (
   if (!point) {
     return;
   }
+  context.lineWidth = 1;
   context.beginPath();
   context.strokeStyle = brush.color;
   if (brush.brushShape.shape === "circle") {
@@ -70,7 +71,7 @@ export const renderTool = (
 ) => {
   if (cursor?.tool.type === ToolType.Stroke) {
     renderStrokeCursor(context, cursor.point, cursor.tool.brush, username);
-  } else if (cursor?.tool.type === ToolType.Select) {
+  } else if (cursor) {
     renderSelectionCursor(context, cursor.point, username);
   }
 };
@@ -82,7 +83,7 @@ export const renderSelection = (
   ratio: number,
   username: string | null,
 ) => {
-  context.lineWidth = Math.max(1, 2 / ratio);
+  context.lineWidth = 1;
   context.strokeStyle = "#000000";
   context.setLineDash([6 / ratio, 6 / ratio]);
 
@@ -98,6 +99,6 @@ export const renderSelection = (
   context.setLineDash([]);
 
   if (username) {
-    renderUsername(context, { x: points[0].x + 5, y: points[0].y + 5 }, username);
+    renderUsername(context, { x: points[0].x, y: points[0].y - 4 }, username);
   }
 };

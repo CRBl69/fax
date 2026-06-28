@@ -41,8 +41,9 @@ interface GlobalState {
   canvasWorker: Worker | null;
   tolerance: number;
   userMoveStart: Point | null;
+  isSelecting: boolean;
   selections: SvelteMap<string, { points: Point[]; closed: boolean }>;
-  users: SvelteMap<string, Cursor | null>;
+  cursors: SvelteMap<string, Cursor | null>;
   inProgressTick: number;
 }
 
@@ -66,8 +67,9 @@ export const gs: GlobalState = $state({
   canvasWorker: null,
   tolerance: 0,
   userMoveStart: null,
+  isSelecting: false,
   selections: new SvelteMap(),
-  users: new SvelteMap(),
+  cursors: new SvelteMap(),
   inProgressTick: 0,
 });
 

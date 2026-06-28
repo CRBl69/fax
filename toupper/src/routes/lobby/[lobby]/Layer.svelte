@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ImageInsertion, InstructionBox, Point, Stroke } from "$lib/drinfo";
+  import type { ImageInsertion, InstructionBox, Motion, Point, Stroke } from "$lib/drinfo";
   import { getX, getY, ToolType } from "$lib/toupper";
   import { applyInstruction, rgbToStr } from "$lib/render";
   import { onMount, untrack } from "svelte";
@@ -208,21 +208,29 @@
       }
     }
     if (gs.toolType === ToolType.Select && cursorPosition) {
-      const selection = gs.selections.get(username)!;
-      if (selection.points.length === 1) {
+      if (gs.isSelecting) {
+        const selection = gs.selections.get(username)!;
         const s = selection.points[0];
         const c = cursorPosition;
-        sendSelection([s, { x: c.x, y: s.y }, c, { x: s.x, y: c.y }], true);
+        const newPoints = [s, { x: c.x, y: s.y }, c, { x: s.x, y: c.y }];
+        gs.selections.set(username, {
+          points: newPoints,
+          closed: true,
+        });
+        sendSelection(newPoints, true);
       }
     }
     if (gs.toolType === ToolType.Move && gs.userMoveStart && cursorPosition) {
       const dx = cursorPosition.x - gs.userMoveStart!.x;
       const dy = cursorPosition.y - gs.userMoveStart!.y;
-      const selectionStart = gs.selections.get(username)!.points[0];
-      sendMove({
+      const selection = (gs.instructionBox!.instruction as Motion).selection;
+      const selectionStart = selection[0];
+      const point = {
         x: selectionStart.x + dx,
         y: selectionStart.y + dy,
-      });
+      };
+      sendMove(point);
+      (gs.instructionBox!.instruction as Motion).end = point;
     }
     if (gs.toolType === ToolType.InsertImage) {
       gs.server?.sendTempImage(
@@ -268,12 +276,14 @@
     );
   };
   const onmousedownselect = () => {
-    if (!gs.selections.has(username)) {
+    if (!gs.isSelecting) {
       gs.selections.set(username, {
         points: [cursorPosition!, cursorPosition!, cursorPosition!, cursorPosition!],
         closed: true,
       });
+      gs.isSelecting = true;
     } else {
+      gs.isSelecting = false;
       const selection = gs.selections.get(username)!;
       const start = selection.points[0];
       const end = cursorPosition!;
@@ -293,6 +303,14 @@
     if ((gs.selections.get(username)?.points.length ?? 0) >= 3) {
       gs.userMoveStart = cursorPosition!;
       moveUuid = crypto.randomUUID();
+      gs.instructionBox = {
+        applied: false,
+        uuid: moveUuid,
+        instruction: {
+          selection: gs.selections.get(username)!.points,
+          end: gs.selections.get(username)!.points[0],
+        }
+      }
       sendMove(cursorPosition!);
     }
   };
@@ -334,20 +352,14 @@
     };
     const selection = gs.selections.get(username)!;
     gs.server?.instructionBox(
-      {
-        instruction: {
-          end: { x: selection.points[0].x + delta.x, y: selection.points[0].y + delta.y },
-          selection: selection.points,
-        },
-        uuid: crypto.randomUUID(),
-        applied: true,
-      },
+      gs.instructionBox!,
       name,
     );
     gs.selections.set(username, {
       closed: true,
       points: selection.points.map((p) => ({ x: p.x + delta.x, y: p.y + delta.y })),
     });
+    gs.instructionBox = null;
     gs.userMoveStart = null;
     moveUuid = undefined;
   };

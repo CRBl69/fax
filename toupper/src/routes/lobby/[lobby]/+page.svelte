@@ -30,6 +30,8 @@
     }
   }
 
+  $inspect(gs.instructionBox);
+
   onMount(() => {
     initWebWorker();
     gs.server = new Server(`${location.protocol.replace(/http/, "ws")}//${SERVER_URL}`, username);
@@ -45,12 +47,12 @@
       }
       gs.drawing = FromServer.drawing(data.drawing);
       data.users.forEach((u) => {
-        if (u !== username) gs.users.set(u, null);
+        if (u !== username) gs.cursors.set(u, null);
       });
     });
 
     gs.server.registerEventHandler("cursorout", (data) => {
-      gs.users.set(data.username, data.cursor ? FromServer.cursor(data.cursor) : null);
+      gs.cursors.set(data.username, data.cursor ? FromServer.cursor(data.cursor) : null);
     });
 
     gs.server.registerEventHandler("addlayer", (data) => {
@@ -75,7 +77,7 @@
     });
 
     gs.server.registerEventHandler("join", (data) => {
-      gs.users.set(data, null);
+      gs.cursors.set(data, null);
     });
 
     gs.server.registerEventHandler("sethistoryindex", (data) => {
