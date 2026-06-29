@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getX, getY } from "$lib/toupper";
+  import { getX, getY } from "$lib/util";
   import { renderSelection, renderTool } from "$lib/render";
   import { getStateTool, gs } from "$lib/state.svelte";
   import { untrack } from "svelte";

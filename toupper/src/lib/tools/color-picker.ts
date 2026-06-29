@@ -16,6 +16,6 @@ export class ColorPickerTool extends BaseTool {
   }
 
   public getToolType() {
-    return ToolType.Eraser;
+    return ToolType.PickColor;
   }
 }

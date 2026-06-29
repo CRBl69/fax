@@ -2,17 +2,17 @@
   import { onMount } from "svelte";
   import { gs } from "$lib/state.svelte";
   import { applyInstruction } from "$lib/render";
-  import { ToolType } from "$lib/toupper";
+  import { ToolType } from "$lib/types";
   import { SERVER_URL } from "$lib/env";
   import type { ImageInsertion } from "$lib/drinfo";
-  import { ImageInsertionTool } from "$lib/toupper/tools/image-insertion";
-  import { StrokeTool } from "$lib/toupper/tools/stroke";
-  import { EraserTool } from "$lib/toupper/tools/eraser";
-  import { BucketTool } from "$lib/toupper/tools/bucket";
-  import { ColorPickerTool } from "$lib/toupper/tools/color-picker";
-  import { SelectionTool } from "$lib/toupper/tools/selection";
-  import { PolySelectionTool } from "$lib/toupper/tools/poly-selection";
-  import { MoveTool } from "$lib/toupper/tools/move";
+  import { ImageInsertionTool } from "$lib/tools/image-insertion";
+  import { StrokeTool } from "$lib/tools/stroke";
+  import { EraserTool } from "$lib/tools/eraser";
+  import { BucketTool } from "$lib/tools/bucket";
+  import { ColorPickerTool } from "$lib/tools/color-picker";
+  import { SelectionTool } from "$lib/tools/selection";
+  import { PolySelectionTool } from "$lib/tools/poly-selection";
+  import { MoveTool } from "$lib/tools/move";
 
   let saveUrl = $state("");
 

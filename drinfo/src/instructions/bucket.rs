@@ -6,10 +6,11 @@ use crate::{Brush, Point};
 pub struct Bucket {
     point: Point,
     brush: Brush,
+    tolerance: f64,
 }
 
 impl Bucket {
-    pub fn new(point: Point, brush: Brush) -> Self {
-        Bucket { point, brush }
+    pub fn new(point: Point, brush: Brush, tolerance: f64) -> Self {
+        Bucket { point, brush, tolerance }
     }
 }

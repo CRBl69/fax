@@ -7,13 +7,12 @@ import type {
   Point,
   Stroke,
 } from "$lib/drinfo";
-import { ToServer } from "$lib/tolower";
 import { drawImage, strToRgb } from "./draw";
 
 const generateShape = (brush: Brush): OffscreenCanvas => {
   const canvas = new OffscreenCanvas(brush.width, brush.width);
   const context = canvas.getContext("2d")!;
-  const color = ToServer.color(brush.color);
+  const color = strToRgb(brush.color);
   context.strokeStyle = `rgba(${color.r} ${color.g} ${color.b} / ${brush.opacity / 1000}%)`;
   context.fillStyle = `rgba(${color.r} ${color.g} ${color.b} / ${brush.opacity / 1000}%)`;
   context.lineCap = "round";
@@ -193,7 +192,7 @@ export const bucket = (
     const g = imageData.data[pixelPos + 1];
     const b = imageData.data[pixelPos + 2];
     const a = imageData.data[pixelPos + 3];
-    const tolerance = 10;
+    const tolerance = bucket.tolerance;
     return (
       Math.abs(r - colorToPaint.r) < tolerance &&
       Math.abs(g - colorToPaint.g) < tolerance &&

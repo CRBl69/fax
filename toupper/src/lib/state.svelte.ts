@@ -1,13 +1,8 @@
 import { Drawing, type Brush, type InstructionBox, type Point } from "$lib/drinfo";
 import type { Server } from "$lib/tolower";
-import {
-  getDefaultBrush,
-  getSecondaryDefaultBrush,
-  type Cursor,
-  type Tool as ToolServerType,
-  ToolType,
-} from "$lib/toupper";
-import { Tool } from "$lib/toupper/tools";
+import { getDefaultBrush, getSecondaryDefaultBrush } from "$lib/default";
+import { type Cursor, type Tool as ToolServerType, ToolType } from "$lib/types";
+import { Tool } from "$lib/tools";
 import { SvelteMap } from "svelte/reactivity";
 
 export type LayerData = {

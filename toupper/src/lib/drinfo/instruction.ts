@@ -21,6 +21,7 @@ export type ImageInsertion = {
 export type Bucket = {
   point: Point;
   brush: Brush;
+  tolerance: number;
 };
 
 export type Instruction = Stroke | Motion | ImageInsertion | Bucket;

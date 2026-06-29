@@ -1,5 +1,5 @@
 import * as DrInFo from "$lib/drinfo";
-import * as ToUpper from "$lib/toupper";
+import { type Tool as ToUpperTool, ToolType } from "$lib/types";
 import type {
   Brush,
   BrushShape,
@@ -58,32 +58,32 @@ export class ToServer {
     };
   }
 
-  static tool(tool: ToUpper.Tool): Tool {
-    if (tool.type === ToUpper.ToolType.Bucket) {
+  static tool(tool: ToUpperTool): Tool {
+    if (tool.type === ToolType.Bucket) {
       return {
         Bucket: ToServer.brush(tool.brush),
       };
     }
-    if (tool.type === ToUpper.ToolType.Stroke) {
+    if (tool.type === ToolType.Stroke) {
       return {
         Brush: ToServer.brush(tool.brush),
       };
     }
-    if (tool.type === ToUpper.ToolType.Eraser) {
+    if (tool.type === ToolType.Eraser) {
       return {
         Eraser: ToServer.brush(tool.brush),
       };
     }
-    if (tool.type === ToUpper.ToolType.Select) {
+    if (tool.type === ToolType.Select) {
       return "Selection";
     }
-    if (tool.type === ToUpper.ToolType.InsertImage) {
+    if (tool.type === ToolType.InsertImage) {
       return "ImageInsertion";
     }
-    if (tool.type === ToUpper.ToolType.PickColor) {
+    if (tool.type === ToolType.PickColor) {
       return "ColorPicker";
     }
-    if (tool.type === ToUpper.ToolType.Move) {
+    if (tool.type === ToolType.Move) {
       return "Move";
     }
     return "Selection";
@@ -115,6 +115,7 @@ export class ToServer {
       Bucket: {
         point: bucket.point,
         brush: ToServer.brush(bucket.brush),
+        tolerance: bucket.tolerance,
       },
     };
   }

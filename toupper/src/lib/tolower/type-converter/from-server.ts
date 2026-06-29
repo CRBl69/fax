@@ -1,5 +1,5 @@
 import * as DrInFo from "$lib/drinfo";
-import * as ToUpper from "$lib/toupper";
+import { type Cursor as ToUpperCursor, type Tool as ToUpperTool, ToolType } from "$lib/types";
 import { SvelteMap } from "svelte/reactivity";
 import type {
   Brush,
@@ -70,6 +70,7 @@ export class FromServer {
     return {
       point: bucket.point,
       brush: FromServer.brush(bucket.brush),
+      tolerance: bucket.tolerance,
     };
   }
 
@@ -123,46 +124,46 @@ export class FromServer {
     });
   }
 
-  static tool(tool: Tool): ToUpper.Tool {
+  static tool(tool: Tool): ToUpperTool {
     if (tool === "Selection") {
       return {
-        type: ToUpper.ToolType.Select,
+        type: ToolType.Select,
       };
     }
     if (tool === "ColorPicker") {
       return {
-        type: ToUpper.ToolType.PickColor,
+        type: ToolType.PickColor,
       };
     }
     if (tool === "Move") {
       return {
-        type: ToUpper.ToolType.Move,
+        type: ToolType.Move,
       };
     }
     if (tool === "ImageInsertion") {
       return {
-        type: ToUpper.ToolType.InsertImage,
+        type: ToolType.InsertImage,
       };
     }
     if ("Brush" in tool) {
       return {
-        type: ToUpper.ToolType.Stroke,
+        type: ToolType.Stroke,
         brush: FromServer.brush(tool.Brush),
       };
     }
     if ("Bucket" in tool) {
       return {
-        type: ToUpper.ToolType.Bucket,
+        type: ToolType.Bucket,
         brush: FromServer.brush(tool.Bucket),
       };
     }
     return {
-      type: ToUpper.ToolType.Eraser,
+      type: ToolType.Eraser,
       brush: FromServer.brush(tool.Eraser),
     };
   }
 
-  static cursor(cursor: Cursor): ToUpper.Cursor {
+  static cursor(cursor: Cursor): ToUpperCursor {
     return {
       tool: FromServer.tool(cursor.tool),
       point: cursor.point,

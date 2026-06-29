@@ -1,4 +1,4 @@
-import type { Tool } from "$lib/toupper";
+import type { Tool } from "$lib/types";
 import * as DrInFo from "../drinfo";
 import type {
   AddLayerMessage,
@@ -101,7 +101,7 @@ export class Server extends typedEventTarget {
     // Hook here something to display an error message in case we fail again.
     this._websocket.onclose = () => {
       setTimeout(() => {
-        this._websocket = new WebSocket(url);
+        this._websocket = new WebSocket(`${url}/ws/${username}`);
         this._websocket.onopen = () => {
           this._websocket.send(JSON.stringify("RequestInit"));
         };

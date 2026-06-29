@@ -1,6 +1,6 @@
 <script lang="ts">
   import { drawSquares } from "$lib/render";
-  import { getRatio } from "$lib/toupper";
+  import { getRatio } from "$lib/util";
   import CursorLayer from "./CursorLayer.svelte";
   import LayerComponent from "./Layer.svelte";
   import { gs } from "$lib/state.svelte";

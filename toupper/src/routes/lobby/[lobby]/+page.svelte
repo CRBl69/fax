@@ -23,7 +23,7 @@
 
   async function initWebWorker() {
     if (window.Worker) {
-      const CanvasWorker = await import("$lib/toupper/canvas-worker.ts?worker");
+      const CanvasWorker = await import("$lib/canvas-worker.ts?worker");
       gs.canvasWorker = new CanvasWorker.default();
     }
   }
@@ -33,8 +33,6 @@
       gs.canvasWorker.terminate();
     }
   }
-
-  $inspect(gs.instructionBox);
 
   onMount(() => {
     initWebWorker();

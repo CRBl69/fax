@@ -1,5 +1,5 @@
 import type { Brush, Point } from "$lib/drinfo";
-import { type Cursor, ToolType } from "$lib/toupper";
+import { type Cursor, ToolType } from "$lib/types";
 
 const renderSelectionCursor = (
   context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,

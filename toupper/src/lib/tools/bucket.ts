@@ -13,6 +13,7 @@ export class BucketTool extends BaseTool {
         instruction: {
           point: this.cursorPosition!,
           brush: gs.brush,
+          tolerance: gs.tolerance,
         },
         uuid: crypto.randomUUID(),
         applied: true,

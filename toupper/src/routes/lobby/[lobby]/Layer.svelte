@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { InstructionBox, Point } from "$lib/drinfo";
-  import { getX, getY } from "$lib/toupper";
+  import { getX, getY } from "$lib/util";
   import { applyInstruction } from "$lib/render";
   import { onMount, untrack } from "svelte";
   import { gs } from "$lib/state.svelte";

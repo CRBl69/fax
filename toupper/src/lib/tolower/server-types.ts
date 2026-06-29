@@ -46,6 +46,7 @@ export type Bucket = {
   Bucket: {
     point: Point;
     brush: Brush;
+    tolerance: number;
   };
 };
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ToolType } from "$lib/toupper";
+  import { ToolType } from "$lib/types";
   import { gs } from "$lib/state.svelte";
   import BrushSettings from "./BrushSettings.svelte";
   import BucketSettings from "./BucketSettings.svelte";
