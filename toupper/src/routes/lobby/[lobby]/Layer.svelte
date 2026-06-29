@@ -1,26 +1,23 @@
 <script lang="ts">
-  import type { ImageInsertion, InstructionBox, Motion, Point, Stroke } from "$lib/drinfo";
-  import { getX, getY, ToolType } from "$lib/toupper";
-  import { applyInstruction, rgbToStr } from "$lib/render";
+  import type { InstructionBox, Point } from "$lib/drinfo";
+  import { getX, getY } from "$lib/toupper";
+  import { applyInstruction } from "$lib/render";
   import { onMount, untrack } from "svelte";
   import { gs } from "./state.svelte";
   import { type MoveInstructionMessage, type SetInstructionVisibilityMessage } from "$lib/tolower";
-  import { page } from "$app/state";
 
   interface Props {
     name: string;
     listener: HTMLDivElement | undefined;
   }
 
-  let username = page.params.lobby;
-
   let { name, listener }: Props = $props();
 
   let currentIndex = $state(0);
 
   // State that is stored in global state to allow context sharing.
-  let layerData = gs.layerData.get(name)!;
-  let layer = gs.drawing.layers.get(name)!;
+  let layerData = $derived.by(() => gs.layerData.get(name)!);
+  let layer = $derived.by(() => gs.drawing.layers.get(name)!);
 
   let canvas: HTMLCanvasElement;
   let context: CanvasRenderingContext2D = $derived.by(() => canvas.getContext("2d")!);
@@ -28,15 +25,8 @@
   let isVisible = $derived(layer.visible);
   let visibility = $derived(isVisible ? "unset" : "none");
 
-  let mousedown: boolean = $state(false);
-
   let prevCursorPosition: Point | undefined = $state();
   let cursorPosition: Point | undefined = $state();
-
-  // Used for shift click straight line drawing.
-  let lastPoint: Point | undefined = $state(undefined);
-
-  let moveUuid: string | undefined = $state();
 
   const onkeydown = (e: KeyboardEvent) => {
     if (gs.selectedLayer === name) {
@@ -131,249 +121,37 @@
     cursorPosition = { x, y };
   };
 
-  const sendSelection = (points: Point[], closed: boolean) => {
-    gs.server?.sendSelection(points, closed);
-  };
-
-  const sendMove = (end: Point) => {
-    if (moveUuid) {
-      gs.server?.sendMove(moveUuid, name, end);
-    }
-  };
-
   // Browser event handlers.
-  const onmousemoveimageinsertion = (e: MouseEvent) => {
-    let imageInsertion = gs.instructionBox!.instruction as ImageInsertion;
-    if (e.ctrlKey) {
-      imageInsertion.scale.x += (cursorPosition!.x - prevCursorPosition!.x) / 2000;
-      imageInsertion.scale.y += (cursorPosition!.y - prevCursorPosition!.y) / 2000;
-    } else if (e.shiftKey) {
-      imageInsertion.scale.x += (cursorPosition!.x - prevCursorPosition!.x) / 2000;
-      imageInsertion.scale.y = imageInsertion.scale.x;
-    } else if (e.altKey) {
-      const img = gs.images.get(imageInsertion.base64);
-      if (!img) return;
-      const centerX = Math.round(
-        (imageInsertion.point.x * 2 + img.width * imageInsertion.scale.x) / 2,
-      );
-      const centerY = Math.round(
-        (imageInsertion.point.y * 2 + img.height * imageInsertion.scale.y) / 2,
-      );
-      const aX = cursorPosition!.x;
-      const aY = cursorPosition!.y;
-      const bX = prevCursorPosition!.x;
-      const bY = prevCursorPosition!.y;
-      const caX = aX - centerX;
-      const caY = aY - centerY;
-      const cbX = bX - centerX;
-      const cbY = bY - centerY;
-      const product = caX * cbX + caY * cbY;
-      const caMag = Math.sqrt(caX ** 2 + caY ** 2);
-      const cbMag = Math.sqrt(cbX ** 2 + cbY ** 2);
-      const cos = product / (caMag * cbMag);
-      const angleRadians = Math.acos(cos);
-      const angleDegrees = (angleRadians / Math.PI) * 180;
-      const crossProduct = caX * cbY - caY * cbX;
-      let rotate;
-      if (crossProduct > 0) {
-        rotate = (imageInsertion.rotate - angleDegrees) % 360;
-      } else {
-        rotate = (imageInsertion.rotate + angleDegrees) % 360;
-      }
-      if (!isNaN(rotate)) {
-        imageInsertion.rotate = rotate;
-      }
-    } else {
-      imageInsertion.point.x += cursorPosition!.x - prevCursorPosition!.x;
-      imageInsertion.point.y += cursorPosition!.y - prevCursorPosition!.y;
-    }
-  };
-  const onmousemovestroke = () => {
-    (gs.instructionBox!.instruction as Stroke).points.push(cursorPosition!);
-    gs.server?.drawTemp(
-      gs.brush,
-      gs.instructionBox!.uuid,
-      prevCursorPosition!,
-      cursorPosition!,
-      name,
-    );
-  };
   const onmousemove = (element: HTMLDivElement, e: MouseEvent) => {
     updateCursorPosition(element, e);
-    if (mousedown && gs.instructionBox) {
-      if ("point" in gs.instructionBox.instruction) {
-        onmousemoveimageinsertion(e);
-      } else if ("points" in gs.instructionBox.instruction) {
-        onmousemovestroke();
-      }
-    }
-    if (gs.toolType === ToolType.Select && cursorPosition) {
-      if (gs.isSelecting) {
-        const selection = gs.selections.get(username)!;
-        const s = selection.points[0];
-        const c = cursorPosition;
-        const newPoints = [s, { x: c.x, y: s.y }, c, { x: s.x, y: c.y }];
-        gs.selections.set(username, {
-          points: newPoints,
-          closed: true,
-        });
-        sendSelection(newPoints, true);
-      }
-    }
-    if (gs.toolType === ToolType.Move && gs.userMoveStart && cursorPosition) {
-      const dx = cursorPosition.x - gs.userMoveStart!.x;
-      const dy = cursorPosition.y - gs.userMoveStart!.y;
-      const selection = (gs.instructionBox!.instruction as Motion).selection;
-      const selectionStart = selection[0];
-      const point = {
-        x: selectionStart.x + dx,
-        y: selectionStart.y + dy,
-      };
-      sendMove(point);
-      (gs.instructionBox!.instruction as Motion).end = point;
-    }
-    if (gs.toolType === ToolType.InsertImage) {
-      gs.server?.sendTempImage(
-        gs.instructionBox!.uuid,
-        name,
-        gs.instructionBox!.instruction as ImageInsertion,
-      );
+    if (gs.tool) {
+      gs.tool.onmousemove(e, element);
     }
   };
 
-  const onmousedownimageinsertion = (e: MouseEvent) => {
-    if (e.button === 2) {
-      let imageInsertion = gs.instructionBox!.instruction as ImageInsertion;
-      imageInsertion.scale.y = imageInsertion.scale.x;
-    }
-  };
-  const onmousedownstroke = (e: MouseEvent) => {
-    if (e.button !== 0) return;
-    gs.instructionBox = {
-      uuid: crypto.randomUUID(),
-      applied: true,
-      instruction: {
-        points: [],
-        brush: gs.brush,
-      },
-    };
-    if (e.shiftKey && lastPoint) {
-      (gs.instructionBox.instruction as Stroke).points.push(lastPoint);
-    }
-    (gs.instructionBox.instruction as Stroke).points.push(cursorPosition!);
-  };
-  const onmousedownbucket = () => {
-    gs.server?.instructionBox(
-      {
-        instruction: {
-          point: cursorPosition!,
-          brush: gs.brush,
-        },
-        uuid: crypto.randomUUID(),
-        applied: true,
-      },
-      name,
-    );
-  };
-  const onmousedownselect = () => {
-    if (!gs.isSelecting) {
-      gs.selections.set(username, {
-        points: [cursorPosition!, cursorPosition!, cursorPosition!, cursorPosition!],
-        closed: true,
-      });
-      gs.isSelecting = true;
-    } else {
-      gs.isSelecting = false;
-      const selection = gs.selections.get(username)!;
-      const start = selection.points[0];
-      const end = cursorPosition!;
-      gs.selections.set(username, {
-        points: [start, { x: end.x, y: start.y }, end, { x: start.x, y: end.y }],
-        closed: true,
-      });
-    }
-  };
-  const onmousedownpolyselect = () => {
-    const prev = gs.selections.get(username);
-    const newPoints = [...(prev?.points ?? []), cursorPosition!];
-    gs.selections.set(username, { points: newPoints, closed: false });
-    sendSelection(newPoints, false);
-  };
-  const onmousedownmove = () => {
-    if ((gs.selections.get(username)?.points.length ?? 0) >= 3) {
-      gs.userMoveStart = cursorPosition!;
-      moveUuid = crypto.randomUUID();
-      gs.instructionBox = {
-        applied: false,
-        uuid: moveUuid,
-        instruction: {
-          selection: gs.selections.get(username)!.points,
-          end: gs.selections.get(username)!.points[0],
-        },
-      };
-      sendMove(cursorPosition!);
-    }
-  };
   const onmousedown = (element: HTMLDivElement, e: MouseEvent) => {
     updateCursorPosition(element, e);
-    mousedown = true;
-    if (gs.toolType === ToolType.PickColor) {
-      const imgd = context.getImageData(cursorPosition!.x, cursorPosition!.y, 1, 1);
-      const colorStr = rgbToStr(imgd.data[0], imgd.data[1], imgd.data[2]);
-      gs.brush.opacity = Math.floor((imgd.data[3] * 100000) / 255);
-      gs.brush.color = colorStr;
-      gs.toolType = ToolType.Stroke;
-    } else if (gs.toolType === ToolType.InsertImage) {
-      onmousedownimageinsertion(e);
-    } else if (gs.toolType === ToolType.Bucket) {
-      onmousedownbucket();
-    } else if (gs.toolType === ToolType.Select) {
-      onmousedownselect();
-    } else if (gs.toolType === ToolType.PolySelect) {
-      onmousedownpolyselect();
-    } else if (gs.toolType === ToolType.Move) {
-      onmousedownmove();
-    } else if (gs.toolType === ToolType.Stroke && !gs.instructionBox) {
-      onmousedownstroke(e);
+    if (gs.tool) {
+      gs.tool.onmousedown(e, element);
     }
   };
 
-  const onmouseupstroke = () => {
-    if (gs.instructionBox) {
-      gs.server?.instructionBox(gs.instructionBox, name);
-      gs.instructionBox = null;
-    }
-    lastPoint = gs.cursorPosition!;
-  };
-  const onmouseupmove = () => {
-    const delta = {
-      x: cursorPosition!.x - gs.userMoveStart!.x,
-      y: cursorPosition!.y - gs.userMoveStart!.y,
-    };
-    const selection = gs.selections.get(username)!;
-    gs.server?.instructionBox(gs.instructionBox!, name);
-    gs.selections.set(username, {
-      closed: true,
-      points: selection.points.map((p) => ({ x: p.x + delta.x, y: p.y + delta.y })),
-    });
-    gs.instructionBox = null;
-    gs.userMoveStart = null;
-    moveUuid = undefined;
-  };
   const onmouseup = (element: HTMLDivElement, e: MouseEvent) => {
     updateCursorPosition(element, e);
-    mousedown = false;
-    if (gs.toolType === ToolType.InsertImage) {
-    } else if (gs.toolType === ToolType.Move) {
-      onmouseupmove();
-    } else if (gs.instructionBox && gs.toolType === ToolType.Stroke) {
-      onmouseupstroke();
+    if (gs.tool) {
+      gs.tool.onmouseup(e, element);
     }
   };
 
-  const onmouseout = (element: HTMLDivElement, e: MouseEvent) => {
-    if (mousedown) {
-      onmouseup(element, e);
+  const onmouseleave = (element: HTMLDivElement, e: MouseEvent) => {
+    if (gs.tool) {
+      gs.tool.onmouseleave(e, element);
+    }
+  };
+
+  const onmouseenter = (element: HTMLDivElement, e: MouseEvent) => {
+    if (gs.tool) {
+      gs.tool.onmouseenter(e, element);
     }
   };
 
@@ -388,25 +166,31 @@
     const onmouseupwrapped = function (this: HTMLDivElement, e: MouseEvent) {
       onmouseup(this, e);
     };
-    const onmouseoutwrapped = function (this: HTMLDivElement, e: MouseEvent) {
-      onmouseout(this, e);
+    const onmouseoutleavewrapped = function (this: HTMLDivElement, e: MouseEvent) {
+      onmouseleave(this, e);
+    };
+    const onmouseoutenterwrapped = function (this: HTMLDivElement, e: MouseEvent) {
+      onmouseenter(this, e);
     };
     if (listener && gs.selectedLayer === name) {
       listener.addEventListener("mousemove", onmousemovewrapped);
       listener.addEventListener("mousedown", onmousedownwrapped);
       listener.addEventListener("mouseup", onmouseupwrapped);
-      listener.addEventListener("mouseout", onmouseoutwrapped);
+      listener.addEventListener("mouseleave", onmouseoutleavewrapped);
+      listener.addEventListener("mouseenter", onmouseoutenterwrapped);
       return () => {
         listener.removeEventListener("mousemove", onmousemovewrapped);
         listener.removeEventListener("mousedown", onmousedownwrapped);
         listener.removeEventListener("mouseup", onmouseupwrapped);
-        listener.removeEventListener("mouseout", onmouseoutwrapped);
+        listener.removeEventListener("mouseleave", onmouseoutleavewrapped);
+        listener.removeEventListener("mouseenter", onmouseoutenterwrapped);
       };
     } else if (listener && gs.selectedLayer !== name) {
       listener.removeEventListener("mousemove", onmousemovewrapped);
       listener.removeEventListener("mousedown", onmousedownwrapped);
       listener.removeEventListener("mouseup", onmouseupwrapped);
-      listener.removeEventListener("mouseout", onmouseoutwrapped);
+      listener.removeEventListener("mouseleave", onmouseoutleavewrapped);
+      listener.removeEventListener("mouseenter", onmouseoutenterwrapped);
     }
   });
 

@@ -4,12 +4,17 @@
   import { applyInstruction } from "$lib/render";
   import { ToolType } from "$lib/toupper";
   import { SERVER_URL } from "$lib/env";
-  import { page } from "$app/state";
   import type { ImageInsertion } from "$lib/drinfo";
+  import { ImageInsertionTool } from "$lib/toupper/tools/image-insertion";
+  import { StrokeTool } from "$lib/toupper/tools/stroke";
+  import { EraserTool } from "$lib/toupper/tools/eraser";
+  import { BucketTool } from "$lib/toupper/tools/bucket";
+  import { ColorPickerTool } from "$lib/toupper/tools/color-picker";
+  import { SelectionTool } from "$lib/toupper/tools/selection";
+  import { PolySelectionTool } from "$lib/toupper/tools/poly-selection";
+  import { MoveTool } from "$lib/toupper/tools/move";
 
   let saveUrl = $state("");
-
-  let username = page.params.lobby;
 
   let files: FileList | undefined = $state(undefined);
 
@@ -43,7 +48,7 @@
             },
             uuid: crypto.randomUUID(),
           };
-          gs.toolType = ToolType.InsertImage;
+          gs.tool = new ImageInsertionTool(gs.ratio, null);
           gs.server?.sendTempImageStart(
             gs.instructionBox.uuid,
             gs.selectedLayer!,
@@ -76,44 +81,44 @@
 {/snippet}
 
 <div class="container">
-  {@render icon("brush", gs.toolType === ToolType.Stroke && !gs.brush.erase, () => {
-    gs.toolType = ToolType.Stroke;
+  {@render icon("brush", gs.tool?.getToolType() === ToolType.Stroke, () => {
+    gs.tool = new StrokeTool(gs.ratio, null);
     gs.brush.erase = false;
   })}
-  {@render icon("eraser", gs.toolType === ToolType.Stroke && gs.brush.erase, () => {
-    gs.toolType = ToolType.Stroke;
+  {@render icon("eraser", gs.tool?.getToolType() === ToolType.Eraser, () => {
+    gs.tool = new EraserTool(gs.ratio, null);
     gs.brush.erase = true;
   })}
-  {@render icon("bucket", gs.toolType === ToolType.Bucket, () => {
-    gs.toolType = ToolType.Bucket;
+  {@render icon("bucket", gs.tool?.getToolType() === ToolType.Bucket, () => {
+    gs.tool = new BucketTool(gs.ratio, null);
   })}
-  {@render icon("pipette", gs.toolType === ToolType.PickColor, () => {
-    gs.toolType = ToolType.PickColor;
+  {@render icon("pipette", gs.tool?.getToolType() === ToolType.PickColor, () => {
+    gs.tool = new ColorPickerTool(gs.ratio, null);
   })}
-  {@render icon("select", gs.toolType === ToolType.Select, () => {
-    gs.toolType = ToolType.Select;
+  {@render icon("select", gs.tool?.getToolType() === ToolType.Select, () => {
+    gs.tool = new SelectionTool(gs.ratio, null);
   })}
-  {#if gs.toolType === ToolType.PolySelect && (gs.selections.get(username)?.points.length ?? 0) >= 3}
+  {#if gs.tool?.getToolType() === ToolType.PolySelect && (gs.selections.get(gs.username)?.points.length ?? 0) >= 3}
     {@render icon("poly-confirm", false, () => {
-      if (username) {
-        const selection = gs.selections.get(username)!;
+      if (gs.username) {
+        const selection = gs.selections.get(gs.username)!;
         selection.closed = false;
         gs.server?.sendSelection(selection.points, true);
       }
     })}
     {@render icon("poly-cancel", false, () => {
-      if (username) {
-        gs.selections.delete(username);
+      if (gs.username) {
+        gs.selections.delete(gs.username);
         gs.server?.sendSelection([], true);
       }
     })}
   {:else}
-    {@render icon("poly-select", gs.toolType === ToolType.PolySelect, () => {
-      gs.toolType = ToolType.PolySelect;
+    {@render icon("poly-select", gs.tool?.getToolType() === ToolType.PolySelect, () => {
+      gs.tool = new PolySelectionTool(0, null);
     })}
   {/if}
-  {@render icon("move", gs.toolType === ToolType.Move, () => {
-    gs.toolType = ToolType.Move;
+  {@render icon("move", gs.tool?.getToolType() === ToolType.Move, () => {
+    gs.tool = new MoveTool(0, null);
   })}
   {@render icon("zoom", gs.zoom, () => {
     gs.zoom = !gs.zoom;
@@ -125,7 +130,7 @@
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   {#if !(gs.instructionBox && "point" in gs.instructionBox.instruction)}
     <div
-      class={`icon  icon-${gs.toolType === ToolType.InsertImage ? "enabled" : "disabled"}`}
+      class={`icon  icon-${gs.tool?.getToolType() === ToolType.InsertImage ? "enabled" : "disabled"}`}
       onclick={() => {}}
     >
       <label for="insertion"><span class="insert-icon"></span></label>
@@ -143,12 +148,12 @@
     </div>
   {:else}
     {@render icon("insert-confirm", false, () => {
-      gs.toolType = ToolType.Stroke;
+      gs.tool = new StrokeTool(0, null);
       gs.server?.instructionBox(gs.instructionBox!, gs.selectedLayer!);
       gs.instructionBox = null;
     })}
     {@render icon("insert-cancel", false, () => {
-      gs.toolType = ToolType.Stroke;
+      gs.tool = new StrokeTool(0, null);
       gs.instructionBox = null;
       files = undefined;
     })}

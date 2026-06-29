@@ -24,11 +24,11 @@
       renderSelection(context, v[1].points, v[1].closed, 1, v[0]);
     });
 
-    if (gs.cursorPosition) {
+    if (gs.cursorPosition && gs.tool) {
       renderTool(
         context,
         {
-          tool: getStateTool(gs),
+          tool: getStateTool(gs)!,
           point: gs.cursorPosition,
         },
         null,
@@ -47,13 +47,13 @@
 
   const onmousemove = (element: HTMLDivElement, e: MouseEvent) => {
     updateCursorPosition(element, e);
-    gs.server?.cursor(getStateTool(gs), gs.cursorPosition);
+    if (gs.tool) gs.server?.cursor(getStateTool(gs)!, gs.cursorPosition);
     drawAllCursors();
   };
 
   const onmouseout = () => {
     gs.cursorPosition = null;
-    gs.server?.cursor(getStateTool(gs), gs.cursorPosition);
+    if (gs.tool) gs.server?.cursor(getStateTool(gs)!, gs.cursorPosition);
     drawAllCursors();
   };
 

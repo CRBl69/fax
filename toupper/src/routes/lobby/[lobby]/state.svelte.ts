@@ -4,9 +4,10 @@ import {
   getDefaultBrush,
   getSecondaryDefaultBrush,
   type Cursor,
-  type Tool,
+  type Tool as ToolServerType,
   ToolType,
 } from "$lib/toupper";
+import { Tool } from "$lib/toupper/tools";
 import { SvelteMap } from "svelte/reactivity";
 
 export type LayerData = {
@@ -37,14 +38,13 @@ interface GlobalState {
   hoveredInstruction: InstructionBox | null;
   images: SvelteMap<string, HTMLImageElement>;
   draggedInstruction: number | null;
-  toolType: ToolType;
+  tool: Tool | null;
   canvasWorker: Worker | null;
   tolerance: number;
-  userMoveStart: Point | null;
-  isSelecting: boolean;
   selections: SvelteMap<string, { points: Point[]; closed: boolean }>;
   cursors: SvelteMap<string, Cursor | null>;
   inProgressTick: number;
+  username: string;
 }
 
 export const gs: GlobalState = $state({
@@ -63,26 +63,27 @@ export const gs: GlobalState = $state({
   hoveredInstruction: null,
   images: new SvelteMap(),
   draggedInstruction: null,
-  toolType: ToolType.Stroke,
+  tool: null,
   canvasWorker: null,
   tolerance: 0,
-  userMoveStart: null,
-  isSelecting: false,
   selections: new SvelteMap(),
   cursors: new SvelteMap(),
   inProgressTick: 0,
+  username: "",
 });
 
-export const getStateTool = (gs: GlobalState): Tool => {
+export const getStateTool = (gs: GlobalState): ToolServerType | null => {
+  if (gs.tool === null) return null;
+  const toolType = gs.tool.getToolType();
   if (
-    gs.toolType === ToolType.Bucket ||
-    gs.toolType === ToolType.Eraser ||
-    gs.toolType === ToolType.Stroke
+    toolType === ToolType.Bucket ||
+    toolType === ToolType.Eraser ||
+    toolType === ToolType.Stroke
   ) {
     return {
-      type: gs.toolType,
+      type: toolType,
       brush: gs.brush,
     };
   }
-  return { type: gs.toolType };
+  return { type: toolType };
 };

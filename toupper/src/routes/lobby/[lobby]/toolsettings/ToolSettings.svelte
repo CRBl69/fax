@@ -5,8 +5,8 @@
   import BucketSettings from "./BucketSettings.svelte";
 </script>
 
-{#if gs.toolType === ToolType.Stroke}
+{#if gs.tool?.getToolType() === ToolType.Stroke}
   <BrushSettings />
-{:else if gs.toolType === ToolType.Bucket}
+{:else if gs.tool?.getToolType() === ToolType.Bucket}
   <BucketSettings />
 {/if}

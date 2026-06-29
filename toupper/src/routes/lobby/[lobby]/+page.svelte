@@ -13,7 +13,11 @@
   import Zoom from "./Zoom.svelte";
   import ToolSettings from "./toolsettings/ToolSettings.svelte";
 
-  let username = $page.params.lobby;
+  let username = $page.params.lobby ?? crypto.randomUUID();
+
+  $effect(() => {
+    gs.username = username;
+  });
 
   let menu: "tool" | "history" = $state("tool");
 
