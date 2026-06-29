@@ -8,7 +8,11 @@
     if (canvas && gs.hoveredInstruction) {
       const thisContext = canvas.getContext("2d")!;
       drawSquares(thisContext);
-      applyInstruction(gs.hoveredInstruction.instruction, thisContext, gs.images);
+      applyInstruction(
+        gs.hoveredInstruction.instruction,
+        thisContext,
+        gs.renderer?.imageCache ?? new Map(),
+      );
     } else if (canvas) {
       const thisContext = canvas.getContext("2d")!;
       thisContext.clearRect(0, 0, canvas.width, canvas.height);

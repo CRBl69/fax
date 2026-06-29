@@ -6,14 +6,17 @@ import { ToolType } from "../types";
 export class ImageInsertionTool extends BaseTool {
   public onmousedown(event: MouseEvent, element: HTMLElement): void {
     super.onmousedown(event, element);
-    if (event.button === 2) {
-      let imageInsertion = gs.instructionBox!.instruction as ImageInsertion;
+    if (event.button === 2 && gs.selectedLayer && gs.currentUuid) {
+      let imageInsertion = gs.inProgress.get(gs.selectedLayer)!.get(gs.currentUuid)!.instructionBox
+        .instruction as ImageInsertion;
       imageInsertion.scale.y = imageInsertion.scale.x;
     }
   }
   public onmousemove(event: MouseEvent, element: HTMLElement): void {
     super.onmousemove(event, element);
-    let imageInsertion = gs.instructionBox!.instruction as ImageInsertion;
+    if (!gs.selectedLayer || !gs.currentUuid) return;
+    let imageInsertion = gs.inProgress.get(gs.selectedLayer)!.get(gs.currentUuid)!.instructionBox
+      .instruction as ImageInsertion;
     if (event.ctrlKey) {
       imageInsertion.scale.x += (this.cursorPosition!.x - this.previousCursorPosition!.x) / 2000;
       imageInsertion.scale.y += (this.cursorPosition!.y - this.previousCursorPosition!.y) / 2000;
@@ -21,7 +24,7 @@ export class ImageInsertionTool extends BaseTool {
       imageInsertion.scale.x += (this.cursorPosition!.x - this.previousCursorPosition!.x) / 2000;
       imageInsertion.scale.y = imageInsertion.scale.x;
     } else if (event.altKey) {
-      const img = gs.images.get(imageInsertion.base64);
+      const img = gs.renderer?.imageCache.get(imageInsertion.base64);
       if (!img) return;
       const centerX = Math.round(
         (imageInsertion.point.x * 2 + img.width * imageInsertion.scale.x) / 2,
@@ -57,11 +60,7 @@ export class ImageInsertionTool extends BaseTool {
       imageInsertion.point.x += this.cursorPosition!.x - this.previousCursorPosition!.x;
       imageInsertion.point.y += this.cursorPosition!.y - this.previousCursorPosition!.y;
     }
-    gs.server?.sendTempImage(
-      gs.instructionBox!.uuid,
-      gs.selectedLayer!,
-      gs.instructionBox!.instruction as ImageInsertion,
-    );
+    gs.server?.sendTempImage(gs.currentUuid, gs.selectedLayer!, imageInsertion);
   }
 
   public getToolType() {

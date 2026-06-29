@@ -2,36 +2,41 @@ import type { Point, Stroke } from "$lib/drinfo";
 import { BaseTool } from ".";
 import { gs } from "$lib/state.svelte";
 import { ToolType } from "../types";
+import { SvelteMap } from "svelte/reactivity";
 
 export class StrokeTool extends BaseTool {
   private lastPoint: Point | null = null;
 
   public onmousemove(event: MouseEvent, element: HTMLElement): void {
     super.onmousemove(event, element);
-    if (gs.selectedLayer) {
-      (gs.instructionBox!.instruction as Stroke).points.push(this.cursorPosition!);
-      gs.server?.drawTemp(
-        gs.brush,
-        gs.instructionBox!.uuid,
-        this.previousCursorPosition!,
-        this.cursorPosition!,
-        gs.selectedLayer,
-      );
-    }
+    if (!gs.selectedLayer || !gs.currentUuid) return;
+    let instructionBox = gs.inProgress.get(gs.selectedLayer)!.get(gs.currentUuid)!.instructionBox;
+    (instructionBox.instruction as Stroke).points.push(this.cursorPosition!);
+    gs.server?.drawTemp(
+      gs.brush,
+      instructionBox.uuid,
+      this.previousCursorPosition!,
+      this.cursorPosition!,
+      gs.selectedLayer,
+    );
   }
   public onmouseup(event: MouseEvent, element: HTMLElement): void {
     super.onmouseup(event, element);
-    if (gs.instructionBox && gs.selectedLayer) {
-      gs.server?.instructionBox(gs.instructionBox, gs.selectedLayer!);
-      const stroke = gs.instructionBox!.instruction as Stroke;
+    if (!gs.selectedLayer || !gs.currentUuid) return;
+    let instructionBox = gs.inProgress.get(gs.selectedLayer)?.get(gs.currentUuid)?.instructionBox;
+    if (instructionBox) {
+      gs.server?.instructionBox(instructionBox, gs.selectedLayer);
+      const stroke = instructionBox.instruction as Stroke;
       this.lastPoint = stroke.points[stroke.points.length - 1];
     }
-    gs.instructionBox = null;
+    gs.inProgress.get(gs.selectedLayer)?.delete(gs.currentUuid);
+    gs.currentUuid = null;
   }
   public onmousedown(event: MouseEvent, element: HTMLElement): void {
     super.onmousedown(event, element);
     if (event.button !== 0) return;
-    gs.instructionBox = {
+    if (!gs.selectedLayer) return;
+    const instructionBox = {
       uuid: crypto.randomUUID(),
       applied: true,
       instruction: {
@@ -39,10 +44,21 @@ export class StrokeTool extends BaseTool {
         brush: gs.brush,
       },
     };
-    if (event.shiftKey && this.lastPoint) {
-      (gs.instructionBox.instruction as Stroke).points.push(this.lastPoint);
+    gs.currentUuid = instructionBox.uuid;
+    let map = gs.inProgress.get(gs.selectedLayer);
+    if (!map) {
+      map = new SvelteMap();
+      gs.inProgress.set(gs.selectedLayer, map);
     }
-    (gs.instructionBox.instruction as Stroke).points.push(this.mousedown!);
+    map.set(instructionBox.uuid, {
+      username: gs.username,
+      layer: gs.selectedLayer,
+      instructionBox,
+    });
+    if (event.shiftKey && this.lastPoint) {
+      (instructionBox.instruction as Stroke).points.push(this.lastPoint);
+    }
+    (instructionBox.instruction as Stroke).points.push(this.mousedown!);
   }
   public onmouseleave(event: MouseEvent, element: HTMLElement): void {
     super.onmouseleave(event, element);

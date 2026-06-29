@@ -19,7 +19,7 @@ export interface DrawingData {
 }
 
 export class Drawing {
-  layers: SvelteMap<string, Layer> = $state(new SvelteMap());
+  layers: SvelteMap<string, Layer> = new SvelteMap();
   layerOrder: string[] = $state([]);
   width: number = $state(1920);
   height: number = $state(1080);

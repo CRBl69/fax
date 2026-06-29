@@ -4,12 +4,7 @@ import { getDefaultBrush, getSecondaryDefaultBrush } from "$lib/default";
 import { type Cursor, type Tool as ToolServerType, ToolType } from "$lib/types";
 import { Tool } from "$lib/tools";
 import { SvelteMap } from "svelte/reactivity";
-
-export type LayerData = {
-  historyContexts: SvelteMap<number, CanvasRenderingContext2D>;
-  currentCanvas: HTMLCanvasElement | null;
-  inProgress: SvelteMap<string, InProgressEntry>;
-};
+import type { Renderer } from "./render";
 
 export type InProgressEntry = {
   instructionBox: InstructionBox;
@@ -26,20 +21,20 @@ interface GlobalState {
   zoomRatio: number;
   server: Server | null;
   selectedLayer: string | null;
-  layerData: SvelteMap<string, LayerData>;
-  drawing: Drawing;
   bg: boolean;
-  instructionBox: InstructionBox | null;
   hoveredInstruction: InstructionBox | null;
-  images: SvelteMap<string, HTMLImageElement>;
   draggedInstruction: number | null;
   tool: Tool | null;
   canvasWorker: Worker | null;
   tolerance: number;
   selections: SvelteMap<string, { points: Point[]; closed: boolean }>;
   cursors: SvelteMap<string, Cursor | null>;
-  inProgressTick: number;
   username: string;
+  renderer: Renderer | null;
+  drawing: Drawing;
+  canvas: HTMLCanvasElement | null;
+  inProgress: SvelteMap<string, Map<string, InProgressEntry>>;
+  currentUuid: string | null;
 }
 
 export const gs: GlobalState = $state({
@@ -51,20 +46,20 @@ export const gs: GlobalState = $state({
   zoomRatio: 2,
   server: null,
   selectedLayer: null,
-  layerData: new SvelteMap(),
-  drawing: new Drawing(),
   bg: true,
-  instructionBox: null,
   hoveredInstruction: null,
-  images: new SvelteMap(),
   draggedInstruction: null,
   tool: null,
   canvasWorker: null,
   tolerance: 0,
   selections: new SvelteMap(),
   cursors: new SvelteMap(),
-  inProgressTick: 0,
   username: "",
+  renderer: null,
+  canvas: null,
+  drawing: new Drawing(),
+  inProgress: new SvelteMap(),
+  currentUuid: null,
 });
 
 export const getStateTool = (gs: GlobalState): ToolServerType | null => {

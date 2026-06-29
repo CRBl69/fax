@@ -1,10 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { gs } from "$lib/state.svelte";
-  import { applyInstruction } from "$lib/render";
   import { ToolType } from "$lib/types";
   import { SERVER_URL } from "$lib/env";
-  import type { ImageInsertion } from "$lib/drinfo";
+  import type { ImageInsertion, InstructionBox } from "$lib/drinfo";
   import { ImageInsertionTool } from "$lib/tools/image-insertion";
   import { StrokeTool } from "$lib/tools/stroke";
   import { EraserTool } from "$lib/tools/eraser";
@@ -13,8 +12,14 @@
   import { SelectionTool } from "$lib/tools/selection";
   import { PolySelectionTool } from "$lib/tools/poly-selection";
   import { MoveTool } from "$lib/tools/move";
+  import { SvelteMap } from "svelte/reactivity";
 
   let saveUrl = $state("");
+
+  const currentInstructionBox = $derived.by(() => {
+    if (!gs.selectedLayer || !gs.currentUuid) return null;
+    return gs.inProgress.get(gs.selectedLayer)?.get(gs.currentUuid)?.instructionBox ?? null;
+  });
 
   let files: FileList | undefined = $state(undefined);
 
@@ -26,13 +31,12 @@
     if (gs.selectedLayer && files && files[0]) {
       const fileReader = new FileReader();
       fileReader.addEventListener("load", (e) => {
-        if (!e.target) {
-          return;
-        }
+        if (!e.target) return;
         const base64img = e.target.result as string;
         let image = new Image();
         image.onload = () => {
-          gs.instructionBox = {
+          if (gs.selectedLayer === null) return;
+          const instructionBox: InstructionBox = {
             applied: true,
             instruction: {
               base64: base64img,
@@ -48,11 +52,22 @@
             },
             uuid: crypto.randomUUID(),
           };
+          let map = gs.inProgress.get(gs.selectedLayer);
+          if (!map) {
+            map = new SvelteMap();
+            gs.inProgress.set(gs.selectedLayer, map);
+          }
+          gs.currentUuid = instructionBox.uuid;
+          map.set(instructionBox.uuid, {
+            instructionBox,
+            layer: gs.selectedLayer,
+            username: gs.username,
+          });
           gs.tool = new ImageInsertionTool(gs.ratio, null);
           gs.server?.sendTempImageStart(
-            gs.instructionBox.uuid,
+            instructionBox.uuid,
             gs.selectedLayer!,
-            gs.instructionBox.instruction as ImageInsertion,
+            instructionBox.instruction as ImageInsertion,
           );
         };
         image.src = base64img;
@@ -72,7 +87,9 @@
     class={`icon  icon-${enabled ? "enabled" : "disabled"}`}
     onclick={() => {
       if (onclick) onclick();
-      gs.instructionBox = null;
+      if (gs.selectedLayer && gs.currentUuid)
+        gs.inProgress.get(gs.selectedLayer)?.delete(gs.currentUuid);
+      gs.currentUuid = null;
       files = undefined;
     }}
   >
@@ -128,7 +145,7 @@
   })}
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  {#if !(gs.instructionBox && "point" in gs.instructionBox.instruction)}
+  {#if !(currentInstructionBox && "point" in currentInstructionBox.instruction)}
     <div
       class={`icon  icon-${gs.tool?.getToolType() === ToolType.InsertImage ? "enabled" : "disabled"}`}
       onclick={() => {}}
@@ -149,28 +166,25 @@
   {:else}
     {@render icon("insert-confirm", false, () => {
       gs.tool = new StrokeTool(0, null);
-      gs.server?.instructionBox(gs.instructionBox!, gs.selectedLayer!);
-      gs.instructionBox = null;
+      gs.server?.instructionBox(currentInstructionBox!, gs.selectedLayer!);
+      if (gs.selectedLayer && gs.currentUuid)
+        gs.inProgress.get(gs.selectedLayer)?.delete(gs.currentUuid);
+      gs.currentUuid = null;
     })}
     {@render icon("insert-cancel", false, () => {
       gs.tool = new StrokeTool(0, null);
-      gs.instructionBox = null;
+      if (gs.selectedLayer && gs.currentUuid) {
+        gs.inProgress.get(gs.selectedLayer)?.delete(gs.currentUuid);
+        gs.currentUuid = null;
+      }
       files = undefined;
     })}
   {/if}
   {@render icon("export", false, () => {
-    const canvas = new OffscreenCanvas(gs.drawing.width, gs.drawing.height);
-    const context = canvas.getContext("2d")!;
-    for (const layerName of gs.drawing.layerOrder) {
-      const layer = gs.drawing.layers.get(layerName)!;
-      for (const instruction of layer.history) {
-        applyInstruction(instruction.instruction, context, gs.images);
-      }
-    }
-    context.canvas.convertToBlob().then((r) => {
+    if (gs.renderer) {
       const w = window.open("about:blank")!;
-      w.location = URL.createObjectURL(r);
-    });
+      w.location = gs.renderer.getPNG();
+    }
   })}
   <!-- svelte-ignore a11y_consider_explicit_label -->
   <a class="icon icon-disabled" href={saveUrl}>

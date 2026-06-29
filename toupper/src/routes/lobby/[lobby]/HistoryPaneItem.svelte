@@ -114,7 +114,7 @@
       } else if ("point" in instruction.instruction && "base64" in instruction.instruction) {
         (async () => {
           const imageInsertion = instruction.instruction as ImageInsertion;
-          let image = gs.images.get(imageInsertion.base64);
+          let image = gs.renderer!.imageCache.get(imageInsertion.base64);
           if (!image) {
             image = new Image();
             await new Promise((resolve, reject) => {
@@ -122,7 +122,7 @@
               image!.onerror = reject;
               image!.src = imageInsertion.base64;
             });
-            gs.images.set(imageInsertion.base64, image);
+            gs.renderer!.imageCache.set(imageInsertion.base64, image);
           }
           let ratio;
           if (image.height * imageInsertion.scale.y > image.width * imageInsertion.scale.x) {

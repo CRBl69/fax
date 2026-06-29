@@ -2,17 +2,21 @@
   import { onDestroy, onMount } from "svelte";
   import { SERVER_URL } from "$lib/env";
   import { Server } from "$lib/tolower";
-  import Layers from "./Layers.svelte";
   import Buttons from "./Buttons.svelte";
   import HistoryPane from "./HistoryPane.svelte";
   import LayersPane from "./LayersPane.svelte";
-  import { page } from "$app/stores";
   import { gs } from "$lib/state.svelte";
   import { registerWsHandlers } from "$lib/ws-handlers.svelte";
   import Zoom from "./Zoom.svelte";
   import ToolSettings from "./toolsettings/ToolSettings.svelte";
+  import { page } from "$app/state";
+  import Canvas from "./Canvas.svelte";
+  import CursorLayer from "./CursorLayer.svelte";
+  import PreviewLayer from "./PreviewLayer.svelte";
+  import BgCanvas from "./BgCanvas.svelte";
+    import { getRatio } from "$lib/util";
 
-  let username = $page.params.lobby ?? crypto.randomUUID();
+  let username = page.params.lobby ?? crypto.randomUUID();
 
   $effect(() => {
     gs.username = username;
@@ -52,6 +56,16 @@
     if (gs.selectedLayer === null && gs.drawing.layerOrder.length > 0) {
       gs.selectedLayer = gs.drawing.layerOrder[0];
     }
+  });
+
+  let realHeight = $state(0);
+  let realWidth = $state(0);
+
+  $effect(() => {
+    gs.ratio = getRatio(
+      { width: realWidth - 2, height: realHeight - 2 },
+      { width: gs.drawing.width, height: gs.drawing.height },
+    );
   });
 
   onDestroy(() => {
@@ -99,8 +113,15 @@
       {/if}
     {/if}
   </div>
-  <div class="layers">
-    <Layers />
+  <div class="layers" bind:clientWidth={realWidth} bind:clientHeight={realHeight}>
+    <BgCanvas />
+    {#if gs.hoveredInstruction}
+      <PreviewLayer />
+    {/if}
+    <div style="visibility: {!gs.hoveredInstruction ? 'visible' : 'hidden'};">
+      <Canvas />
+      <CursorLayer />
+    </div>
   </div>
   <div class="info">
     <div class="coordinates">
@@ -137,6 +158,13 @@
   .layers {
     grid-row: 2 / 4;
     grid-column: 2;
+    position: relative;
+  }
+  .layers :global {
+    canvas {
+      max-width: 100%;
+      max-height: 100%;
+    }
   }
   .buttons {
     grid-row: 1;

@@ -1,19 +1,14 @@
-import { SvelteMap } from "svelte/reactivity";
 import { type Stroke, type Motion, type ImageInsertion } from "$lib/drinfo";
 import { FromServer, type Server } from "$lib/tolower";
-import { gs, type LayerData } from "$lib/state.svelte";
+import { gs } from "$lib/state.svelte";
+import { Renderer } from "./render";
 
 export function registerWsHandlers(server: Server, username: string): void {
   server.registerEventHandler("init", (data) => {
-    for (const layerName of data.drawing.layer_order) {
-      const x: LayerData = $state({
-        historyContexts: new SvelteMap(),
-        currentCanvas: null,
-        inProgress: new SvelteMap(),
-      });
-      gs.layerData.set(layerName, x);
-    }
     gs.drawing = FromServer.drawing(data.drawing);
+    gs.renderer = new Renderer(gs.canvas!, gs.drawing, gs.inProgress, (layer, data, index) => {
+      gs.server?.snapshot(layer, data, index);
+    });
     data.users.forEach((u) => {
       if (u !== username) gs.cursors.set(u, null);
     });
@@ -24,11 +19,6 @@ export function registerWsHandlers(server: Server, username: string): void {
   });
 
   server.registerEventHandler("addlayer", (data) => {
-    gs.layerData.set(data, {
-      historyContexts: new SvelteMap(),
-      currentCanvas: null,
-      inProgress: new SvelteMap(),
-    });
     gs.drawing.addLayer(data);
   });
 
@@ -53,11 +43,7 @@ export function registerWsHandlers(server: Server, username: string): void {
   });
 
   server.registerEventHandler("moveinstruction", (data) => {
-    gs.drawing.moveInstruction(
-      data.layer,
-      data.old_instruction_index,
-      data.new_instruction_index,
-    );
+    gs.drawing.moveInstruction(data.layer, data.old_instruction_index, data.new_instruction_index);
   });
 
   server.registerEventHandler("snapshot", ({ layer, data, index }) => {
@@ -70,8 +56,7 @@ export function registerWsHandlers(server: Server, username: string): void {
 
   server.registerEventHandler("instruction", ({ layer, instruction }) => {
     gs.drawing.instruct(layer, FromServer.instructionBox(instruction));
-    gs.layerData.get(layer)?.inProgress.delete(instruction.uuid);
-    gs.inProgressTick++;
+    gs.inProgress.get(layer)?.delete(instruction.uuid);
   });
 
   server.registerEventHandler("removeinstruction", ({ layer, index }) => {
@@ -84,7 +69,7 @@ export function registerWsHandlers(server: Server, username: string): void {
 
   server.registerEventHandler("tempdraw", (data) => {
     if (data.layer !== gs.selectedLayer) return;
-    const ip = gs.layerData.get(data.layer)?.inProgress;
+    const ip = gs.inProgress.get(data.layer);
     if (!ip) return;
     const brush = FromServer.brush(data.brush);
     const existing = ip.get(data.uuid);
@@ -111,26 +96,24 @@ export function registerWsHandlers(server: Server, username: string): void {
         },
       });
     }
-    gs.inProgressTick++;
   });
 
   server.registerEventHandler("tempimagestart", ({ uuid, image_insertion, layer }) => {
-    const ip = gs.layerData.get(layer)?.inProgress;
+    const ip = gs.inProgress.get(layer);
     if (!ip) return;
     ip.set(uuid, {
       instructionBox: { uuid, applied: true, instruction: image_insertion as ImageInsertion },
       layer,
       username: "",
     });
-    gs.inProgressTick++;
   });
 
   server.registerEventHandler("tempimage", ({ uuid, point, rotate, scale }) => {
-    for (const ld of gs.layerData.values()) {
-      const entry = ld.inProgress.get(uuid);
+    for (const ld of gs.inProgress.values()) {
+      const entry = ld.get(uuid);
       if (entry) {
         const img = entry.instructionBox.instruction as ImageInsertion;
-        ld.inProgress.set(uuid, {
+        ld.set(uuid, {
           ...entry,
           instructionBox: {
             ...entry.instructionBox,
@@ -140,11 +123,10 @@ export function registerWsHandlers(server: Server, username: string): void {
         break;
       }
     }
-    gs.inProgressTick++;
   });
 
   server.registerEventHandler("tempmove", ({ uuid, username, end, layer }) => {
-    const ip = gs.layerData.get(layer)?.inProgress;
+    const ip = gs.inProgress.get(layer);
     if (!ip) return;
     if (end) {
       const existing = ip.get(uuid);
@@ -171,6 +153,5 @@ export function registerWsHandlers(server: Server, username: string): void {
     } else {
       ip.delete(uuid);
     }
-    gs.inProgressTick++;
   });
 }

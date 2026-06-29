@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { drawSquares } from "$lib/render";
+  import { drawSquares, renderTool } from "$lib/render";
   import { onMount } from "svelte";
-  import { gs } from "$lib/state.svelte";
+  import { getStateTool, gs } from "$lib/state.svelte";
 
   let bottom = $state(30);
   let left = $state(30);
@@ -9,6 +9,33 @@
 
   let canvas: HTMLCanvasElement;
   let context = $derived.by(() => canvas?.getContext("2d"));
+
+  $effect(() => {
+    let req: number;
+    function loop() {
+      if (context && gs.cursorPosition !== null && gs.renderer) {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        drawSquares(context);
+        context.drawImage(
+          gs.renderer.canvas,
+          gs.cursorPosition.x - 100 / gs.zoomRatio,
+          gs.cursorPosition.y - 100 / gs.zoomRatio,
+          200 / gs.zoomRatio,
+          200 / gs.zoomRatio,
+          0,
+          0,
+          200,
+          200,
+        );
+        if (gs.tool) {
+          renderTool(context, {point: gs.cursorPosition, tool: getStateTool(gs)! }, null);
+        }
+      }
+      req = requestAnimationFrame(loop);
+    }
+    req = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(req);
+  });
 
   function onMouseDown() {
     moving = true;
@@ -24,46 +51,6 @@
   function onMouseUp() {
     moving = false;
   }
-
-  $effect(() => {
-    const cursorPosition = gs.cursorPosition;
-    void gs.inProgressTick;
-    void gs.instructionBox;
-    if (context && cursorPosition !== null) {
-      context.clearRect(0, 0, canvas.width, canvas.height);
-      drawSquares(context);
-      gs.drawing.layerOrder.forEach((name) => {
-        if (!gs.drawing.layers.get(name)?.visible) return;
-        const layerData = gs.layerData.get(name);
-        if (layerData?.currentCanvas) {
-          context.drawImage(
-            layerData.currentCanvas,
-            cursorPosition.x - 100 / gs.zoomRatio,
-            cursorPosition.y - 100 / gs.zoomRatio,
-            200 / gs.zoomRatio,
-            200 / gs.zoomRatio,
-            0,
-            0,
-            200,
-            200,
-          );
-        }
-      });
-      context.beginPath();
-      context.strokeStyle = gs.brush.color;
-      if (gs.brush.brushShape.shape === "circle") {
-        context.arc(100, 100, (gs.brush.width / 2) * gs.zoomRatio, 0, 2 * Math.PI);
-      } else if (gs.brush.brushShape.shape === "square") {
-        context.strokeRect(
-          100 - (gs.brush.width / 2) * gs.zoomRatio,
-          100 - (gs.brush.width / 2) * gs.zoomRatio,
-          gs.brush.width * gs.zoomRatio,
-          gs.brush.width * gs.zoomRatio,
-        );
-      }
-      context.stroke();
-    }
-  });
 
   onMount(() => {
     if (context) {

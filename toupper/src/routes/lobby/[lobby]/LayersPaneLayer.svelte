@@ -11,17 +11,21 @@
   let canvas: HTMLCanvasElement;
 
   let original = $derived.by(() => {
-    const layerData = gs.layerData.get(name);
-    const layer = gs.drawing.layers.get(name);
-    return layerData?.historyContexts.get(layer!.historyIndex);
+    return gs.renderer?.getLayerCanvas(name);
   });
 
   $effect(() => {
-    if (canvas && original) {
-      const context = canvas.getContext("2d");
-      context?.clearRect(0, 0, canvas.width, canvas.height);
-      context?.drawImage(original.canvas, 0, 0);
+    let req: number;
+    function loop() {
+      if (canvas && original) {
+        const context = canvas.getContext("2d");
+        context?.clearRect(0, 0, canvas.width, canvas.height);
+        context?.drawImage(original, 0, 0);
+      }
+      req = requestAnimationFrame(loop);
     }
+    req = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(req);
   });
 </script>
 
@@ -35,8 +39,8 @@
 >
   <canvas
     bind:this={canvas}
-    width={original?.canvas.width}
-    height={original?.canvas.height}
+    width={original?.width}
+    height={original?.height}
     class="layer-preview"
   >
   </canvas>

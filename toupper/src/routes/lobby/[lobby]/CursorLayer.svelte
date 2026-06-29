@@ -4,16 +4,10 @@
   import { getStateTool, gs } from "$lib/state.svelte";
   import { untrack } from "svelte";
 
-  interface Props {
-    listener: HTMLDivElement | undefined;
-  }
-
-  const { listener }: Props = $props();
-
-  let cursorCanvas: HTMLCanvasElement;
+  let canvas: HTMLCanvasElement;
 
   const drawAllCursors = () => {
-    const context = cursorCanvas.getContext("2d")!;
+    const context = canvas.getContext("2d")!;
     context.clearRect(0, 0, gs.drawing.width, gs.drawing.height);
 
     gs.cursors.entries().forEach((v) => {
@@ -45,35 +39,78 @@
     };
   };
 
-  const onmousemove = (element: HTMLDivElement, e: MouseEvent) => {
-    updateCursorPosition(element, e);
-    if (gs.tool) gs.server?.cursor(getStateTool(gs)!, gs.cursorPosition);
-    drawAllCursors();
-  };
-
-  const onmouseout = () => {
-    gs.cursorPosition = null;
-    if (gs.tool) gs.server?.cursor(getStateTool(gs)!, gs.cursorPosition);
-    drawAllCursors();
-  };
-
   $effect(() => {
     gs.cursors.entries();
     gs.selections.entries();
     untrack(() => drawAllCursors());
   });
 
+  // Browser event handlers.
+  const onmousemove = (element: HTMLElement, e: MouseEvent) => {
+    updateCursorPosition(element, e);
+    if (gs.tool) {
+      gs.server?.cursor(getStateTool(gs)!, gs.cursorPosition);
+      gs.tool.onmousemove(e, element);
+    }
+    drawAllCursors();
+  };
+
+  const onmousedown = (element: HTMLElement, e: MouseEvent) => {
+    if (gs.tool) {
+      gs.tool.onmousedown(e, element);
+    }
+  };
+
+  const onmouseup = (element: HTMLElement, e: MouseEvent) => {
+    if (gs.tool) {
+      gs.tool.onmouseup(e, element);
+    }
+  };
+
+  const onmouseleave = (element: HTMLElement, e: MouseEvent) => {
+    if (gs.tool) {
+      gs.tool.onmouseleave(e, element);
+      gs.server?.cursor(getStateTool(gs)!, null);
+    }
+    gs.cursorPosition = null;
+    drawAllCursors();
+  };
+
+  const onmouseenter = (element: HTMLElement, e: MouseEvent) => {
+    if (gs.tool) {
+      gs.tool.onmouseenter(e, element);
+    }
+  };
+
   $effect(() => {
-    if (listener) {
-      listener.addEventListener("mousemove", function (this, e) {
-        onmousemove(this, e);
-      });
-      listener.addEventListener("mouseout", onmouseout);
+    // Functions are wrapped to handle `this`.
+    const onmousemovewrapped = function (this: HTMLElement, e: MouseEvent) {
+      onmousemove(this, e);
+    };
+    const onmousedownwrapped = function (this: HTMLElement, e: MouseEvent) {
+      onmousedown(this, e);
+    };
+    const onmouseupwrapped = function (this: HTMLElement, e: MouseEvent) {
+      onmouseup(this, e);
+    };
+    const onmouseoutleavewrapped = function (this: HTMLElement, e: MouseEvent) {
+      onmouseleave(this, e);
+    };
+    const onmouseoutenterwrapped = function (this: HTMLElement, e: MouseEvent) {
+      onmouseenter(this, e);
+    };
+    if (canvas) {
+      canvas.addEventListener("mousemove", onmousemovewrapped);
+      canvas.addEventListener("mousedown", onmousedownwrapped);
+      canvas.addEventListener("mouseup", onmouseupwrapped);
+      canvas.addEventListener("mouseleave", onmouseoutleavewrapped);
+      canvas.addEventListener("mouseenter", onmouseoutenterwrapped);
       return () => {
-        listener.removeEventListener("mousemove", function (this, e) {
-          onmousemove(this, e);
-        });
-        listener.removeEventListener("mouseout", onmouseout);
+        canvas.removeEventListener("mousemove", onmousemovewrapped);
+        canvas.removeEventListener("mousedown", onmousedownwrapped);
+        canvas.removeEventListener("mouseup", onmouseupwrapped);
+        canvas.removeEventListener("mouseleave", onmouseoutleavewrapped);
+        canvas.removeEventListener("mouseenter", onmouseoutenterwrapped);
       };
     }
   });
@@ -83,16 +120,16 @@
   };
 
   $effect(() => {
-    cursorCanvas;
-    gs.server?.addEventListener("cursorout", onfriendcursor);
+    canvas;
+    gs.server?.addEventListener("cursor", onfriendcursor);
     return () => {
-      gs.server?.removeEventListener("cursorout", onfriendcursor);
+      gs.server?.removeEventListener("cursor", onfriendcursor);
     };
   });
 </script>
 
 <canvas
-  bind:this={cursorCanvas}
+  bind:this={canvas}
   height={gs.drawing.height}
   width={gs.drawing.width}
   oncontextmenu={(e) => {

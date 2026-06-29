@@ -30,7 +30,7 @@ import type {
 import * as TypeConverter from "./type-converter";
 
 interface EventMap {
-  cursorout: CustomEvent<CursorServerMessage["Cursor"]>;
+  cursor: CustomEvent<CursorServerMessage["Cursor"]>;
   instruction: CustomEvent<InstructionMessage["Instruction"]>;
   setlayervisibility: CustomEvent<SetLayerVisibilityMessage["SetLayerVisibility"]>;
   setinstructionvisibility: CustomEvent<
