@@ -1,6 +1,6 @@
 import { rgbToStr } from "$lib/render";
 import { BaseTool } from ".";
-import { gs } from "../../../routes/lobby/[lobby]/state.svelte";
+import { gs } from "$lib/state.svelte";
 import { ToolType } from "../types";
 
 export class ColorPickerTool extends BaseTool {

@@ -2,7 +2,7 @@
   import type { Bucket, ImageInsertion, InstructionBox, Stroke } from "$lib/drinfo";
   import { ToServer } from "$lib/tolower";
   import { drawImage, drawSquares, stroke } from "$lib/render";
-  import { gs } from "./state.svelte";
+  import { gs } from "$lib/state.svelte";
 
   interface Props {
     instruction: InstructionBox;

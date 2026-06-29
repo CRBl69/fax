@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getX, getY } from "$lib/toupper";
   import { renderSelection, renderTool } from "$lib/render";
-  import { getStateTool, gs } from "./state.svelte";
+  import { getStateTool, gs } from "$lib/state.svelte";
   import { untrack } from "svelte";
 
   interface Props {

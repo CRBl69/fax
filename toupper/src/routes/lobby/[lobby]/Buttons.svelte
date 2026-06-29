@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { gs } from "./state.svelte";
+  import { gs } from "$lib/state.svelte";
   import { applyInstruction } from "$lib/render";
   import { ToolType } from "$lib/toupper";
   import { SERVER_URL } from "$lib/env";

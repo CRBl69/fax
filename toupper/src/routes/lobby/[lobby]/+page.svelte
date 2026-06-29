@@ -9,7 +9,7 @@
   import HistoryPane from "./HistoryPane.svelte";
   import LayersPane from "./LayersPane.svelte";
   import { page } from "$app/stores";
-  import { gs, type LayerData } from "./state.svelte";
+  import { gs, type LayerData } from "$lib/state.svelte";
   import Zoom from "./Zoom.svelte";
   import ToolSettings from "./toolsettings/ToolSettings.svelte";
 

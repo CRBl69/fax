@@ -1,6 +1,6 @@
 <script lang="ts">
   import HistoryPaneItem from "./HistoryPaneItem.svelte";
-  import { gs } from "./state.svelte";
+  import { gs } from "$lib/state.svelte";
 
   interface Props {
     name: string;

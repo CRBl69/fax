@@ -1,7 +1,7 @@
 <script lang="ts">
   import { type InstructionBox } from "$lib/drinfo";
   import LayersPaneLayer from "./LayersPaneLayer.svelte";
-  import { gs } from "./state.svelte";
+  import { gs } from "$lib/state.svelte";
 
   const getNextLayerName = () => {
     let possible = `New layer ${gs.drawing.layerOrder.length + 1}`;

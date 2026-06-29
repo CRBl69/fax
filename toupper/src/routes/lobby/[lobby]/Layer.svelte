@@ -3,7 +3,7 @@
   import { getX, getY } from "$lib/toupper";
   import { applyInstruction } from "$lib/render";
   import { onMount, untrack } from "svelte";
-  import { gs } from "./state.svelte";
+  import { gs } from "$lib/state.svelte";
   import { type MoveInstructionMessage, type SetInstructionVisibilityMessage } from "$lib/tolower";
 
   interface Props {

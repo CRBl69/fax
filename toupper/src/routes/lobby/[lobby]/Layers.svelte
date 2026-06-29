@@ -3,7 +3,7 @@
   import { getRatio } from "$lib/toupper";
   import CursorLayer from "./CursorLayer.svelte";
   import LayerComponent from "./Layer.svelte";
-  import { gs } from "./state.svelte";
+  import { gs } from "$lib/state.svelte";
   import PreviewLayer from "./PreviewLayer.svelte";
 
   let realHeight = $state(0);

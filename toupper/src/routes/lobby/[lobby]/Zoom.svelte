@@ -1,7 +1,7 @@
 <script lang="ts">
   import { drawSquares } from "$lib/render";
   import { onMount } from "svelte";
-  import { gs } from "./state.svelte";
+  import { gs } from "$lib/state.svelte";
 
   let bottom = $state(30);
   let left = $state(30);
