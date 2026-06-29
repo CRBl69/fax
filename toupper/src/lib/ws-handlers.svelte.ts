@@ -14,7 +14,7 @@ export function registerWsHandlers(server: Server, username: string): void {
     });
   });
 
-  server.registerEventHandler("cursorout", (data) => {
+  server.registerEventHandler("cursor", (data) => {
     gs.cursors.set(data.username, data.cursor ? FromServer.cursor(data.cursor) : null);
   });
 

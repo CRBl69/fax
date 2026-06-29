@@ -12,9 +12,13 @@
     let req: number;
     let cancelled = false;
     function loop() {
-      gs.renderer?.render().then(() => {
+      if (gs.renderer) {
+        gs.renderer.render().then(() => {
+          if (!cancelled) req = requestAnimationFrame(loop);
+        });
+      } else {
         if (!cancelled) req = requestAnimationFrame(loop);
-      });
+      }
     }
     req = requestAnimationFrame(loop);
     return () => {

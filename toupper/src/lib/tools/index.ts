@@ -1,4 +1,5 @@
 import type { Point } from "$lib/drinfo";
+import { gs } from "$lib/state.svelte";
 import type { ToolType } from "../types";
 import { getX, getY } from "../util";
 
@@ -15,34 +16,31 @@ export abstract class Tool {
 
 export abstract class BaseTool extends Tool {
   protected mousedown: Point | null = null;
-  protected ratio: number;
   protected previousCursorPosition: Point | null = null;
   protected cursorPosition: Point | null = null;
   protected context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
 
   constructor(
-    ratio: number,
     context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null,
   ) {
     super();
     this.context = context;
-    this.ratio = ratio;
   }
 
   public onmouseup(_event: MouseEvent, _element: HTMLElement): void {
     this.mousedown = null;
   }
   public onmousedown(event: MouseEvent, element: HTMLElement): void {
-    const x = getX(element, event, this.ratio);
-    const y = getY(element, event, this.ratio);
+    const x = getX(element, event, gs.ratio);
+    const y = getY(element, event, gs.ratio);
     this.mousedown = { x, y };
   }
   public onmouseleave(event: MouseEvent, element: HTMLElement): void {
     this.onmouseup(event, element);
   }
   public onmousemove(event: MouseEvent, element: HTMLElement): void {
-    const x = getX(element, event, this.ratio);
-    const y = getY(element, event, this.ratio);
+    const x = getX(element, event, gs.ratio);
+    const y = getY(element, event, gs.ratio);
     this.previousCursorPosition = this.cursorPosition;
     this.cursorPosition = { x, y };
   }

@@ -159,6 +159,8 @@
     grid-row: 2 / 4;
     grid-column: 2;
     position: relative;
+    width: 100%;
+    height: 100%;
   }
   .layers :global {
     canvas {

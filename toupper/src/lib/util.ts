@@ -9,13 +9,15 @@ export const getRatio = (canvas: Dimensions, drawing: Dimensions) => {
 };
 
 export const getX = (element: HTMLElement, e: MouseEvent, ratio: number) => {
+  const rect = element.getBoundingClientRect();
   return (
-    (e.clientX - element.parentElement!.offsetLeft + document.scrollingElement!.scrollLeft) * ratio
+    (e.clientX - rect.left) * ratio
   );
 };
 
 export const getY = (element: HTMLElement, e: MouseEvent, ratio: number) => {
+  const rect = element.getBoundingClientRect();
   return (
-    (e.clientY - element.parentElement!.offsetTop + document.scrollingElement!.scrollTop) * ratio
+    (e.clientY - rect.top) * ratio
   );
 };
