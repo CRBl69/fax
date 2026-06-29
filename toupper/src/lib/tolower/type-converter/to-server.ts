@@ -1,4 +1,5 @@
 import * as DrInFo from "$lib/drinfo";
+import { strToRgb } from "$lib/render";
 import { type Tool as ToUpperTool, ToolType } from "$lib/types";
 import type {
   Brush,
@@ -15,21 +16,7 @@ import type {
 
 export class ToServer {
   static color(color: DrInFo.Color): Color {
-    let data: string = color.substring(1);
-    if (data.length === 3 || data.length === 4) {
-      data = data
-        .split("")
-        .map((e) => `${e}${e}`)
-        .join("");
-    }
-    const red = data.substring(0, 2);
-    const green = data.substring(2, 4);
-    const blue = data.substring(4, 6);
-    return {
-      r: parseInt(red, 16),
-      g: parseInt(green, 16),
-      b: parseInt(blue, 16),
-    };
+    return strToRgb(color);
   }
 
   static brushShape(brushShape: DrInFo.BrushShape): BrushShape {
