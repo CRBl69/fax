@@ -229,6 +229,8 @@ export type TempMoveStartClientMessage = {
     layer: string;
     selection: Point[];
     end: Point;
+    scale: Point;
+    rotate: number;
   };
 };
 
@@ -237,6 +239,8 @@ export type TempMoveClientMessage = {
     uuid: string;
     layer: string;
     end: Point;
+    scale: Point;
+    rotate: number;
   };
 };
 
@@ -247,6 +251,8 @@ export type TempMoveStartServerMessage = {
     layer: string;
     selection: Point[];
     end: Point;
+    scale: Point;
+    rotate: number;
   };
 };
 
@@ -256,6 +262,8 @@ export type TempMoveServerMessage = {
     uuid: string;
     layer: string;
     end: Point;
+    scale: Point;
+    rotate: number;
   };
 };
 

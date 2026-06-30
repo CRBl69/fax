@@ -314,24 +314,35 @@ export class Server extends typedEventTarget {
     this.send(message);
   }
 
-  sendMoveStart(uuid: string, layer: string, selection: DrInFo.Point[], end: DrInFo.Point) {
+  sendMoveStart(
+    uuid: string,
+    layer: string,
+    selection: DrInFo.Point[],
+    end: DrInFo.Point,
+    scale: DrInFo.Point,
+    rotate: number,
+  ) {
     const message: TempMoveStartClientMessage = {
       TempMoveStart: {
         uuid,
         layer,
         end,
         selection,
+        scale,
+        rotate,
       },
     };
     this.send(message);
   }
 
-  sendMove(uuid: string, layer: string, end: DrInFo.Point) {
+  sendMove(uuid: string, layer: string, end: DrInFo.Point, scale: DrInFo.Point, rotate: number) {
     const message: TempMoveClientMessage = {
       TempMove: {
         uuid,
         layer,
         end,
+        scale,
+        rotate,
       },
     };
     this.send(message);

@@ -302,6 +302,8 @@ pub async fn handle_socket(socket: WebSocket, username: String, app_data: Arc<Ap
                             layer: data.layer,
                             selection: data.selection,
                             end: data.end,
+                            scale: data.scale,
+                            rotate: data.rotate,
                         }))
                         .unwrap(),
                     );
@@ -319,6 +321,8 @@ pub async fn handle_socket(socket: WebSocket, username: String, app_data: Arc<Ap
                             uuid: data.uuid,
                             layer: data.layer,
                             end: data.end,
+                            scale: data.scale,
+                            rotate: data.rotate,
                         }))
                         .unwrap(),
                     );

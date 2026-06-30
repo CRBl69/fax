@@ -181,6 +181,8 @@ pub struct MoveStartClientData {
     pub layer: String,
     pub selection: Vec<Point>,
     pub end: Point,
+    pub scale: Point,
+    pub rotate: u32,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -188,6 +190,8 @@ pub struct MoveClientData {
     pub uuid: String,
     pub layer: String,
     pub end: Point,
+    pub scale: Point,
+    pub rotate: u32,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -197,6 +201,8 @@ pub struct MoveStartServerData {
     pub layer: String,
     pub selection: Vec<Point>,
     pub end: Point,
+    pub scale: Point,
+    pub rotate: u32,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -205,6 +211,8 @@ pub struct MoveServerData {
     pub uuid: String,
     pub layer: String,
     pub end: Point,
+    pub scale: Point,
+    pub rotate: u32,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

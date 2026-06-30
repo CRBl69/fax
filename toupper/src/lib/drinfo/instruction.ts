@@ -9,6 +9,8 @@ export type Stroke = {
 export type Motion = {
   end: Point;
   selection: Point[];
+  scale: Point;
+  rotate: number;
 };
 
 export type ImageInsertion = {

@@ -3,7 +3,7 @@
   import { gs } from "$lib/state.svelte";
   import { ToolType } from "$lib/types";
   import { SERVER_URL } from "$lib/env";
-  import type { ImageInsertion, InstructionBox } from "$lib/drinfo";
+  import type { ImageInsertion, InstructionBox, Motion } from "$lib/drinfo";
   import { ImageInsertionTool } from "$lib/tools/image-insertion";
   import { StrokeTool } from "$lib/tools/stroke";
   import { EraserTool } from "$lib/tools/eraser";
@@ -12,6 +12,7 @@
   import { SelectionTool } from "$lib/tools/selection";
   import { PolySelectionTool } from "$lib/tools/poly-selection";
   import { MoveTool } from "$lib/tools/move";
+  import { translateSelection } from "$lib/util";
   import { SvelteMap } from "svelte/reactivity";
 
   let saveUrl = $state("");
@@ -129,7 +130,7 @@
   })}
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
-  {#if !(currentInstructionBox && "point" in currentInstructionBox.instruction)}
+  {#if !currentInstructionBox}
     <div
       class={`icon  icon-${gs.tool?.getToolType() === ToolType.InsertImage ? "enabled" : "disabled"}`}
       onclick={() => {}}
@@ -147,7 +148,7 @@
         }}
       />
     </div>
-  {:else}
+  {:else if "base64" in currentInstructionBox.instruction}
     {@render icon("insert-confirm", false, () => {
       gs.tool = new StrokeTool(null);
       gs.server?.instructionBox(currentInstructionBox!, gs.selectedLayer!);
@@ -162,6 +163,26 @@
         gs.currentUuid = null;
       }
       files = undefined;
+    })}
+  {:else if "selection" in currentInstructionBox.instruction}
+    {@render icon("insert-confirm", false, () => {
+      gs.tool = new StrokeTool(null);
+      const motion = currentInstructionBox!.instruction as Motion;
+      gs.server?.instructionBox(currentInstructionBox!, gs.selectedLayer!);
+      gs.selections.set(gs.username, {
+        closed: true,
+        points: translateSelection(motion.selection, motion.end, motion.scale, motion.rotate),
+      });
+      if (gs.selectedLayer && gs.currentUuid)
+        gs.inProgress.get(gs.selectedLayer)?.delete(gs.currentUuid);
+      gs.currentUuid = null;
+    })}
+    {@render icon("insert-cancel", false, () => {
+      gs.tool = new StrokeTool(null);
+      if (gs.selectedLayer && gs.currentUuid) {
+        gs.inProgress.get(gs.selectedLayer)?.delete(gs.currentUuid);
+        gs.currentUuid = null;
+      }
     })}
   {/if}
   {@render icon("export", false, () => {

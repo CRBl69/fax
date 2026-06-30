@@ -130,6 +130,8 @@ export const motion = (
 
   const dx = motion.end.x - motion.selection[0].x;
   const dy = motion.end.y - motion.selection[0].y;
+  const scale = motion.scale ?? { x: 1, y: 1 };
+  const rotate = motion.rotate ?? 0;
 
   const tempCanvas = new OffscreenCanvas(context.canvas.width, context.canvas.height);
   const tempContext = tempCanvas.getContext("2d")!;
@@ -142,9 +144,23 @@ export const motion = (
   context.fill();
 
   context.globalCompositeOperation = "source-over";
-  context.translate(dx, dy);
-  context.drawImage(tempCanvas, 0, 0);
-  context.resetTransform();
+  const cx = motion.selection.reduce((sum, p) => sum + p.x, 0) / motion.selection.length;
+  const cy = motion.selection.reduce((sum, p) => sum + p.y, 0) / motion.selection.length;
+  context.save();
+  context.translate(cx + dx, cy + dy);
+  context.rotate((rotate * Math.PI * 2) / (2 ** 32 - 1));
+  context.drawImage(
+    tempCanvas,
+    0,
+    0,
+    tempCanvas.width,
+    tempCanvas.height,
+    -cx * scale.x,
+    -cy * scale.y,
+    tempCanvas.width * scale.x,
+    tempCanvas.height * scale.y,
+  );
+  context.restore();
 };
 
 export const insertImage = async (

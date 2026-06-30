@@ -71,7 +71,7 @@ export function registerWsHandlers(server: Server, username: string): void {
       const username = inProgress.username;
       if (username === gs.username) return;
       gs.selections.set(username, {
-        points: translateSelection(motion.selection, motion.end),
+        points: translateSelection(motion.selection, motion.end, motion.scale, motion.rotate),
         closed: true,
       });
     }
@@ -152,24 +152,27 @@ export function registerWsHandlers(server: Server, username: string): void {
     });
   });
 
-  server.registerEventHandler("tempmovestart", ({ uuid, username, end, selection, layer }) => {
-    let ip = gs.inProgress.get(layer);
-    if (!ip) {
-      ip = new SvelteMap();
-      gs.inProgress.set(layer, ip);
-    }
-    ip.set(uuid, {
-      instructionBox: {
-        uuid,
-        applied: true,
-        instruction: { end, selection },
-      },
-      layer,
-      username,
-    });
-  });
+  server.registerEventHandler(
+    "tempmovestart",
+    ({ uuid, username, end, selection, scale, rotate, layer }) => {
+      let ip = gs.inProgress.get(layer);
+      if (!ip) {
+        ip = new SvelteMap();
+        gs.inProgress.set(layer, ip);
+      }
+      ip.set(uuid, {
+        instructionBox: {
+          uuid,
+          applied: true,
+          instruction: { end, selection, scale, rotate },
+        },
+        layer,
+        username,
+      });
+    },
+  );
 
-  server.registerEventHandler("tempmove", ({ uuid, end, layer }) => {
+  server.registerEventHandler("tempmove", ({ uuid, end, scale, rotate, layer }) => {
     const ip = gs.inProgress.get(layer);
     if (!ip) return;
     const existing = ip.get(uuid);
@@ -179,7 +182,7 @@ export function registerWsHandlers(server: Server, username: string): void {
       ...existing,
       instructionBox: {
         ...existing.instructionBox,
-        instruction: { ...motion, end },
+        instruction: { ...motion, end, scale, rotate },
       },
     });
   });

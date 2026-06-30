@@ -1,32 +1,28 @@
-import type { Motion } from "$lib/drinfo";
+import type { Motion, Point } from "$lib/drinfo";
 import { BaseTool } from ".";
 import { gs } from "$lib/state.svelte";
 import { ToolType } from "../types";
 import { SvelteMap } from "svelte/reactivity";
-import { translateSelection } from "$lib/util";
+import { applyTransform } from "./transform";
+
+function selectionCenter(selection: Point[]): Point {
+  let cx = 0;
+  let cy = 0;
+  for (const p of selection) {
+    cx += p.x;
+    cy += p.y;
+  }
+  return { x: cx / selection.length, y: cy / selection.length };
+}
 
 export class MoveTool extends BaseTool {
   public onmouseup(event: MouseEvent, element: HTMLElement): void {
-    if (this.mousedown) {
-      if (!gs.selectedLayer || !gs.currentUuid) return;
-      const instructionBox = gs.inProgress
-        .get(gs.selectedLayer)!
-        .get(gs.currentUuid)!.instructionBox;
-      gs.server?.instructionBox(instructionBox, gs.selectedLayer!);
-      gs.inProgress.get(gs.selectedLayer)?.delete(gs.currentUuid);
-      gs.currentUuid = null;
-
-      const selection = gs.selections.get(gs.username)!;
-      gs.selections.set(gs.username, {
-        closed: true,
-        points: translateSelection(selection.points, (instructionBox.instruction as Motion).end),
-      });
-    }
     super.onmouseup(event, element);
   }
   public onmousedown(event: MouseEvent, element: HTMLElement): void {
     super.onmousedown(event, element);
     if ((gs.selections.get(gs.username)?.points.length ?? 0) >= 3 && gs.selectedLayer !== null) {
+      if (gs.currentUuid) return;
       const uuid = crypto.randomUUID();
       const instructionBox = {
         applied: true,
@@ -34,6 +30,8 @@ export class MoveTool extends BaseTool {
         instruction: {
           selection: gs.selections.get(gs.username)!.points,
           end: gs.selections.get(gs.username)!.points[0],
+          scale: { x: 1, y: 1 },
+          rotate: 0,
         },
       };
       gs.currentUuid = uuid;
@@ -43,36 +41,44 @@ export class MoveTool extends BaseTool {
         gs.inProgress.set(gs.selectedLayer, map);
       }
       map.set(uuid, { username: gs.username, layer: gs.selectedLayer, instructionBox });
+      const motion = instructionBox.instruction as Motion;
       gs.server?.sendMoveStart(
         uuid,
         gs.selectedLayer,
-        gs.selections.get(gs.username)!.points,
-        this.cursorPosition!,
+        motion.selection,
+        motion.end,
+        motion.scale,
+        motion.rotate,
       );
     }
   }
   public onmouseleave(event: MouseEvent, element: HTMLElement): void {
     super.onmouseleave(event, element);
-    this.onmouseup(event, element);
   }
   public onmousemove(event: MouseEvent, element: HTMLElement): void {
     super.onmousemove(event, element);
-    if (this.mousedown) {
-      if (!gs.selectedLayer || !gs.currentUuid) return;
-      const instructionBox = gs.inProgress
-        .get(gs.selectedLayer)!
-        .get(gs.currentUuid)!.instructionBox;
-      const dx = this.cursorPosition!.x - this.mousedown.x;
-      const dy = this.cursorPosition!.y - this.mousedown.y;
-      const selection = (instructionBox.instruction as Motion).selection;
-      const selectionStart = selection[0];
-      const point = {
-        x: selectionStart.x + dx,
-        y: selectionStart.y + dy,
-      };
-      gs.server?.sendMove(instructionBox.uuid, gs.selectedLayer!, point);
-      (instructionBox.instruction as Motion).end = point;
-    }
+    if (!this.mousedown) return;
+    if (!gs.selectedLayer || !gs.currentUuid) return;
+    const instructionBox = gs.inProgress.get(gs.selectedLayer)!.get(gs.currentUuid)!.instructionBox;
+    const motion = instructionBox.instruction as Motion;
+    const center = selectionCenter(motion.selection);
+    const pivot = {
+      x: center.x + (motion.end.x - motion.selection[0].x),
+      y: center.y + (motion.end.y - motion.selection[0].y),
+    };
+    const result = applyTransform(
+      motion.end,
+      motion.scale,
+      motion.rotate,
+      this.cursorPosition!,
+      this.previousCursorPosition!,
+      event,
+      pivot,
+    );
+    motion.end = result.position;
+    motion.scale = result.scale;
+    motion.rotate = result.rotate;
+    gs.server?.sendMove(gs.currentUuid, gs.selectedLayer!, motion.end, motion.scale, motion.rotate);
   }
 
   public getToolType() {

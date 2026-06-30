@@ -45,10 +45,25 @@ export const u32ToPercentage = (u32: number) => Math.round((u32 * 100) / (2 ** 3
 export const percentageToU32 = (percentage: number) =>
   Math.round((percentage * (2 ** 32 - 1)) / 100);
 
-export const translateSelection = (selection: Point[], end: Point) => {
-  const delta = {
-    x: end.x - selection[0].x,
-    y: end.y - selection[0].y,
-  };
-  return selection.map((p) => ({ x: p.x + delta.x, y: p.y + delta.y }));
+export const translateSelection = (
+  selection: Point[],
+  end: Point,
+  scale: Point = { x: 1, y: 1 },
+  rotate: number = 0,
+) => {
+  const cx = selection.reduce((sum, p) => sum + p.x, 0) / selection.length;
+  const cy = selection.reduce((sum, p) => sum + p.y, 0) / selection.length;
+  const dx = end.x - selection[0].x;
+  const dy = end.y - selection[0].y;
+  const angle = (rotate * Math.PI * 2) / (2 ** 32 - 1);
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  return selection.map((p) => {
+    const rx = (p.x - cx) * scale.x;
+    const ry = (p.y - cy) * scale.y;
+    return {
+      x: rx * cos - ry * sin + cx + dx,
+      y: rx * sin + ry * cos + cy + dy,
+    };
+  });
 };
