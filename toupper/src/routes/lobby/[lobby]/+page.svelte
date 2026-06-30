@@ -24,13 +24,6 @@
 
   let menu: "tool" | "history" = $state("tool");
 
-  async function initWebWorker() {
-    if (window.Worker) {
-      const CanvasWorker = await import("$lib/canvas-worker.ts?worker");
-      gs.canvasWorker = new CanvasWorker.default();
-    }
-  }
-
   function terminateWorker() {
     if (gs.canvasWorker) {
       gs.canvasWorker.terminate();
@@ -38,7 +31,6 @@
   }
 
   onMount(() => {
-    initWebWorker();
     gs.server = new Server(`${location.protocol.replace(/http/, "ws")}//${SERVER_URL}`, username);
 
     registerWsHandlers(gs.server, username);

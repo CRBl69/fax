@@ -32,6 +32,22 @@ export class Renderer {
   }
 
   async render(): Promise<void> {
+    let updates = false;
+    for (const [layerName, layer] of this.drawing.layers) {
+      if (!this.layerHistoryCanvases.get(layerName)?.has(layer.historyIndex)) {
+        updates = true;
+        break;
+      }
+    }
+    if (!updates && this.inProgress.size > 0) {
+      for (const inProgress of this.inProgress.values()) {
+        if (inProgress.size > 0) {
+          updates = true;
+          break;
+        }
+      }
+    }
+    if (!updates) return;
     const w = this.drawing.width;
     const h = this.drawing.height;
     if (this.canvas.width !== w) this.canvas.width = w;
@@ -69,6 +85,20 @@ export class Renderer {
     const historyIndex = this.drawing.layers.get(layer)?.historyIndex;
     if (historyIndex === undefined) return undefined;
     return this.layerHistoryCanvases.get(layer)?.get(historyIndex);
+  }
+
+  invalidateFrom(layer: string, index: number): void {
+    const layerHistory = this.layerHistoryCanvases.get(layer);
+    if (!layerHistory) return;
+    const keysToDelete = [];
+    for (const key of layerHistory.keys()) {
+      if (key >= index) {
+        keysToDelete.push(key);
+      }
+    }
+    for (const key of keysToDelete) {
+      layerHistory.delete(key);
+    }
   }
 
   private getContext(layerName: string, index: number): OffscreenCanvas | null {

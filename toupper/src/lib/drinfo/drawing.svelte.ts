@@ -199,6 +199,7 @@ export class Drawing {
     ) {
       const [intruction] = layer.history.splice(oldInstructionIndex - 1, 1);
       layer.history.splice(newInstructionIndex - 1, 0, intruction);
+      this.invalidateSnapshots(layerName, Math.min(oldInstructionIndex, newInstructionIndex));
     } else {
       throw LAYER_SET_HISTORY_INDEX_ERROR;
     }

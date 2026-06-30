@@ -45,6 +45,7 @@ export function registerWsHandlers(server: Server, username: string): void {
   });
 
   server.registerEventHandler("moveinstruction", (data) => {
+    gs.renderer?.invalidateFrom(data.layer, Math.min(data.old_instruction_index, data.new_instruction_index));
     gs.drawing.moveInstruction(data.layer, data.old_instruction_index, data.new_instruction_index);
   });
 
@@ -53,6 +54,7 @@ export function registerWsHandlers(server: Server, username: string): void {
   });
 
   server.registerEventHandler("setinstructionvisibility", ({ layer, index, visible }) => {
+    gs.renderer?.invalidateFrom(layer, index);
     gs.drawing.setInstructionVisibility(layer, index, visible);
   });
 
@@ -72,6 +74,7 @@ export function registerWsHandlers(server: Server, username: string): void {
   });
 
   server.registerEventHandler("removeinstruction", ({ layer, index }) => {
+    gs.renderer?.invalidateFrom(layer, index);
     gs.drawing.removeInstruction(layer, index);
   });
 
