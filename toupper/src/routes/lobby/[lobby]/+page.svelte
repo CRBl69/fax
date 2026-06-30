@@ -14,7 +14,7 @@
   import CursorLayer from "./CursorLayer.svelte";
   import PreviewLayer from "./PreviewLayer.svelte";
   import BgCanvas from "./BgCanvas.svelte";
-    import { getRatio } from "$lib/util";
+  import { getRatio } from "$lib/util";
 
   let username = page.params.lobby ?? crypto.randomUUID();
 

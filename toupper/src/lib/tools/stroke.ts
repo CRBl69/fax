@@ -10,7 +10,7 @@ export class StrokeTool extends BaseTool {
   public onmousemove(event: MouseEvent, element: HTMLElement): void {
     super.onmousemove(event, element);
     if (!gs.selectedLayer || !gs.currentUuid) return;
-    let instructionBox = gs.inProgress.get(gs.selectedLayer)!.get(gs.currentUuid)!.instructionBox;
+    const instructionBox = gs.inProgress.get(gs.selectedLayer)!.get(gs.currentUuid)!.instructionBox;
     (instructionBox.instruction as Stroke).points.push(this.cursorPosition!);
     gs.server?.drawTemp(
       gs.brush,
@@ -23,7 +23,7 @@ export class StrokeTool extends BaseTool {
   public onmouseup(event: MouseEvent, element: HTMLElement): void {
     super.onmouseup(event, element);
     if (!gs.selectedLayer || !gs.currentUuid) return;
-    let instructionBox = gs.inProgress.get(gs.selectedLayer)?.get(gs.currentUuid)?.instructionBox;
+    const instructionBox = gs.inProgress.get(gs.selectedLayer)?.get(gs.currentUuid)?.instructionBox;
     if (instructionBox) {
       gs.server?.instructionBox(instructionBox, gs.selectedLayer);
       const stroke = instructionBox.instruction as Stroke;

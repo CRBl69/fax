@@ -1,7 +1,7 @@
 import type { Brush, Point } from "$lib/drinfo";
 
 export type Cursor = {
-  tool: Tool;
+  tool: Tool | null;
   point: Point;
 };
 

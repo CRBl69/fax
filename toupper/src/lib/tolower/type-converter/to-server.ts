@@ -1,5 +1,5 @@
 import * as DrInFo from "$lib/drinfo";
-import { strToRgb } from "$lib/render";
+import { strToRgb } from "$lib/util";
 import { type Tool as ToUpperTool, ToolType } from "$lib/types";
 import type {
   Brush,

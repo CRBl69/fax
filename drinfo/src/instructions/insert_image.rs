@@ -11,12 +11,12 @@ pub struct ImageInsertion {
     point: Point,
     /// The X and Y scale of the image.
     scale: Point,
-    /// Rotation of the picture in degrees.
-    rotate: f64,
+    /// Rotation of the picture. `rotate / u32::MAX * 360` = rotation in degrees
+    rotate: u32,
 }
 
 impl ImageInsertion {
-    pub fn new(base64: &str, point: Point, scale: Point, rotate: f64) -> Self {
+    pub fn new(base64: &str, point: Point, scale: Point, rotate: u32) -> Self {
         ImageInsertion {
             base64: String::from(base64),
             point,

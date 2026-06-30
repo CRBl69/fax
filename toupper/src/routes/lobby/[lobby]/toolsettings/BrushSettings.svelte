@@ -1,5 +1,6 @@
 <script lang="ts">
   import { gs } from "$lib/state.svelte";
+  import { percentageToU32, u32ToPercentage } from "$lib/util";
 </script>
 
 <div class="container">
@@ -25,20 +26,24 @@
       <input
         id="brush-opactiy"
         type="range"
-        min="1"
+        min="0"
         max="100"
-        bind:value={() => gs.brush.opacity / 1000, (v) => (gs.brush.opacity = v * 1000)}
+        bind:value={
+          () => u32ToPercentage(gs.brush.opacity), (v) => (gs.brush.opacity = percentageToU32(v))
+        }
       />
       <input
         type="number"
-        bind:value={() => gs.brush.opacity / 1000, (v) => (gs.brush.opacity = v * 1000)}
+        bind:value={
+          () => u32ToPercentage(gs.brush.opacity), (v) => (gs.brush.opacity = percentageToU32(v))
+        }
       />
     </div>
   </div>
   <div class="inner-container">
     <label for="brush-width">Width:</label>
     <div class="input-group">
-      <input id="brush-width" type="range" min="1" max="200" bind:value={gs.brush.width} />
+      <input id="brush-width" type="range" min="1" max="1000" bind:value={gs.brush.width} />
       <input
         type="number"
         oninput={(e) => {
@@ -53,7 +58,15 @@
   <div class="inner-container">
     <label for="brush-hardness">hardness:</label>
     <div class="input-group">
-      <input id="brush-hardness" type="range" min="0" max="100" bind:value={gs.brush.hardness} />
+      <input
+        id="brush-hardness"
+        type="range"
+        min="0"
+        max="100"
+        bind:value={
+          () => u32ToPercentage(gs.brush.hardness), (v) => (gs.brush.hardness = percentageToU32(v))
+        }
+      />
       <input
         type="number"
         oninput={(e) => {
@@ -61,7 +74,9 @@
             gs.brush.hardness = Number(e.currentTarget.value);
           }
         }}
-        value={gs.brush.hardness}
+        bind:value={
+          () => u32ToPercentage(gs.brush.hardness), (v) => (gs.brush.hardness = percentageToU32(v))
+        }
       />
     </div>
   </div>
@@ -72,12 +87,16 @@
         id="brush-repeat"
         type="range"
         min="1"
-        max="1000"
-        bind:value={() => gs.brush.repeat * 1000, (v) => (gs.brush.repeat = v / 1000)}
+        max="100"
+        bind:value={
+          () => u32ToPercentage(gs.brush.repeat), (v) => (gs.brush.repeat = percentageToU32(v))
+        }
       />
       <input
         type="number"
-        bind:value={() => gs.brush.repeat * 1000, (v) => (gs.brush.repeat = v / 1000)}
+        bind:value={
+          () => u32ToPercentage(gs.brush.repeat), (v) => (gs.brush.repeat = percentageToU32(v))
+        }
       />
     </div>
   </div>

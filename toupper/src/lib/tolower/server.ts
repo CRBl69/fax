@@ -8,7 +8,7 @@ import type {
   LayerDownMessage,
   LayerUpMessage,
   SnapshotMessage,
-  TempDrawMessage,
+  TempDrawServerMessage,
   SetInstructionVisibilityMessage,
   SetLayerVisibilityMessage,
   MoveInstructionMessage,
@@ -26,6 +26,12 @@ import type {
   TempMoveClientMessage,
   TempImageStartClientMessage,
   TempImageStartServerMessage,
+  UnselectClientMessage,
+  UnselectServerMessage,
+  LeaveMessage,
+  TempMoveStartServerMessage,
+  TempMoveStartClientMessage,
+  TempDrawClientMessage,
 } from "./server-types";
 import * as TypeConverter from "./type-converter";
 
@@ -45,10 +51,13 @@ interface EventMap {
   removeinstruction: CustomEvent<RemoveInstructionMessage["RemoveInstruction"]>;
   init: CustomEvent<InitMessage["Init"]>;
   join: CustomEvent<JoinMessage["Join"]>;
-  tempdraw: CustomEvent<TempDrawMessage["TempDraw"]>;
+  leave: CustomEvent<LeaveMessage["Leave"]>;
+  tempdraw: CustomEvent<TempDrawServerMessage["TempDraw"]>;
   selection: CustomEvent<SelectionServerMessage["Selection"]>;
+  unselect: CustomEvent<UnselectServerMessage["Unselect"]>;
   tempimagestart: CustomEvent<TempImageStartServerMessage["TempImageStart"]>;
   tempimage: CustomEvent<TempImageServerMessage["TempImage"]>;
+  tempmovestart: CustomEvent<TempMoveStartServerMessage["TempMoveStart"]>;
   tempmove: CustomEvent<TempMoveServerMessage["TempMove"]>;
 }
 
@@ -79,12 +88,25 @@ const typedEventTarget = EventTarget as { new (): ServerEventTarget; prototype: 
 
 export class Server extends typedEventTarget {
   private _websocket;
+  private waitTime = 1000;
 
   constructor(url: string, username: string) {
     super();
     this._websocket = new WebSocket(`${url}/ws/${username}`);
 
-    this._websocket.onopen = () => {
+    const onopen = () => {
+      this.waitTime = 1000;
+      const sendKeepalive = () => {
+        if (
+          this._websocket.readyState === this._websocket.CLOSED ||
+          this._websocket.readyState === this._websocket.CLOSING
+        ) {
+          return;
+        }
+        this._websocket.send(JSON.stringify("KeepAlive"));
+        setTimeout(sendKeepalive, 2000);
+      };
+      sendKeepalive();
       this._websocket.send(JSON.stringify("RequestInit"));
     };
 
@@ -96,18 +118,23 @@ export class Server extends typedEventTarget {
       this.dispatchEvent(event);
     };
 
-    this._websocket.onmessage = onmessage;
-
     // Hook here something to display an error message in case we fail again.
-    this._websocket.onclose = () => {
-      setTimeout(() => {
-        this._websocket = new WebSocket(`${url}/ws/${username}`);
-        this._websocket.onopen = () => {
-          this._websocket.send(JSON.stringify("RequestInit"));
-        };
-        this._websocket.onmessage = onmessage;
-      }, 1000);
+    const onclose = () => {
+      this.waitTime *= 2;
+      setTimeout(
+        () => {
+          this._websocket = new WebSocket(`${url}/ws/${username}`);
+          this._websocket.onopen = onopen;
+          this._websocket.onclose = onclose;
+          this._websocket.onmessage = onmessage;
+        },
+        Math.min(this.waitTime, 15000),
+      );
     };
+
+    this._websocket.onopen = onopen;
+    this._websocket.onmessage = onmessage;
+    this._websocket.onclose = onclose;
   }
 
   private send(obj: WebSocketClientMessage) {
@@ -236,7 +263,7 @@ export class Server extends typedEventTarget {
     end: DrInFo.Point,
     layer: string,
   ) {
-    const message: TempDrawMessage = {
+    const message: TempDrawClientMessage = {
       TempDraw: {
         brush: TypeConverter.ToServer.brush(brush),
         uuid,
@@ -255,6 +282,11 @@ export class Server extends typedEventTarget {
         closed,
       },
     };
+    this.send(message);
+  }
+
+  sendUnselect() {
+    const message: UnselectClientMessage = "Unselect";
     this.send(message);
   }
 
@@ -277,6 +309,18 @@ export class Server extends typedEventTarget {
         point: imageInsertion.point,
         scale: imageInsertion.scale,
         rotate: imageInsertion.rotate,
+      },
+    };
+    this.send(message);
+  }
+
+  sendMoveStart(uuid: string, layer: string, selection: DrInFo.Point[], end: DrInFo.Point) {
+    const message: TempMoveStartClientMessage = {
+      TempMoveStart: {
+        uuid,
+        layer,
+        end,
+        selection,
       },
     };
     this.send(message);

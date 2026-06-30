@@ -7,14 +7,15 @@ import type {
   Point,
   Stroke,
 } from "$lib/drinfo";
-import { drawImage, strToRgb } from "./draw";
+import { rgboToStr, strToRgb, getDistance } from "$lib/util";
+import { drawImage } from "./draw";
 
 const generateShape = (brush: Brush): OffscreenCanvas => {
   const canvas = new OffscreenCanvas(brush.width, brush.width);
   const context = canvas.getContext("2d")!;
   const color = strToRgb(brush.color);
-  context.strokeStyle = `rgba(${color.r} ${color.g} ${color.b} / ${brush.opacity / 1000}%)`;
-  context.fillStyle = `rgba(${color.r} ${color.g} ${color.b} / ${brush.opacity / 1000}%)`;
+  context.strokeStyle = rgboToStr(color.r, color.g, color.b, brush.opacity);
+  context.fillStyle = rgboToStr(color.r, color.g, color.b, brush.opacity);
   context.lineCap = "round";
   context.lineJoin = "round";
   context.lineWidth = brush.width;
@@ -22,10 +23,10 @@ const generateShape = (brush: Brush): OffscreenCanvas => {
     const radius = brush.width / 2;
     const grad = context.createRadialGradient(radius, radius, 0, radius, radius, radius);
     grad.addColorStop(
-      1 - brush.hardness / 100,
-      `rgba(${color.r} ${color.g} ${color.b} / ${brush.opacity / 1000}%)`,
+      brush.hardness / (2 ** 32 - 1),
+      rgboToStr(color.r, color.g, color.b, brush.opacity),
     );
-    grad.addColorStop(1, `rgba(${color.r} ${color.g} ${color.b} / 0%)`);
+    grad.addColorStop(1, rgboToStr(color.r, color.g, color.b, 0));
     context.fillStyle = grad;
     context.arc(radius, radius, radius, 0, Math.PI * 2);
     context.fill();
@@ -34,9 +35,6 @@ const generateShape = (brush: Brush): OffscreenCanvas => {
   }
   return canvas;
 };
-
-const getDistance = (a: Point, b: Point): number =>
-  Math.sqrt(Math.pow(b.x - a.x, 2) + Math.pow(b.y - a.y, 2));
 
 const getPointOnSegment = (a: Point, b: Point, distance: number): Point => {
   const l = getDistance(a, b);
@@ -79,35 +77,33 @@ export const stroke = (
   let lastDrawDistance = 0;
   let position;
   let index = 0;
+  const spacing = Math.max((stroke.brush.repeat * stroke.brush.width) / (2 ** 32 - 1), 1);
   while (walkedDistance < totalDistance) {
     for (let i = index; i < stroke.points.length - 1; i++) {
       index = i;
       const pointsDistance = Math.max(getDistance(stroke.points[i], stroke.points[i + 1]), 1);
-      if (
-        walkedDistance + pointsDistance >=
-        lastDrawDistance + stroke.brush.repeat * stroke.brush.width
-      ) {
+      if (walkedDistance + pointsDistance >= lastDrawDistance + spacing) {
         break;
       }
       walkedDistance += pointsDistance;
     }
-    if (
-      index === stroke.points.length - 2 &&
-      lastDrawDistance + stroke.brush.repeat * stroke.brush.width !== totalDistance
-    )
+    if (index === stroke.points.length - 2 && lastDrawDistance + spacing !== totalDistance) {
+      context.globalCompositeOperation = "source-over";
       return;
+    }
     position = getPointOnSegment(
       stroke.points[index],
       stroke.points[index + 1],
-      lastDrawDistance + stroke.brush.repeat * stroke.brush.width - walkedDistance,
+      lastDrawDistance + spacing - walkedDistance,
     );
     context.drawImage(
       brushImage,
       position.x - stroke.brush.width / 2,
       position.y - stroke.brush.width / 2,
     );
-    lastDrawDistance += Math.max(stroke.brush.repeat * stroke.brush.width, 1);
+    lastDrawDistance += spacing;
   }
+  context.globalCompositeOperation = "source-over";
 };
 
 const traceSelection = (
@@ -184,7 +180,7 @@ export const bucket = (
   const imageData = context.getImageData(0, 0, context.canvas.width, context.canvas.height);
   const fillColor = {
     ...strToRgb(bucket.brush.color),
-    a: (bucket.brush.opacity * 255) / 100000,
+    a: (bucket.brush.opacity * 255) / (2 ** 32 - 1),
   };
 
   const colorMatch = (pixelPos: number) => {
@@ -192,7 +188,7 @@ export const bucket = (
     const g = imageData.data[pixelPos + 1];
     const b = imageData.data[pixelPos + 2];
     const a = imageData.data[pixelPos + 3];
-    const tolerance = bucket.tolerance;
+    const tolerance = (bucket.tolerance * 255) / (2 ** 32 - 1);
     return (
       Math.abs(r - colorToPaint.r) < tolerance &&
       Math.abs(g - colorToPaint.g) < tolerance &&

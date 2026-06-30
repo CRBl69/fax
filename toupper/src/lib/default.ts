@@ -1,15 +1,16 @@
 import type { Brush } from "$lib/drinfo";
+import { percentageToU32 } from "./util";
 
 export const getDefaultBrush = (): Brush => ({
   color: "#000000",
   width: 10,
-  hardness: 0,
+  hardness: percentageToU32(100),
   brushShape: {
     shape: "circle",
   },
-  opacity: 100000,
+  opacity: percentageToU32(100),
   erase: false,
-  repeat: 0.02,
+  repeat: percentageToU32(2),
 });
 
 export const getSecondaryDefaultBrush = (): Brush => ({

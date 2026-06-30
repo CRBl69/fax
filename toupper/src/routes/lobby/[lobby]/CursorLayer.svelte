@@ -18,11 +18,11 @@
       renderSelection(context, v[1].points, v[1].closed, 1, v[0]);
     });
 
-    if (gs.cursorPosition && gs.tool) {
+    if (gs.cursorPosition) {
       renderTool(
         context,
         {
-          tool: getStateTool(gs)!,
+          tool: getStateTool(gs),
           point: gs.cursorPosition,
         },
         null,
@@ -120,6 +120,7 @@
   };
 
   $effect(() => {
+    /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
     canvas;
     gs.server?.addEventListener("cursor", onfriendcursor);
     return () => {

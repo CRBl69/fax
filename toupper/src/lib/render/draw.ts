@@ -31,7 +31,7 @@ export const drawImage = (
     (imageInsertion.point.y * 2 + image.height * imageInsertion.scale.y) / 2,
   );
   context.translate(centerX, centerY);
-  context.rotate((imageInsertion.rotate * Math.PI) / 180);
+  context.rotate((imageInsertion.rotate * Math.PI * 2) / (2 ** 32 - 1));
   context.drawImage(
     image,
     0,
@@ -44,19 +44,4 @@ export const drawImage = (
     image.height * imageInsertion.scale.y,
   );
   context.resetTransform();
-};
-
-export const rgbToStr = (r: number, g: number, b: number): `#${string}` => {
-  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
-};
-
-export const strToRgb = (str: `#${string}`): { r: number; g: number; b: number } => {
-  if (str.length != 4 && str.length != 7) {
-    throw new Error("Invalid color string.");
-  }
-  return {
-    r: parseInt(str.slice(1, 3), 16),
-    g: parseInt(str.slice(3, 5), 16),
-    b: parseInt(str.slice(5, 7), 16),
-  };
 };

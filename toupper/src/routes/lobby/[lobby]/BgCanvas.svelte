@@ -5,6 +5,7 @@
   let bgCanvas: HTMLCanvasElement | undefined = $state();
 
   $effect(() => {
+    /* eslint-disable-next-line @typescript-eslint/no-unused-expressions */
     gs.ratio;
     let context = bgCanvas!.getContext("2d")!;
     drawSquares(context);

@@ -63,7 +63,7 @@
             layer: gs.selectedLayer,
             username: gs.username,
           });
-          gs.tool = new ImageInsertionTool(gs.ratio, null);
+          gs.tool = new ImageInsertionTool(null);
           gs.server?.sendTempImageStart(
             instructionBox.uuid,
             gs.selectedLayer!,
@@ -99,43 +99,27 @@
 
 <div class="container">
   {@render icon("brush", gs.tool?.getToolType() === ToolType.Stroke, () => {
-    gs.tool = new StrokeTool(gs.ratio, null);
+    gs.tool = new StrokeTool(null);
     gs.brush.erase = false;
   })}
   {@render icon("eraser", gs.tool?.getToolType() === ToolType.Eraser, () => {
-    gs.tool = new EraserTool(gs.ratio, null);
+    gs.tool = new EraserTool(null);
     gs.brush.erase = true;
   })}
   {@render icon("bucket", gs.tool?.getToolType() === ToolType.Bucket, () => {
-    gs.tool = new BucketTool(gs.ratio, null);
+    gs.tool = new BucketTool(null);
   })}
   {@render icon("pipette", gs.tool?.getToolType() === ToolType.PickColor, () => {
-    gs.tool = new ColorPickerTool(gs.ratio, null);
+    gs.tool = new ColorPickerTool(gs.canvas);
   })}
   {@render icon("select", gs.tool?.getToolType() === ToolType.Select, () => {
-    gs.tool = new SelectionTool(gs.ratio, null);
+    gs.tool = new SelectionTool(null);
   })}
-  {#if gs.tool?.getToolType() === ToolType.PolySelect && (gs.selections.get(gs.username)?.points.length ?? 0) >= 3}
-    {@render icon("poly-confirm", false, () => {
-      if (gs.username) {
-        const selection = gs.selections.get(gs.username)!;
-        selection.closed = false;
-        gs.server?.sendSelection(selection.points, true);
-      }
-    })}
-    {@render icon("poly-cancel", false, () => {
-      if (gs.username) {
-        gs.selections.delete(gs.username);
-        gs.server?.sendSelection([], true);
-      }
-    })}
-  {:else}
-    {@render icon("poly-select", gs.tool?.getToolType() === ToolType.PolySelect, () => {
-      gs.tool = new PolySelectionTool(0, null);
-    })}
-  {/if}
+  {@render icon("poly-select", gs.tool?.getToolType() === ToolType.PolySelect, () => {
+    gs.tool = new PolySelectionTool(null);
+  })}
   {@render icon("move", gs.tool?.getToolType() === ToolType.Move, () => {
-    gs.tool = new MoveTool(0, null);
+    gs.tool = new MoveTool(null);
   })}
   {@render icon("zoom", gs.zoom, () => {
     gs.zoom = !gs.zoom;
@@ -165,14 +149,14 @@
     </div>
   {:else}
     {@render icon("insert-confirm", false, () => {
-      gs.tool = new StrokeTool(0, null);
+      gs.tool = new StrokeTool(null);
       gs.server?.instructionBox(currentInstructionBox!, gs.selectedLayer!);
       if (gs.selectedLayer && gs.currentUuid)
         gs.inProgress.get(gs.selectedLayer)?.delete(gs.currentUuid);
       gs.currentUuid = null;
     })}
     {@render icon("insert-cancel", false, () => {
-      gs.tool = new StrokeTool(0, null);
+      gs.tool = new StrokeTool(null);
       if (gs.selectedLayer && gs.currentUuid) {
         gs.inProgress.get(gs.selectedLayer)?.delete(gs.currentUuid);
         gs.currentUuid = null;
@@ -187,7 +171,7 @@
     }
   })}
   <!-- svelte-ignore a11y_consider_explicit_label -->
-  <a class="icon icon-disabled" href={saveUrl}>
+  <a class="icon icon-disabled" rel="external" href={saveUrl}>
     <span class="save-icon"></span>
   </a>
 </div>

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { gs } from "$lib/state.svelte";
+  import { percentageToU32, u32ToPercentage } from "$lib/util";
 </script>
 
 <div class="container">
@@ -25,13 +26,13 @@
       <input
         id="bucket-tolerance"
         type="range"
-        min="0"
+        min="1"
         max="100"
-        bind:value={() => gs.tolerance / 1000, (v) => (gs.tolerance = v * 1000)}
+        bind:value={() => u32ToPercentage(gs.tolerance), (v) => (gs.tolerance = percentageToU32(v))}
       />
       <input
         type="number"
-        bind:value={() => gs.tolerance / 1000, (v) => (gs.tolerance = v * 1000)}
+        bind:value={() => u32ToPercentage(gs.tolerance), (v) => (gs.tolerance = percentageToU32(v))}
       />
     </div>
   </div>

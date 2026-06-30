@@ -69,7 +69,7 @@ export const renderTool = (
   cursor: Cursor | null,
   username: string | null,
 ) => {
-  if (cursor?.tool.type === ToolType.Stroke) {
+  if (cursor?.tool?.type === ToolType.Stroke || cursor?.tool?.type === ToolType.Eraser) {
     renderStrokeCursor(context, cursor.point, cursor.tool.brush, username);
   } else if (cursor) {
     renderSelectionCursor(context, cursor.point, username);

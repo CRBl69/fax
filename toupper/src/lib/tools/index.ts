@@ -18,13 +18,11 @@ export abstract class BaseTool extends Tool {
   protected mousedown: Point | null = null;
   protected previousCursorPosition: Point | null = null;
   protected cursorPosition: Point | null = null;
-  protected context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null;
+  protected canvas: HTMLCanvasElement | OffscreenCanvas | null;
 
-  constructor(
-    context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null,
-  ) {
+  constructor(canvas: HTMLCanvasElement | OffscreenCanvas | null) {
     super();
-    this.context = context;
+    this.canvas = canvas;
   }
 
   public onmouseup(_event: MouseEvent, _element: HTMLElement): void {
@@ -43,6 +41,7 @@ export abstract class BaseTool extends Tool {
     const y = getY(element, event, gs.ratio);
     this.previousCursorPosition = this.cursorPosition;
     this.cursorPosition = { x, y };
+    if (!this.previousCursorPosition) this.previousCursorPosition = this.cursorPosition;
   }
   public onmouseenter(_event: MouseEvent, _element: HTMLElement): void {}
   public onkeydown(_event: KeyboardEvent, _element: HTMLElement): void {}

@@ -5,6 +5,7 @@ import { type Cursor, type Tool as ToolServerType, ToolType } from "$lib/types";
 import { Tool } from "$lib/tools";
 import { SvelteMap } from "svelte/reactivity";
 import type { Renderer } from "./render";
+import { percentageToU32 } from "./util";
 
 export type InProgressEntry = {
   instructionBox: InstructionBox;
@@ -51,7 +52,7 @@ export const gs: GlobalState = $state({
   draggedInstruction: null,
   tool: null,
   canvasWorker: null,
-  tolerance: 0,
+  tolerance: percentageToU32(1),
   selections: new SvelteMap(),
   cursors: new SvelteMap(),
   username: "",

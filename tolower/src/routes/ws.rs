@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use axum::{
     extract::{
@@ -10,11 +10,11 @@ use axum::{
 use drawing::Drawing;
 use futures::{SinkExt as _, StreamExt as _};
 use log::*;
-use tokio::sync::Mutex;
+use tokio::{sync::Mutex, time::timeout};
 
 use crate::{
     AppData, ws::messages::{
-        CursorServerData, InitData, MoveServerData, SelectionServerData, TempImageServerData, TempImageStartServerData, WebSocketClientMessage, WebSocketServerMessage
+        CursorServerData, InitData, MoveServerData, MoveStartServerData, SelectionServerData, TempDrawServerData, TempImageServerData, TempImageStartServerData, WebSocketClientMessage, WebSocketServerMessage
     }
 };
 
@@ -27,20 +27,31 @@ pub async fn ws_handler(
 }
 
 pub async fn handle_socket(socket: WebSocket, username: String, app_data: Arc<AppData>) {
+    info!("{username} joined");
+
     let (mut sender, mut receiver) = socket.split();
     let sender = Arc::new(Mutex::new(sender));
 
-    app_data
-        .users
-        .lock()
-        .await
-        .insert(username.clone(), sender.clone());
+    {
+        let mut users = app_data
+            .users
+            .lock()
+            .await;
+        let join_msg = Message::text(
+            serde_json::to_string(&WebSocketServerMessage::Join(username.clone()))
+                .unwrap(),
+        );
+        for user in users.values() {
+            user.lock().await.send(join_msg.clone()).await;
+        }
+        users.insert(username.clone(), sender.clone());
+    }
 
-    while let Some(Ok(msg)) = receiver.next().await {
+    while let Ok(Some(Ok(msg))) = timeout(Duration::from_secs(3), receiver.next()).await {
         let Ok(text) = msg.to_text() else {
             return;
         };
-        info!("Incomming websocket message from {username}: {text}");
+        debug!("Incomming websocket message from {username}: {text}");
         if let Ok(m) = serde_json::from_str::<WebSocketClientMessage>(text) {
             match m {
                 WebSocketClientMessage::Instruction(data) => {
@@ -200,7 +211,14 @@ pub async fn handle_socket(socket: WebSocket, username: String, app_data: Arc<Ap
                 WebSocketClientMessage::TempDraw(data) => {
                     let mut users = app_data.users.lock().await;
                     let msg = Message::text(
-                        serde_json::to_string(&WebSocketServerMessage::TempDraw(data)).unwrap(),
+                        serde_json::to_string(&WebSocketServerMessage::TempDraw(TempDrawServerData {
+                            brush: data.brush,
+                            uuid: data.uuid,
+                            start: data.start,
+                            end: data.end,
+                            layer: data.layer,
+                            username: username.clone(),
+                        })).unwrap(),
                     );
                     for (name, user) in users.iter_mut() {
                         if name != &username {
@@ -266,6 +284,24 @@ pub async fn handle_socket(socket: WebSocket, username: String, app_data: Arc<Ap
                             uuid: data.uuid,
                             layer: data.layer,
                             image_insertion: data.image_insertion,
+                        }))
+                        .unwrap(),
+                    );
+                    for (name, user) in users.iter_mut() {
+                        if name != &username {
+                            user.lock().await.send(msg.clone()).await;
+                        }
+                    }
+                }
+                WebSocketClientMessage::TempMoveStart(data) => {
+                    let mut users = app_data.users.lock().await;
+                    let msg = Message::text(
+                        serde_json::to_string(&WebSocketServerMessage::TempMoveStart(MoveStartServerData {
+                            username: username.clone(),
+                            uuid: data.uuid,
+                            layer: data.layer,
+                            selection: data.selection,
+                            end: data.end,
                         }))
                         .unwrap(),
                     );
@@ -347,11 +383,29 @@ pub async fn handle_socket(socket: WebSocket, username: String, app_data: Arc<Ap
                         }
                     }
                 }
+                WebSocketClientMessage::KeepAlive => {},
             }
         } else {
             error!("Could not parse message: {msg:?}");
         };
     }
 
-    app_data.users.lock().await.remove(&username);
+    info!("{username} left");
+
+    {
+        let mut users = app_data
+            .users
+            .lock()
+            .await;
+
+        users.remove(&username);
+
+        let leave_msg = Message::text(
+            serde_json::to_string(&WebSocketServerMessage::Leave(username))
+                .unwrap(),
+        );
+        for user in users.values() {
+            user.lock().await.send(leave_msg.clone()).await;
+        }
+    }
 }

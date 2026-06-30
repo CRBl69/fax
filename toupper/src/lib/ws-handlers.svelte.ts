@@ -2,6 +2,8 @@ import { type Stroke, type Motion, type ImageInsertion } from "$lib/drinfo";
 import { FromServer, type Server } from "$lib/tolower";
 import { gs } from "$lib/state.svelte";
 import { Renderer } from "./render";
+import { translateSelection } from "./util";
+import { SvelteMap } from "svelte/reactivity";
 
 export function registerWsHandlers(server: Server, username: string): void {
   server.registerEventHandler("init", (data) => {
@@ -56,7 +58,17 @@ export function registerWsHandlers(server: Server, username: string): void {
 
   server.registerEventHandler("instruction", ({ layer, instruction }) => {
     gs.drawing.instruct(layer, FromServer.instructionBox(instruction));
+    const inProgress = gs.inProgress.get(layer)?.get(instruction.uuid);
     gs.inProgress.get(layer)?.delete(instruction.uuid);
+    if (inProgress && "Motion" in instruction.instruction) {
+      const motion = instruction.instruction.Motion as Motion;
+      const username = inProgress.username;
+      if (username === gs.username) return;
+      gs.selections.set(username, {
+        points: translateSelection(motion.selection, motion.end),
+        closed: true,
+      });
+    }
   });
 
   server.registerEventHandler("removeinstruction", ({ layer, index }) => {
@@ -67,10 +79,17 @@ export function registerWsHandlers(server: Server, username: string): void {
     gs.selections.set(username, { points, closed });
   });
 
+  server.registerEventHandler("unselect", (username) => {
+    gs.selections.delete(username);
+  });
+
   server.registerEventHandler("tempdraw", (data) => {
     if (data.layer !== gs.selectedLayer) return;
-    const ip = gs.inProgress.get(data.layer);
-    if (!ip) return;
+    let ip = gs.inProgress.get(data.layer);
+    if (!ip) {
+      ip = new SvelteMap();
+      gs.inProgress.set(data.layer, ip);
+    }
     const brush = FromServer.brush(data.brush);
     const existing = ip.get(data.uuid);
     if (!existing) {
@@ -81,7 +100,7 @@ export function registerWsHandlers(server: Server, username: string): void {
       ip.set(data.uuid, {
         instructionBox: { uuid: data.uuid, applied: true, instruction: stroke },
         layer: data.layer,
-        username: "",
+        username: data.username,
       });
     } else {
       const stroke = existing.instructionBox.instruction as Stroke;
@@ -98,60 +117,80 @@ export function registerWsHandlers(server: Server, username: string): void {
     }
   });
 
-  server.registerEventHandler("tempimagestart", ({ uuid, image_insertion, layer }) => {
-    const ip = gs.inProgress.get(layer);
-    if (!ip) return;
+  server.registerEventHandler("tempimagestart", ({ uuid, image_insertion, layer, username }) => {
+    let ip = gs.inProgress.get(layer);
+    if (!ip) {
+      ip = new SvelteMap();
+      gs.inProgress.set(layer, ip);
+    }
     ip.set(uuid, {
       instructionBox: { uuid, applied: true, instruction: image_insertion as ImageInsertion },
       layer,
-      username: "",
+      username: username,
     });
   });
 
-  server.registerEventHandler("tempimage", ({ uuid, point, rotate, scale }) => {
-    for (const ld of gs.inProgress.values()) {
-      const entry = ld.get(uuid);
-      if (entry) {
-        const img = entry.instructionBox.instruction as ImageInsertion;
-        ld.set(uuid, {
-          ...entry,
-          instructionBox: {
-            ...entry.instructionBox,
-            instruction: { ...img, point, rotate, scale },
-          },
-        });
-        break;
-      }
-    }
-  });
-
-  server.registerEventHandler("tempmove", ({ uuid, username, end, layer }) => {
+  server.registerEventHandler("tempimage", ({ uuid, point, rotate, scale, layer }) => {
     const ip = gs.inProgress.get(layer);
     if (!ip) return;
-    if (end) {
-      const existing = ip.get(uuid);
-      if (!existing) {
-        ip.set(uuid, {
-          instructionBox: {
-            uuid,
-            applied: true,
-            instruction: { end, selection: [] } as Motion,
-          },
-          layer,
-          username,
-        });
-      } else {
-        const motion = existing.instructionBox.instruction as Motion;
-        ip.set(uuid, {
-          ...existing,
-          instructionBox: {
-            ...existing.instructionBox,
-            instruction: { ...motion, end },
-          },
-        });
+    const existing = ip.get(uuid);
+    if (!existing) return;
+    const img = existing.instructionBox.instruction as ImageInsertion;
+    ip.set(uuid, {
+      ...existing,
+      instructionBox: {
+        ...existing.instructionBox,
+        instruction: { ...img, point, rotate, scale },
+      },
+    });
+  });
+
+  server.registerEventHandler("tempmovestart", ({ uuid, username, end, selection, layer }) => {
+    let ip = gs.inProgress.get(layer);
+    if (!ip) {
+      ip = new SvelteMap();
+      gs.inProgress.set(layer, ip);
+    }
+    ip.set(uuid, {
+      instructionBox: {
+        uuid,
+        applied: true,
+        instruction: { end, selection },
+      },
+      layer,
+      username,
+    });
+  });
+
+  server.registerEventHandler("tempmove", ({ uuid, end, layer }) => {
+    const ip = gs.inProgress.get(layer);
+    if (!ip) return;
+    const existing = ip.get(uuid);
+    if (!existing) return;
+    const motion = existing.instructionBox.instruction as Motion;
+    ip.set(uuid, {
+      ...existing,
+      instructionBox: {
+        ...existing.instructionBox,
+        instruction: { ...motion, end },
+      },
+    });
+  });
+
+  server.registerEventHandler("leave", (username) => {
+    gs.selections.delete(username);
+    gs.cursors.delete(username);
+    for (const layer of gs.inProgress.values()) {
+      const uuidsToDelete = [];
+      for (const [uuid, entry] of layer) {
+        if (entry.username === username) {
+          uuidsToDelete.push(uuid);
+        }
       }
-    } else {
-      ip.delete(uuid);
+      console.log({ layer, uuidsToDelete });
+      for (const uuid of uuidsToDelete) {
+        layer.delete(uuid);
+      }
     }
   });
 }

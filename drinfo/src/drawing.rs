@@ -117,7 +117,7 @@ impl Drawing {
     pub fn remove_instruction(
         &mut self,
         layer_name: &str,
-        index: usize,
+        index: u64,
     ) -> Result<(), DrawingError> {
         let layer = self.layers.get_mut(layer_name);
         if let Some(l) = layer {
@@ -156,7 +156,7 @@ impl Drawing {
     pub fn set_instruction_visibility(
         &mut self,
         layer_name: &str,
-        index: usize,
+        index: u64,
         visible: bool,
     ) -> Result<(), DrawingError> {
         let layer = self.layers.get_mut(layer_name);
@@ -172,7 +172,7 @@ impl Drawing {
     pub fn snapshot(
         &mut self,
         layer_name: &str,
-        index: usize,
+        index: u64,
         data: String,
     ) -> Result<(), DrawingError> {
         let layer = self.layers.get_mut(layer_name);
@@ -185,7 +185,7 @@ impl Drawing {
     }
 
     /// Truncates the history of the given layer before this index.
-    pub fn truncate(&mut self, layer_name: &str, index: usize) -> Result<(), DrawingError> {
+    pub fn truncate(&mut self, layer_name: &str, index: u64) -> Result<(), DrawingError> {
         let layer = self.layers.get_mut(layer_name);
         if let Some(l) = layer {
             l.truncate(index)?;
@@ -199,7 +199,7 @@ impl Drawing {
     pub fn set_history_index(
         &mut self,
         layer_name: &str,
-        new_history_index: usize,
+        new_history_index: u64,
     ) -> Result<(), DrawingError> {
         let layer = self.layers.get_mut(layer_name);
         if let Some(l) = layer {
@@ -214,8 +214,8 @@ impl Drawing {
     pub fn move_instruction(
         &mut self,
         layer_name: &str,
-        old_instruction_index: usize,
-        new_instruction_index: usize,
+        old_instruction_index: u64,
+        new_instruction_index: u64,
     ) -> Result<(), DrawingError> {
         let layer = self.layers.get_mut(layer_name);
         if let Some(l) = layer {

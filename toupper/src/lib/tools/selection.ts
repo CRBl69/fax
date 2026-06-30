@@ -7,6 +7,12 @@ export class SelectionTool extends BaseTool {
 
   public onmousedown(event: MouseEvent, element: HTMLElement): void {
     super.onmousedown(event, element);
+    if (event.button === 2) {
+      this.isSelecting = false;
+      gs.selections.delete(gs.username);
+      gs.server?.sendUnselect();
+      return;
+    }
     if (!this.isSelecting) {
       gs.selections.set(gs.username, {
         points: [

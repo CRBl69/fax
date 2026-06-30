@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum WebSocketClientMessage {
+    KeepAlive,
     Cursor(CursorClientData),
     Instruction(InstructionData),
     SetLayerVisibility(SetLayerVisibilityData),
@@ -15,11 +16,12 @@ pub enum WebSocketClientMessage {
     SetHistoryIndex(SetHistoryIndexData),
     MoveInstruction(MoveInstructionData),
     RequestInit,
-    TempDraw(TempDrawData),
+    TempDraw(TempDrawClientData),
     Selection(SelectionClientData),
     Unselect,
     TempImageStart(TempImageStartClientData),
     TempImage(TempImageClientData),
+    TempMoveStart(MoveStartClientData),
     TempMove(MoveClientData),
     Snapshot(SnapshotData),
     SetInstructionVisibility(SetInstructionVisibilityData),
@@ -38,11 +40,13 @@ pub enum WebSocketServerMessage {
     MoveInstruction(MoveInstructionData),
     Init(InitData),
     Join(String),
-    TempDraw(TempDrawData),
+    Leave(String),
+    TempDraw(TempDrawServerData),
     Selection(SelectionServerData),
     Unselect(String),
     TempImageStart(TempImageStartServerData),
     TempImage(TempImageServerData),
+    TempMoveStart(MoveStartServerData),
     TempMove(MoveServerData),
     Snapshot(SnapshotData),
     SetInstructionVisibility(SetInstructionVisibilityData),
@@ -64,14 +68,14 @@ pub struct SetLayerVisibilityData {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SetHistoryIndexData {
     pub layer: String,
-    pub new_history_index: usize,
+    pub new_history_index: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct MoveInstructionData {
     pub layer: String,
-    pub old_instruction_index: usize,
-    pub new_instruction_index: usize,
+    pub old_instruction_index: u64,
+    pub new_instruction_index: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -106,12 +110,22 @@ pub struct InitData {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct TempDrawData {
-    brush: drawing::Brush,
-    uuid: String,
-    start: drawing::Point,
-    end: drawing::Point,
-    layer: String,
+pub struct TempDrawClientData {
+    pub brush: drawing::Brush,
+    pub uuid: String,
+    pub start: drawing::Point,
+    pub end: drawing::Point,
+    pub layer: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct TempDrawServerData {
+    pub brush: drawing::Brush,
+    pub uuid: String,
+    pub start: drawing::Point,
+    pub end: drawing::Point,
+    pub layer: String,
+    pub username: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -148,7 +162,7 @@ pub struct TempImageClientData {
     pub layer: String,
     pub point: Point,
     pub scale: Point,
-    pub rotate: f64,
+    pub rotate: u32,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -158,13 +172,30 @@ pub struct TempImageServerData {
     pub layer: String,
     pub point: Point,
     pub scale: Point,
-    pub rotate: f64,
+    pub rotate: u32,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct MoveStartClientData {
+    pub uuid: String,
+    pub layer: String,
+    pub selection: Vec<Point>,
+    pub end: Point,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct MoveClientData {
     pub uuid: String,
     pub layer: String,
+    pub end: Point,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct MoveStartServerData {
+    pub username: String,
+    pub uuid: String,
+    pub layer: String,
+    pub selection: Vec<Point>,
     pub end: Point,
 }
 
@@ -180,20 +211,20 @@ pub struct MoveServerData {
 pub struct SnapshotData {
     pub layer: String,
     pub data: String,
-    pub index: usize,
+    pub index: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SetInstructionVisibilityData {
     pub layer: String,
-    pub index: usize,
+    pub index: u64,
     pub visible: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RemoveInstructionData {
     pub layer: String,
-    pub index: usize,
+    pub index: u64,
 }
 
 impl CursorServerData {

@@ -12,13 +12,21 @@ pub struct Brush {
     /// The width of the brush (diameter).
     pub width: f32,
     /// The hardness of the brush.
-    pub hardness: u64,
+    ///
+    /// [`u32::MAX`] is 1 and 0 is 0.
+    pub hardness: u32,
     /// The opacity of the brush.
-    pub opacity: u64,
+    ///
+    /// [`u32::MAX`] is 1 and 0 is 0.
+    pub opacity: u32,
     /// Wether to erase or not.
     pub erase: bool,
-    /// How often to repeat the brush.
-    pub repeat: f64,
+    /// How often to repeat the brush, relative to the brush `width`.
+    ///
+    /// If `repeat` is [`u32::MAX`], repeat once every `width` pixels.
+    /// If `repeat` is `1`, repeat once every `1/width` pixels.
+    /// Can't be 0.
+    pub repeat: u32,
 }
 
 impl Default for Brush {
@@ -30,7 +38,7 @@ impl Default for Brush {
             hardness: 0,
             opacity: 100_000,
             erase: false,
-            repeat: 0.02,
+            repeat: 2,
         }
     }
 }
@@ -41,10 +49,10 @@ impl Brush {
         brush_shape: BrushShape,
         color: Color,
         width: f32,
-        hardness: u64,
-        opacity: u64,
+        hardness: u32,
+        opacity: u32,
         erase: bool,
-        repeat: f64,
+        repeat: u32,
     ) -> Self {
         Brush {
             brush_shape,
@@ -68,12 +76,12 @@ impl Brush {
     }
 
     /// Updates the opacity of the brush.
-    pub fn set_hardness(&mut self, hardness: u64) {
+    pub fn set_hardness(&mut self, hardness: u32) {
         self.hardness = hardness;
     }
 
     /// Updates the opacity of the brush.
-    pub fn set_opacity(&mut self, opacity: u64) {
+    pub fn set_opacity(&mut self, opacity: u32) {
         self.opacity = opacity;
     }
 
@@ -88,7 +96,7 @@ impl Brush {
     }
 
     /// Updates the repeat of the brush.
-    pub fn set_repeat(&mut self, repeat: f64) {
+    pub fn set_repeat(&mut self, repeat: u32) {
         self.repeat = repeat;
     }
 }

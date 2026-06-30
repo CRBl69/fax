@@ -144,7 +144,7 @@ export type CursorServerMessage = {
   };
 };
 
-export type TempDrawMessage = {
+export type TempDrawClientMessage = {
   TempDraw: {
     brush: Brush;
     uuid: string;
@@ -154,6 +154,16 @@ export type TempDrawMessage = {
   };
 };
 
+export type TempDrawServerMessage = {
+  TempDraw: {
+    brush: Brush;
+    uuid: string;
+    start: Point;
+    end: Point;
+    layer: string;
+    username: string;
+  };
+};
 export type SelectionClientMessage = {
   Selection: {
     points: Point[];
@@ -213,10 +223,29 @@ export type TempImageServerMessage = {
   };
 };
 
+export type TempMoveStartClientMessage = {
+  TempMoveStart: {
+    uuid: string;
+    layer: string;
+    selection: Point[];
+    end: Point;
+  };
+};
+
 export type TempMoveClientMessage = {
   TempMove: {
     uuid: string;
     layer: string;
+    end: Point;
+  };
+};
+
+export type TempMoveStartServerMessage = {
+  TempMoveStart: {
+    username: string;
+    uuid: string;
+    layer: string;
+    selection: Point[];
     end: Point;
   };
 };
@@ -284,6 +313,10 @@ export type JoinMessage = {
   Join: string;
 };
 
+export type LeaveMessage = {
+  Leave: string;
+};
+
 export type WebSocketClientMessage =
   | CursorClientMessage
   | InstructionMessage
@@ -294,11 +327,12 @@ export type WebSocketClientMessage =
   | SetHistoryIndexMessage
   | MoveInstructionMessage
   | RequestInitMessage
-  | TempDrawMessage
+  | TempDrawClientMessage
   | SelectionClientMessage
   | UnselectClientMessage
   | TempImageStartClientMessage
   | TempImageClientMessage
+  | TempMoveStartClientMessage
   | TempMoveClientMessage
   | SnapshotMessage
   | SetInstructionVisibilityMessage
@@ -315,11 +349,13 @@ export type WebSocketServerMessage =
   | MoveInstructionMessage
   | InitMessage
   | JoinMessage
-  | TempDrawMessage
+  | LeaveMessage
+  | TempDrawServerMessage
   | SelectionServerMessage
   | UnselectServerMessage
   | TempImageStartServerMessage
   | TempImageServerMessage
+  | TempMoveStartServerMessage
   | TempMoveServerMessage
   | SnapshotMessage
   | SetInstructionVisibilityMessage

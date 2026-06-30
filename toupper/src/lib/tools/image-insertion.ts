@@ -7,15 +7,16 @@ export class ImageInsertionTool extends BaseTool {
   public onmousedown(event: MouseEvent, element: HTMLElement): void {
     super.onmousedown(event, element);
     if (event.button === 2 && gs.selectedLayer && gs.currentUuid) {
-      let imageInsertion = gs.inProgress.get(gs.selectedLayer)!.get(gs.currentUuid)!.instructionBox
-        .instruction as ImageInsertion;
+      const imageInsertion = gs.inProgress.get(gs.selectedLayer)!.get(gs.currentUuid)!
+        .instructionBox.instruction as ImageInsertion;
       imageInsertion.scale.y = imageInsertion.scale.x;
     }
   }
   public onmousemove(event: MouseEvent, element: HTMLElement): void {
     super.onmousemove(event, element);
     if (!gs.selectedLayer || !gs.currentUuid) return;
-    let imageInsertion = gs.inProgress.get(gs.selectedLayer)!.get(gs.currentUuid)!.instructionBox
+    if (!this.mousedown) return;
+    const imageInsertion = gs.inProgress.get(gs.selectedLayer)!.get(gs.currentUuid)!.instructionBox
       .instruction as ImageInsertion;
     if (event.ctrlKey) {
       imageInsertion.scale.x += (this.cursorPosition!.x - this.previousCursorPosition!.x) / 2000;
@@ -49,9 +50,13 @@ export class ImageInsertionTool extends BaseTool {
       const crossProduct = caX * cbY - caY * cbX;
       let rotate;
       if (crossProduct > 0) {
-        rotate = (imageInsertion.rotate - angleDegrees) % 360;
+        rotate = ((imageInsertion.rotate * 360) / (2 ** 32 - 1) - angleDegrees) % 360;
       } else {
-        rotate = (imageInsertion.rotate + angleDegrees) % 360;
+        rotate = ((imageInsertion.rotate * 360) / (2 ** 32 - 1) + angleDegrees) % 360;
+      }
+      rotate = Math.round((rotate * (2 ** 32 - 1)) / 360);
+      if (rotate < 0) {
+        rotate = 2 ** 32 - 1 - rotate;
       }
       if (!isNaN(rotate)) {
         imageInsertion.rotate = rotate;

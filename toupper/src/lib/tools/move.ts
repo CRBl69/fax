@@ -3,16 +3,15 @@ import { BaseTool } from ".";
 import { gs } from "$lib/state.svelte";
 import { ToolType } from "../types";
 import { SvelteMap } from "svelte/reactivity";
+import { translateSelection } from "$lib/util";
 
 export class MoveTool extends BaseTool {
   public onmouseup(event: MouseEvent, element: HTMLElement): void {
     if (this.mousedown) {
       if (!gs.selectedLayer || !gs.currentUuid) return;
-      let instructionBox = gs.inProgress.get(gs.selectedLayer)!.get(gs.currentUuid)!.instructionBox;
-      const delta = {
-        x: this.cursorPosition!.x - this.mousedown.x,
-        y: this.cursorPosition!.y - this.mousedown.y,
-      };
+      const instructionBox = gs.inProgress
+        .get(gs.selectedLayer)!
+        .get(gs.currentUuid)!.instructionBox;
       gs.server?.instructionBox(instructionBox, gs.selectedLayer!);
       gs.inProgress.get(gs.selectedLayer)?.delete(gs.currentUuid);
       gs.currentUuid = null;
@@ -20,7 +19,7 @@ export class MoveTool extends BaseTool {
       const selection = gs.selections.get(gs.username)!;
       gs.selections.set(gs.username, {
         closed: true,
-        points: selection.points.map((p) => ({ x: p.x + delta.x, y: p.y + delta.y })),
+        points: translateSelection(selection.points, (instructionBox.instruction as Motion).end),
       });
     }
     super.onmouseup(event, element);
@@ -44,7 +43,12 @@ export class MoveTool extends BaseTool {
         gs.inProgress.set(gs.selectedLayer, map);
       }
       map.set(uuid, { username: gs.username, layer: gs.selectedLayer, instructionBox });
-      gs.server?.sendMove(uuid, gs.selectedLayer, this.cursorPosition!);
+      gs.server?.sendMoveStart(
+        uuid,
+        gs.selectedLayer,
+        gs.selections.get(gs.username)!.points,
+        this.cursorPosition!,
+      );
     }
   }
   public onmouseleave(event: MouseEvent, element: HTMLElement): void {
@@ -55,7 +59,9 @@ export class MoveTool extends BaseTool {
     super.onmousemove(event, element);
     if (this.mousedown) {
       if (!gs.selectedLayer || !gs.currentUuid) return;
-      let instructionBox = gs.inProgress.get(gs.selectedLayer)!.get(gs.currentUuid)!.instructionBox;
+      const instructionBox = gs.inProgress
+        .get(gs.selectedLayer)!
+        .get(gs.currentUuid)!.instructionBox;
       const dx = this.cursorPosition!.x - this.mousedown.x;
       const dy = this.cursorPosition!.y - this.mousedown.y;
       const selection = (instructionBox.instruction as Motion).selection;
