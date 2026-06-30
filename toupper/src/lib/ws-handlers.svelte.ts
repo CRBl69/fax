@@ -78,8 +78,8 @@ export function registerWsHandlers(server: Server, username: string): void {
   });
 
   server.registerEventHandler("removeinstruction", ({ layer, index }) => {
-    gs.renderer?.invalidateFrom(layer, index);
     gs.drawing.removeInstruction(layer, index);
+    gs.renderer?.invalidateFrom(layer, index - 1);
   });
 
   server.registerEventHandler("selection", ({ points, closed, username }) => {
