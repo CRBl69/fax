@@ -68,18 +68,18 @@ export class Renderer {
 
       await this.ensureLayerContext(layerName, layer.historyIndex);
 
-      const context = this.getContext(layerName, layer.historyIndex);
-      if (context) {
-        this.ctx.drawImage(context, 0, 0);
-      }
-
-      const inProgress = this.inProgress.get(layerName);
-      if (inProgress) {
-        for (const [, entry] of inProgress) {
-          if (entry.instructionBox.applied) {
-            await applyInstruction(entry.instructionBox.instruction, this.ctx, this.imageCache);
+      const canvas = this.getCanvas(layerName, layer.historyIndex);
+      if (canvas) {
+        const context = canvas.getContext("2d")!;
+        const inProgress = this.inProgress.get(layerName);
+        if (inProgress) {
+          for (const [, entry] of inProgress) {
+            if (entry.instructionBox.applied) {
+              await applyInstruction(entry.instructionBox.instruction, context, this.imageCache);
+            }
           }
         }
+        this.ctx.drawImage(canvas, 0, 0);
       }
     }
 
@@ -117,7 +117,7 @@ export class Renderer {
     return layerOrder.join(" - ") + " " + layerVisibility.join("");
   }
 
-  private getContext(layerName: string, index: number): OffscreenCanvas | null {
+  private getCanvas(layerName: string, index: number): OffscreenCanvas | null {
     return this.layerHistoryCanvases.get(layerName)?.get(index)?.canvas ?? null;
   }
 
