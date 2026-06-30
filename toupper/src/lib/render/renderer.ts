@@ -16,6 +16,8 @@ export class Renderer {
   private inProgress: Map<string, Map<string, InProgressEntry>>;
   // Layer => History index => data
   private layerHistoryCanvases = new SvelteMap<string, Map<number, OffscreenCanvas>>();
+  // Layer => UUID => hash of instruction at time of last render
+  private inProgressHashes = new Map<string, Map<string, string>>();
   private onSnapshot?: SnapshotCallback;
 
   constructor(
@@ -39,15 +41,11 @@ export class Renderer {
         break;
       }
     }
-    if (!updates && this.inProgress.size > 0) {
-      for (const inProgress of this.inProgress.values()) {
-        if (inProgress.size > 0) {
-          updates = true;
-          break;
-        }
-      }
+    if (!updates) {
+      updates = this.inProgressChanged();
     }
     if (!updates) return;
+    console.log("render", new Date());
     const w = this.drawing.width;
     const h = this.drawing.height;
     if (this.canvas.width !== w) this.canvas.width = w;
@@ -75,6 +73,8 @@ export class Renderer {
         }
       }
     }
+
+    this.storeInProgressHashes();
   }
 
   getPNG(): string {
@@ -218,5 +218,47 @@ export class Renderer {
       reader.onerror = reject;
       reader.readAsDataURL(blob);
     });
+  }
+
+  private hashInstruction(box: InstructionBox): string {
+    return JSON.stringify(box.instruction) + (box.applied ? "1" : "0");
+  }
+
+  private inProgressChanged(): boolean {
+    for (const [layerName, inProgress] of this.inProgress) {
+      const layerHashes = this.inProgressHashes.get(layerName);
+      if (!layerHashes) {
+        if (inProgress.size > 0) return true;
+        continue;
+      }
+      for (const [uuid, entry] of inProgress) {
+        const storedHash = layerHashes.get(uuid);
+        if (!storedHash || storedHash !== this.hashInstruction(entry.instructionBox)) {
+          return true;
+        }
+      }
+      for (const uuid of layerHashes.keys()) {
+        if (!inProgress.has(uuid)) {
+          return true;
+        }
+      }
+    }
+    for (const layerName of this.inProgressHashes.keys()) {
+      if (!this.inProgress.has(layerName)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private storeInProgressHashes(): void {
+    this.inProgressHashes.clear();
+    for (const [layerName, inProgress] of this.inProgress) {
+      const layerHashes = new Map<string, string>();
+      for (const [uuid, entry] of inProgress) {
+        layerHashes.set(uuid, this.hashInstruction(entry.instructionBox));
+      }
+      this.inProgressHashes.set(layerName, layerHashes);
+    }
   }
 }

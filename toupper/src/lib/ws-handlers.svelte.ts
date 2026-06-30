@@ -41,11 +41,15 @@ export function registerWsHandlers(server: Server, username: string): void {
   });
 
   server.registerEventHandler("sethistoryindex", (data) => {
+    gs.renderer?.invalidateFrom(data.layer, data.new_history_index);
     gs.drawing.setHistoryIndex(data.layer, data.new_history_index);
   });
 
   server.registerEventHandler("moveinstruction", (data) => {
-    gs.renderer?.invalidateFrom(data.layer, Math.min(data.old_instruction_index, data.new_instruction_index));
+    gs.renderer?.invalidateFrom(
+      data.layer,
+      Math.min(data.old_instruction_index, data.new_instruction_index),
+    );
     gs.drawing.moveInstruction(data.layer, data.old_instruction_index, data.new_instruction_index);
   });
 
