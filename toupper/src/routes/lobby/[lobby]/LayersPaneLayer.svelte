@@ -1,5 +1,6 @@
 <script lang="ts">
   import { gs } from "$lib/state.svelte";
+  import { untrack } from "svelte";
 
   interface Props {
     name: string;
@@ -13,14 +14,17 @@
   let original = $derived.by(() => {
     return gs.renderer?.getLayerCanvas(name);
   });
+  /* svelte-ignore state_referenced_locally */
+  let currentRenderID = $state(original?.renderID);
 
   $effect(() => {
     let req: number;
     function loop() {
-      if (canvas && original) {
+      if (canvas && original && original.renderID !== untrack(() => currentRenderID)) {
         const context = canvas.getContext("2d");
         context?.clearRect(0, 0, canvas.width, canvas.height);
-        context?.drawImage(original, 0, 0);
+        context?.drawImage(original.canvas, 0, 0);
+        currentRenderID = original.renderID;
       }
       req = requestAnimationFrame(loop);
     }
@@ -39,8 +43,8 @@
 >
   <canvas
     bind:this={canvas}
-    width={original?.width}
-    height={original?.height}
+    width={original?.canvas.width}
+    height={original?.canvas.height}
     class="layer-preview"
   >
   </canvas>

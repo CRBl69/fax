@@ -15,10 +15,14 @@ export class Renderer {
   // Layer => UUID => entry
   private inProgress: Map<string, Map<string, InProgressEntry>>;
   // Layer => History index => data
-  private layerHistoryCanvases = new SvelteMap<string, Map<number, OffscreenCanvas>>();
+  private layerHistoryCanvases = new SvelteMap<
+    string,
+    Map<number, { canvas: OffscreenCanvas; renderID: string }>
+  >();
   // Layer => UUID => hash of instruction at time of last render
   private inProgressHashes = new Map<string, Map<string, string>>();
   private onSnapshot?: SnapshotCallback;
+  private lastRenderMetadataHash: string = "";
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -36,6 +40,7 @@ export class Renderer {
   async render(): Promise<void> {
     let updates = false;
     for (const [layerName, layer] of this.drawing.layers) {
+      if (!layer.visible) continue;
       if (!this.layerHistoryCanvases.get(layerName)?.has(layer.historyIndex)) {
         updates = true;
         break;
@@ -43,6 +48,10 @@ export class Renderer {
     }
     if (!updates) {
       updates = this.inProgressChanged();
+    }
+    const drawingMetadataHash = this.getDrawingMetadataHash();
+    if (this.lastRenderMetadataHash != drawingMetadataHash) {
+      updates = true;
     }
     if (!updates) return;
     console.log("render", new Date());
@@ -74,6 +83,7 @@ export class Renderer {
       }
     }
 
+    this.lastRenderMetadataHash = drawingMetadataHash;
     this.storeInProgressHashes();
   }
 
@@ -81,7 +91,7 @@ export class Renderer {
     return this.canvas.toDataURL("image/png");
   }
 
-  getLayerCanvas(layer: string): OffscreenCanvas | undefined {
+  getLayerCanvas(layer: string): { canvas: OffscreenCanvas; renderID: string } | undefined {
     const historyIndex = this.drawing.layers.get(layer)?.historyIndex;
     if (historyIndex === undefined) return undefined;
     return this.layerHistoryCanvases.get(layer)?.get(historyIndex);
@@ -101,14 +111,20 @@ export class Renderer {
     }
   }
 
+  private getDrawingMetadataHash(): string {
+    const layerVisibility = [...this.drawing.layers.values().map((l) => (l.visible ? "1" : "0"))];
+    const layerOrder = this.drawing.layerOrder;
+    return layerOrder.join(" - ") + " " + layerVisibility.join("");
+  }
+
   private getContext(layerName: string, index: number): OffscreenCanvas | null {
-    return this.layerHistoryCanvases.get(layerName)?.get(index) ?? null;
+    return this.layerHistoryCanvases.get(layerName)?.get(index)?.canvas ?? null;
   }
 
   private async ensureLayerContext(layerName: string, targetIndex: number): Promise<void> {
     let contexts = this.layerHistoryCanvases.get(layerName);
     if (!contexts) {
-      contexts = new Map();
+      contexts = new SvelteMap();
       this.layerHistoryCanvases.set(layerName, contexts);
     }
 
@@ -119,7 +135,7 @@ export class Renderer {
 
     if (!contexts.has(0)) {
       const ctx = new OffscreenCanvas(w, h).getContext("2d")!;
-      contexts.set(0, ctx.canvas);
+      contexts.set(0, { canvas: ctx.canvas, renderID: crypto.randomUUID() });
     }
 
     if (targetIndex === 0) return;
@@ -135,7 +151,7 @@ export class Renderer {
       const ctx = new OffscreenCanvas(w, h).getContext("2d")!;
       ctx.clearRect(0, 0, w, h);
       ctx.drawImage(image, 0, 0);
-      contexts.set(snapshot[0], ctx.canvas);
+      contexts.set(snapshot[0], { canvas: ctx.canvas, renderID: crypto.randomUUID() });
       currentIndex = snapshot[0];
     }
 
@@ -155,7 +171,7 @@ export class Renderer {
     history: InstructionBox[],
     from: number,
     to: number,
-    contexts: Map<number, OffscreenCanvas>,
+    contexts: Map<number, { canvas: OffscreenCanvas; renderID: string }>,
     w: number,
     h: number,
   ): Promise<void> {
@@ -168,7 +184,7 @@ export class Renderer {
       const prevContext = contexts.get(current)!;
       const newCanvas = new OffscreenCanvas(w, h);
       const newCtx = newCanvas.getContext("2d")!;
-      newCtx.drawImage(prevContext, 0, 0);
+      newCtx.drawImage(prevContext.canvas, 0, 0);
 
       if (instructionBox.applied) {
         await applyInstruction(instructionBox.instruction, newCtx, this.imageCache);
@@ -182,7 +198,7 @@ export class Renderer {
         }
       }
 
-      contexts.set(current, newCanvas);
+      contexts.set(current, { canvas: newCanvas, renderID: crypto.randomUUID() });
 
       if (current % SNAPSHOT_INTERVAL === 0 && this.onSnapshot) {
         const blob = await newCanvas.convertToBlob();
@@ -192,7 +208,10 @@ export class Renderer {
     }
   }
 
-  private findClosestContext(contexts: Map<number, OffscreenCanvas>, target: number): number {
+  private findClosestContext(
+    contexts: Map<number, { canvas: OffscreenCanvas; renderID: string }>,
+    target: number,
+  ): number {
     let closest = 0;
     for (const index of contexts.keys()) {
       if (index > closest && index <= target) {

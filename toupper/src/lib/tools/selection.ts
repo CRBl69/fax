@@ -46,7 +46,7 @@ export class SelectionTool extends BaseTool {
         points: newPoints,
         closed: true,
       });
-      gs.server?.sendSelection(newPoints, closed);
+      gs.server?.sendSelection(newPoints, true);
     }
   }
 
